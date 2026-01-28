@@ -55,6 +55,15 @@
 <body
     class="bg-background text-gray-800 font-sans h-screen w-screen overflow-hidden selection:bg-primary selection:text-white">
 
+    <!-- Version Badge -->
+    <div class="fixed top-0 left-0 bg-black/50 text-white text-xs px-2 py-1 z-[9999] pointer-events-none rounded-br">v:281745</div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white/90 z-[10000] hidden flex-col justify-center items-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary"></div>
+        <p class="mt-4 text-primary font-bold text-lg">正在生成图纸...</p>
+    </div>
+
     <!-- Step 1: Home / Upload -->
     <section id="step-home" class="step-section active p-6 relative">
         <div class="flex-1 flex flex-col justify-center items-center text-center space-y-8">
@@ -89,15 +98,15 @@
                 <!-- Example Thumbnails -->
                 <button onclick="loadExample('dog')" aria-label="加载狗狗示例"
                     class="flex-shrink-0 w-16 h-16 rounded-xl bg-white shadow-md overflow-hidden border border-gray-100"><img
-                        src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=150&q=80"
+                        src="./image/ScreenShot_2026-01-28_172218_549.png"
                         alt="狗狗示例" class="w-full h-full object-cover"></button>
                 <button onclick="loadExample('flower')" aria-label="加载花朵示例"
                     class="flex-shrink-0 w-16 h-16 rounded-xl bg-white shadow-md overflow-hidden border border-gray-100"><img
-                        src="https://images.unsplash.com/photo-1490750967868-58cb75069ed6?auto=format&fit=crop&w=150&q=80"
+                        src="./image/ScreenShot_2026-01-28_172329_266.png"
                         alt="花朵示例" class="w-full h-full object-cover"></button>
                 <button onclick="loadExample('pixel')" aria-label="加载像素示例"
                     class="flex-shrink-0 w-16 h-16 rounded-xl bg-white shadow-md overflow-hidden border border-gray-100"><img
-                        src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=150&q=80"
+                        src="./image/ScreenShot_2026-01-28_172400_944.png"
                         alt="像素画示例" class="w-full h-full object-cover"></button>
             </div>
         </div>
@@ -291,9 +300,9 @@
 
         function loadExample(type) {
             const urls = {
-                dog: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=600&q=80',
-                flower: 'https://images.unsplash.com/photo-1490750967868-58cb75069ed6?auto=format&fit=crop&w=600&q=80',
-                pixel: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600&q=80'
+                dog: './image/ScreenShot_2026-01-28_172218_549.png',
+                flower: './image/ScreenShot_2026-01-28_172329_266.png',
+                pixel: './image/ScreenShot_2026-01-28_172400_944.png'
             };
             const img = new Image();
             img.crossOrigin = "Anonymous";
