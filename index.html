@@ -42,7 +42,12 @@
 
         .no-scrollbar {
             -ms-overflow-style: none;
-            scrollbar-width: none;
+        }
+
+        @supports (scrollbar-width: none) {
+            .no-scrollbar {
+                scrollbar-width: none;
+            }
         }
     </style>
 </head>
@@ -82,18 +87,18 @@
             <p class="text-xs text-center text-gray-400 mb-4 uppercase tracking-wider">或尝试示例图片</p>
             <div class="flex space-x-4 overflow-x-auto no-scrollbar px-4 pb-2 justify-center">
                 <!-- Example Thumbnails -->
-                <button onclick="loadExample('dog')" aria-label="Load dog example"
+                <button onclick="loadExample('dog')" aria-label="加载狗狗示例"
                     class="flex-shrink-0 w-16 h-16 rounded-xl bg-white shadow-md overflow-hidden border border-gray-100"><img
                         src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=150&q=80"
-                        alt="Dog example" class="w-full h-full object-cover"></button>
-                <button onclick="loadExample('flower')" aria-label="Load flower example"
+                        alt="狗狗示例" class="w-full h-full object-cover"></button>
+                <button onclick="loadExample('flower')" aria-label="加载花朵示例"
                     class="flex-shrink-0 w-16 h-16 rounded-xl bg-white shadow-md overflow-hidden border border-gray-100"><img
                         src="https://images.unsplash.com/photo-1490750967868-58cb75069ed6?auto=format&fit=crop&w=150&q=80"
-                        alt="Flower example" class="w-full h-full object-cover"></button>
-                <button onclick="loadExample('pixel')" aria-label="Load pixel art example"
+                        alt="花朵示例" class="w-full h-full object-cover"></button>
+                <button onclick="loadExample('pixel')" aria-label="加载像素示例"
                     class="flex-shrink-0 w-16 h-16 rounded-xl bg-white shadow-md overflow-hidden border border-gray-100"><img
                         src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=150&q=80"
-                        alt="Pixel art example" class="w-full h-full object-cover"></button>
+                        alt="像素画示例" class="w-full h-full object-cover"></button>
             </div>
         </div>
     </section>
@@ -165,8 +170,8 @@
             <button onclick="goToStep(4)" class="text-primary font-bold text-sm px-2">下一步</button>
         </div>
 
-        <div class="flex-1 relative overflow-auto flex items-center justify-center p-4" id="result-container">
-            <canvas id="result-canvas" class="shadow-2xl image-pixelated"></canvas>
+        <div class="flex-1 relative overflow-hidden flex items-center justify-center p-4" id="result-container">
+            <canvas id="result-canvas" class="shadow-2xl image-pixelated max-w-full max-h-full object-contain"></canvas>
         </div>
 
         <!-- Stats Panel (Draggable/Expandable could be nice, keeping simple for now) -->
@@ -222,48 +227,48 @@
 
     <!-- Logic -->
     <script>
-        // --- Data & Constants ---
-        // Simplified palette for MVP. RGB values are approximations.
+        // --- 数据与常量 ---
+        // MVP 简化色卡。RGB 值为近似值。
         const PALETTES = {
             perler: [
-                { id: 'P01', name: 'White', r: 255, g: 255, b: 255 },
-                { id: 'P02', name: 'Cream', r: 227, g: 216, b: 172 },
-                { id: 'P03', name: 'Yellow', r: 247, g: 229, b: 59 },
-                { id: 'P04', name: 'Orange', r: 255, g: 108, b: 47 },
-                { id: 'P05', name: 'Red', r: 190, g: 0, b: 47 },
-                { id: 'P06', name: 'Pink', r: 255, g: 147, b: 192 },
-                { id: 'P07', name: 'Purple', r: 104, g: 58, b: 154 },
-                { id: 'P08', name: 'Dark Blue', r: 13, g: 43, b: 109 },
-                { id: 'P09', name: 'Light Blue', r: 28, g: 151, b: 210 },
-                { id: 'P10', name: 'Dark Green', r: 0, g: 103, b: 62 },
-                { id: 'P11', name: 'Light Green', r: 105, g: 190, b: 90 },
-                { id: 'P12', name: 'Brown', r: 76, g: 46, b: 36 },
-                { id: 'P13', name: 'Grey', r: 129, g: 132, b: 138 },
-                { id: 'P14', name: 'Black', r: 0, g: 0, b: 0 },
-                { id: 'P18', name: 'Black', r: 45, g: 45, b: 45 },
-                { id: 'P17', name: 'Grey', r: 140, g: 140, b: 140 },
-                { id: 'P19', name: 'Clear', r: 255, g: 255, b: 255, alpha: 0.2 }, // Handle differently?
-                { id: 'P20', name: 'Rust', r: 161, g: 67, b: 40 },
-                { id: 'P21', name: 'Light Brown', r: 168, g: 112, b: 66 },
+                { id: 'P01', name: '白色', r: 255, g: 255, b: 255 },
+                { id: 'P02', name: '奶油色', r: 227, g: 216, b: 172 },
+                { id: 'P03', name: '黄色', r: 247, g: 229, b: 59 },
+                { id: 'P04', name: '橙色', r: 255, g: 108, b: 47 },
+                { id: 'P05', name: '红色', r: 190, g: 0, b: 47 },
+                { id: 'P06', name: '粉色', r: 255, g: 147, b: 192 },
+                { id: 'P07', name: '紫色', r: 104, g: 58, b: 154 },
+                { id: 'P08', name: '深蓝', r: 13, g: 43, b: 109 },
+                { id: 'P09', name: '浅蓝', r: 28, g: 151, b: 210 },
+                { id: 'P10', name: '深绿', r: 0, g: 103, b: 62 },
+                { id: 'P11', name: '浅绿', r: 105, g: 190, b: 90 },
+                { id: 'P12', name: '棕色', r: 76, g: 46, b: 36 },
+                { id: 'P13', name: '灰色', r: 129, g: 132, b: 138 },
+                { id: 'P14', name: '黑色', r: 0, g: 0, b: 0 },
+                { id: 'P18', name: '深黑', r: 45, g: 45, b: 45 },
+                { id: 'P17', name: '灰白', r: 140, g: 140, b: 140 },
+                { id: 'P19', name: '透明', r: 255, g: 255, b: 255, alpha: 0.2 }, // 可能需要特殊处理
+                { id: 'P20', name: '铁锈红', r: 161, g: 67, b: 40 },
+                { id: 'P21', name: '浅棕', r: 168, g: 112, b: 66 },
             ],
             hama: [
-                { id: 'H01', name: 'White', r: 255, g: 255, b: 255 },
-                { id: 'H05', name: 'Red', r: 204, g: 0, b: 0 },
-                { id: 'H18', name: 'Black', r: 0, g: 0, b: 0 },
-                // ... more colors would be added in prod
+                { id: 'H01', name: '白色', r: 255, g: 255, b: 255 },
+                { id: 'H05', name: '红色', r: 204, g: 0, b: 0 },
+                { id: 'H18', name: '黑色', r: 0, g: 0, b: 0 },
+                // ... 生产环境需添加更多颜色
             ]
         };
 
         const AppState = {
             currentStep: 1,
             image: null,
-            canvasSize: 0, // Pixels
-            gridSize: 32, // Count
+            canvasSize: 0, // 像素
+            gridSize: 32, // 数量
             brand: 'perler',
-            pixelData: [], // Array of color objects
+            pixelData: [], // 颜色对象数组
         };
 
-        // --- Navigation ---
+        // --- 导航逻辑 ---
         function goToStep(step) {
             document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
             document.querySelector(`#step-${getStepName(step)}`).classList.add('active');
@@ -277,7 +282,7 @@
             return ['home', 'settings', 'editor', 'export'][step - 1];
         }
 
-        // --- Step 1: Upload ---
+        // --- 第一步：上传 ---
         function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -312,7 +317,7 @@
             reader.readAsDataURL(file);
         }
 
-        // --- Step 2: Settings ---
+        // --- 第二步：设置 ---
         const sourceCanvas = document.getElementById('source-canvas');
         const ctxSource = sourceCanvas.getContext('2d');
         const slider = document.getElementById('grid-size-slider');
@@ -353,7 +358,7 @@
             // Add grid overlay logic if time permits, for now clean view
         }
 
-        // --- Core Algorithm: Pixelate & Match ---
+        // --- 核心算法：像素化与颜色匹配 ---
         function generatePattern() {
             const gridSize = AppState.gridSize;
             const tempCanvas = document.createElement('canvas');
@@ -408,7 +413,7 @@
             return nearest;
         }
 
-        // --- Step 3: Editor / Preview ---
+        // --- 第三步：编辑/预览 ---
         const resultCanvas = document.getElementById('result-canvas');
         const ctxResult = resultCanvas.getContext('2d');
 
@@ -466,7 +471,7 @@
             `).join('');
         }
 
-        // --- Step 4: Export ---
+        // --- 第四步：导出 ---
         function initExportPreview() {
             const exportImg = document.getElementById('export-preview');
             exportImg.src = resultCanvas.toDataURL();
