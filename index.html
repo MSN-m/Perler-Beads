@@ -127,8 +127,8 @@
         <div class="flex-1 bg-gray-50 relative overflow-hidden flex items-center justify-center p-4">
             <!-- Image Canvas Area -->
             <div id="canvas-container"
-                class="relative shadow-2xl rounded-sm overflow-hidden bg-white max-h-[70vh] max-w-[90vw]">
-                <canvas id="source-canvas"></canvas>
+                class="relative shadow-2xl rounded-sm overflow-hidden bg-white max-h-[70vh] max-w-[90vw] flex items-center justify-center">
+                <canvas id="source-canvas" class="w-full h-full block object-contain"></canvas>
             </div>
         </div>
 
@@ -146,14 +146,31 @@
             </div>
 
             <!-- Brand Selector -->
-            <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">拼豆品牌</label>
-                <select id="brand-select"
-                    class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
-                    <option value="perler">Perler (常用)</option>
-                    <option value="hama">Hama</option>
-                    <option value="artkal">Artkal</option>
-                </select>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 mb-2 block">拼豆品牌</label>
+                    <select id="brand-select"
+                        class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
+                        <option value="mard">MARD (默认)</option>
+                        <option value="perler">Perler (常用)</option>
+                        <option value="hama">Hama</option>
+                        <option value="artkal">Artkal</option>
+                    </select>
+                </div>
+                <div id="mard-set-container">
+                    <label class="text-sm font-semibold text-gray-700 mb-2 block">套装规格</label>
+                    <select id="mard-set-select"
+                        class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
+                        <option value="216">MARD 216色</option>
+                        <option value="192">MARD 192色</option>
+                        <option value="168">MARD 168色</option>
+                        <option value="144">MARD 144色</option>
+                        <option value="96">MARD 96色</option>
+                        <option value="72">MARD 72色</option>
+                        <option value="48">MARD 48色</option>
+                        <option value="24">MARD 24色</option>
+                    </select>
+                </div>
             </div>
 
             <button onclick="generatePattern()"
@@ -239,6 +256,152 @@
         // --- 数据与常量 ---
         // MVP 简化色卡。RGB 值为近似值。
         const PALETTES = {
+            mard: [
+                // 基础色 (24色套装)
+                { id: 'M01', name: '白色', r: 255, g: 255, b: 255, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M02', name: '黑色', r: 0, g: 0, b: 0, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M03', name: '红色', r: 226, g: 30, b: 38, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M04', name: '深蓝', r: 24, g: 50, b: 121, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M05', name: '黄色', r: 253, g: 224, b: 1, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M06', name: '深绿', r: 0, g: 133, b: 63, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M07', name: '粉红色', r: 236, g: 115, b: 147, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M08', name: '浅蓝色', r: 76, g: 173, b: 221, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M09', name: '浅绿色', r: 133, g: 196, b: 65, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M10', name: '橙色', r: 243, g: 114, b: 33, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M11', name: '紫色', r: 114, g: 54, b: 141, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M12', name: '棕色', r: 104, g: 63, b: 36, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M13', name: '灰色', r: 149, g: 154, b: 157, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M14', name: '肤色', r: 244, g: 198, b: 167, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M15', name: '咖啡色', r: 68, g: 37, b: 26, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M16', name: '深紫色', r: 66, g: 30, b: 91, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M17', name: '天蓝色', r: 0, g: 146, b: 204, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M18', name: '浅灰色', r: 201, g: 202, b: 204, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M19', name: '柠檬黄', r: 255, g: 242, b: 0, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M20', name: '薄荷绿', r: 170, g: 220, b: 204, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M21', name: '葡萄紫', r: 147, g: 91, b: 161, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M22', name: '深棕', r: 85, g: 46, b: 33, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M23', name: '深灰', r: 88, g: 89, b: 91, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M24', name: '米色', r: 250, g: 235, b: 215, sets: [24, 48, 72, 96, 144, 168, 192, 216] },
+
+                // 48色及以上新增
+                { id: 'M25', name: '亮红', r: 237, g: 28, b: 36, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M26', name: '酒红', r: 142, g: 18, b: 21, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M27', name: '深蓝2', r: 20, g: 61, b: 138, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M28', name: '浅紫蓝', r: 153, g: 153, b: 255, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M29', name: '翠绿', r: 0, g: 166, b: 81, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M30', name: '森林绿', r: 0, g: 114, b: 54, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M31', name: '金黄', r: 255, g: 204, b: 0, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M32', name: '沙黄色', r: 245, g: 222, b: 179, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M33', name: '巧克力色', r: 91, g: 58, b: 41, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M34', name: '深灰2', r: 64, g: 64, b: 64, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M35', name: '洋红', r: 255, g: 0, b: 255, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M36', name: '青色', r: 0, g: 255, b: 255, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M37', name: '玫瑰红', r: 255, g: 0, b: 127, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M38', name: '浅粉2', r: 255, g: 182, b: 193, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M39', name: '深橄榄', r: 85, g: 107, b: 47, sets: [48, 72, 96, 144, 168, 192, 216] },
+                { id: 'M40', name: '蓝紫色', r: 138, g: 43, b: 226, sets: [48, 72, 96, 144, 168, 192, 216] },
+
+                // 72色及以上新增 (补全色系梯度)
+                { id: 'M41', name: '珊瑚红', r: 255, g: 127, b: 80, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M42', name: '番茄红', r: 255, g: 99, b: 71, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M43', name: '深红', r: 139, g: 0, b: 0, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M44', name: '深紫罗兰', r: 148, g: 0, b: 211, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M45', name: '浅紫罗兰', r: 238, g: 130, b: 238, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M46', name: '深石板蓝', r: 106, g: 90, b: 205, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M47', name: '午夜蓝', r: 25, g: 25, b: 112, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M48', name: '海军蓝', r: 0, g: 0, b: 128, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M49', name: '绿松石', r: 64, g: 224, b: 208, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M50', name: '海洋绿', r: 46, g: 139, b: 87, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M51', name: '浅海绿', r: 32, g: 178, b: 170, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M52', name: '暗金', r: 184, g: 134, b: 11, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M53', name: '土褐色', r: 160, g: 82, b: 45, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M54', name: '象牙色', r: 255, g: 255, b: 240, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M55', name: '雪白色', r: 255, g: 250, b: 250, sets: [72, 96, 144, 168, 192, 216] },
+                { id: 'M56', name: '幽灵白', r: 248, g: 248, b: 255, sets: [72, 96, 144, 168, 192, 216] },
+
+                // 96色及以上 (大幅扩充中间色)
+                { id: 'M57', name: '亮珊瑚', r: 240, g: 128, b: 128, sets: [96, 144, 168, 192, 216] },
+                { id: 'M58', name: '暗鲑红', r: 233, g: 150, b: 122, sets: [96, 144, 168, 192, 216] },
+                { id: 'M59', name: '亮鲑红', r: 255, g: 160, b: 122, sets: [96, 144, 168, 192, 216] },
+                { id: 'M60', name: '金麒麟色', r: 218, g: 165, b: 32, sets: [96, 144, 168, 192, 216] },
+                { id: 'M61', name: '暗黄褐色', r: 189, g: 183, b: 107, sets: [96, 144, 168, 192, 216] },
+                { id: 'M62', name: '黄绿色', r: 154, g: 205, b: 50, sets: [96, 144, 168, 192, 216] },
+                { id: 'M63', name: '暗绿', r: 0, g: 100, b: 0, sets: [96, 144, 168, 192, 216] },
+                { id: 'M64', name: '深海绿', r: 143, g: 188, b: 143, sets: [96, 144, 168, 192, 216] },
+                { id: 'M65', name: '中绿', r: 60, g: 179, b: 113, sets: [96, 144, 168, 192, 216] },
+                { id: 'M66', name: '中海绿', r: 32, g: 178, b: 170, sets: [96, 144, 168, 192, 216] },
+                { id: 'M67', name: '亮天蓝', r: 135, g: 206, b: 250, sets: [96, 144, 168, 192, 216] },
+                { id: 'M68', name: '深天蓝', r: 0, g: 191, b: 255, sets: [96, 144, 168, 192, 216] },
+                { id: 'M69', name: '钢蓝', r: 70, g: 130, b: 180, sets: [96, 144, 168, 192, 216] },
+                { id: 'M70', name: '淡蓝', r: 176, g: 196, b: 222, sets: [96, 144, 168, 192, 216] },
+                { id: 'M71', name: '中紫', r: 147, g: 112, b: 219, sets: [96, 144, 168, 192, 216] },
+                { id: 'M72', name: '暗洋红', r: 139, g: 0, b: 139, sets: [96, 144, 168, 192, 216] },
+                { id: 'M73', name: '深紫红', r: 199, g: 21, b: 133, sets: [96, 144, 168, 192, 216] },
+                { id: 'M74', name: '褐紫红', r: 219, g: 112, b: 147, sets: [96, 144, 168, 192, 216] },
+                { id: 'M75', name: '秘鲁色', r: 205, g: 133, b: 63, sets: [96, 144, 168, 192, 216] },
+                { id: 'M76', name: '马鞍棕', r: 139, g: 69, b: 19, sets: [96, 144, 168, 192, 216] },
+                { id: 'M77', name: '赭色', r: 160, g: 82, b: 45, sets: [96, 144, 168, 192, 216] },
+                { id: 'M78', name: '暗灰', r: 169, g: 169, b: 169, sets: [96, 144, 168, 192, 216] },
+                { id: 'M79', name: '银色', r: 192, g: 192, b: 192, sets: [96, 144, 168, 192, 216] },
+                { id: 'M80', name: '亮灰', r: 211, g: 211, b: 211, sets: [96, 144, 168, 192, 216] },
+
+                // 216色及以上 (极限补全)
+                // 替换之前的随机生成，改为系统的色阶补全以确保色彩覆盖率
+                ...(() => {
+                    const extraColors = [];
+                    const hues = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+                    const sats = [40, 70, 100];
+                    const lights = [30, 50, 70, 90];
+                    
+                    let count = 0;
+                    for (let h of hues) {
+                        for (let s of sats) {
+                            for (let l of lights) {
+                                if (count < 136) {
+                                    // HSL to RGB conversion
+                                    const sNorm = s / 100;
+                                    const lNorm = l / 100;
+                                    const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+                                    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+                                    const m = lNorm - c / 2;
+                                    let r = 0, g = 0, b = 0;
+                                    if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+                                    else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+                                    else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+                                    else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+                                    else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+                                    else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+                                    
+                                    extraColors.push({
+                                        id: `M${81 + count}`,
+                                        name: `补充色${count + 1}`,
+                                        r: Math.round((r + m) * 255),
+                                        g: Math.round((g + m) * 255),
+                                        b: Math.round((b + m) * 255),
+                                        sets: [144, 168, 192, 216]
+                                    });
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    // 如果还没满136个，补一些灰色阶
+                    const graySteps = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+                    for (let g of graySteps) {
+                        if (count < 136) {
+                            const val = Math.round(g * 2.55);
+                            extraColors.push({
+                                id: `M${81 + count}`,
+                                name: `灰色阶${count + 1}`,
+                                r: val, g: val, b: val,
+                                sets: [144, 168, 192, 216]
+                            });
+                            count++;
+                        }
+                    }
+                    return extraColors;
+                })()
+            ],
             perler: [
                 { id: 'P01', name: '白色', r: 255, g: 255, b: 255 },
                 { id: 'P02', name: '奶油色', r: 227, g: 216, b: 172 },
@@ -272,8 +435,10 @@
             currentStep: 1,
             image: null,
             canvasSize: 0, // 像素
-            gridSize: 32, // 数量
-            brand: 'perler',
+            gridWidth: 32, // 数量
+            gridHeight: 32, // 数量
+            brand: 'mard',
+            mardSet: 216,
             pixelData: [], // 颜色对象数组
         };
 
@@ -331,79 +496,128 @@
         const ctxSource = sourceCanvas.getContext('2d');
         const slider = document.getElementById('grid-size-slider');
         const brandSelect = document.getElementById('brand-select');
+        const mardSetSelect = document.getElementById('mard-set-select');
+        const mardSetContainer = document.getElementById('mard-set-container');
         const sizeDisplay = document.getElementById('grid-size-display');
 
         slider.addEventListener('input', (e) => {
-            AppState.gridSize = parseInt(e.target.value);
-            sizeDisplay.innerText = `${AppState.gridSize}x${AppState.gridSize}`;
-            // Optional: Re-draw or show grid overlay hint
+            const val = parseInt(e.target.value);
+            const ratio = AppState.image ? AppState.image.width / AppState.image.height : 1;
+            
+            if (ratio >= 1) {
+                AppState.gridWidth = val;
+                AppState.gridHeight = Math.round(val / ratio);
+            } else {
+                AppState.gridHeight = val;
+                AppState.gridWidth = Math.round(val * ratio);
+            }
+            
+            sizeDisplay.innerText = `${AppState.gridWidth}x${AppState.gridHeight}`;
         });
 
         brandSelect.addEventListener('change', (e) => {
             AppState.brand = e.target.value;
+            if (AppState.brand === 'mard') {
+                mardSetContainer.classList.remove('hidden');
+            } else {
+                mardSetContainer.classList.add('hidden');
+            }
+        });
+
+        mardSetSelect.addEventListener('change', (e) => {
+            AppState.mardSet = parseInt(e.target.value);
         });
 
         function initSettingsCanvas() {
             if (!AppState.image) return;
 
-            // Limit canvas display size for performance but keep aspect ratio
+            const img = AppState.image;
+            const ratio = img.width / img.height;
             const container = document.getElementById('canvas-container');
-            const maxWidth = container.clientWidth;
-            const maxHeight = container.clientHeight; // approx
 
-            // Simple square fill for MVP - central crop logic
-            const size = Math.min(AppState.image.width, AppState.image.height);
-            AppState.canvasSize = size;
+            // 设置容器的宽高比，确保背景白色区域完全匹配图片
+            container.style.aspectRatio = `${img.width} / ${img.height}`;
 
-            sourceCanvas.width = size;
-            sourceCanvas.height = size;
+            // 设置 canvas 原始尺寸为图片尺寸
+            sourceCanvas.width = img.width;
+            sourceCanvas.height = img.height;
 
-            // Draw center crop
-            const sx = (AppState.image.width - size) / 2;
-            const sy = (AppState.image.height - size) / 2;
+            // 直接绘制完整图片，不进行裁剪
+            ctxSource.drawImage(img, 0, 0);
 
-            ctxSource.drawImage(AppState.image, sx, sy, size, size, 0, 0, size, size);
-
-            // Add grid overlay logic if time permits, for now clean view
+            // 初始计算网格尺寸
+            const val = parseInt(slider.value);
+            if (ratio >= 1) {
+                AppState.gridWidth = val;
+                AppState.gridHeight = Math.round(val / ratio);
+            } else {
+                AppState.gridHeight = val;
+                AppState.gridWidth = Math.round(val * ratio);
+            }
+            sizeDisplay.innerText = `${AppState.gridWidth}x${AppState.gridHeight}`;
         }
 
         // --- 核心算法：像素化与颜色匹配 ---
         function generatePattern() {
-            const gridSize = AppState.gridSize;
-            const tempCanvas = document.createElement('canvas');
-            const tCtx = tempCanvas.getContext('2d');
+            const gridWidth = AppState.gridWidth;
+            const gridHeight = AppState.gridHeight;
+            
+            // 获取源图像数据
+            const sourceWidth = sourceCanvas.width;
+            const sourceHeight = sourceCanvas.height;
+            const sourceData = ctxSource.getImageData(0, 0, sourceWidth, sourceHeight).data;
 
-            // Downscale to grid size (pixelation step)
-            tempCanvas.width = gridSize;
-            tempCanvas.height = gridSize;
-
-            // We use the sourceCanvas which is already cropped square
-            tCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, gridSize, gridSize);
-
-            const imageData = tCtx.getImageData(0, 0, gridSize, gridSize);
-            const pixels = imageData.data;
-            const palette = PALETTES[AppState.brand] || PALETTES.perler;
+            let palette = PALETTES[AppState.brand] || PALETTES.perler;
+            
+            // 如果是 MARD，根据套装规格过滤颜色
+            if (AppState.brand === 'mard') {
+                palette = palette.filter(c => c.sets.includes(AppState.mardSet));
+            }
 
             AppState.pixelData = [];
+            const resultPixels = new Uint8ClampedArray(gridWidth * gridHeight * 4);
 
-            // Process every pixel
-            for (let i = 0; i < pixels.length; i += 4) {
-                const r = pixels[i];
-                const g = pixels[i + 1];
-                const b = pixels[i + 2];
-                // alpha pixels[i+3] ignored for now
+            // 使用块平均法 (Box Sampling) 进行下采样，确保精准度
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x++) {
+                    // 计算每个网格在源图中的范围
+                    const startX = Math.floor((x / gridWidth) * sourceWidth);
+                    const startY = Math.floor((y / gridHeight) * sourceHeight);
+                    const endX = Math.floor(((x + 1) / gridWidth) * sourceWidth);
+                    const endY = Math.floor(((y + 1) / gridHeight) * sourceHeight);
 
-                const matched = findNearestColor(r, g, b, palette);
-                AppState.pixelData.push(matched);
+                    let rSum = 0, gSum = 0, bSum = 0, count = 0;
 
-                // Update pixel data for visualization
-                pixels[i] = matched.r;
-                pixels[i + 1] = matched.g;
-                pixels[i + 2] = matched.b;
+                    // 遍历块内所有源像素
+                    for (let sy = startY; sy < endY; sy++) {
+                        for (let sx = startX; sx < endX; sx++) {
+                            const idx = (sy * sourceWidth + sx) * 4;
+                            rSum += sourceData[idx];
+                            gSum += sourceData[idx + 1];
+                            bSum += sourceData[idx + 2];
+                            count++;
+                        }
+                    }
+
+                    // 计算平均值
+                    const rAvg = count > 0 ? rSum / count : 255;
+                    const gAvg = count > 0 ? gSum / count : 255;
+                    const bAvg = count > 0 ? bSum / count : 255;
+
+                    // 匹配最近颜色
+                    const matched = findNearestColor(rAvg, gAvg, bAvg, palette);
+                    AppState.pixelData.push(matched);
+
+                    const outIdx = (y * gridWidth + x) * 4;
+                    resultPixels[outIdx] = matched.r;
+                    resultPixels[outIdx + 1] = matched.g;
+                    resultPixels[outIdx + 2] = matched.b;
+                    resultPixels[outIdx + 3] = 255;
+                }
             }
 
             goToStep(3);
-            renderResult(pixels, gridSize);
+            renderResult(resultPixels, gridWidth, gridHeight);
             calculateStats();
         }
 
@@ -412,8 +626,17 @@
             let nearest = palette[0];
 
             for (let color of palette) {
-                // Simple Euclidean distance
-                const d = ((r - color.r) ** 2) + ((g - color.g) ** 2) + ((b - color.b) ** 2);
+                // 使用 Redmean 颜色距离算法 (比纯欧几里得距离更符合人眼感知)
+                const rMean = (r + color.r) / 2;
+                const dr = r - color.r;
+                const dg = g - color.g;
+                const db = b - color.b;
+                
+                // Redmean 权重公式
+                const d = (2 + rMean / 256) * (dr * dr) + 
+                          4 * (dg * dg) + 
+                          (2 + (255 - rMean) / 256) * (db * db);
+
                 if (d < minDist) {
                     minDist = d;
                     nearest = color;
@@ -426,20 +649,24 @@
         const resultCanvas = document.getElementById('result-canvas');
         const ctxResult = resultCanvas.getContext('2d');
 
-        function renderResult(pixelArray, gridSize) {
+        function renderResult(pixelArray, gridWidth, gridHeight) {
             // Upscale for visibility
             const scale = 20; // px per bead
-            resultCanvas.width = gridSize * scale;
-            resultCanvas.height = gridSize * scale;
+            resultCanvas.width = gridWidth * scale;
+            resultCanvas.height = gridHeight * scale;
+            
+            // 同步更新预览容器的比例
+            const container = document.getElementById('result-container');
+            resultCanvas.style.aspectRatio = `${gridWidth} / ${gridHeight}`;
 
             // Disable smoothing for pixel art look
             ctxResult.imageSmoothingEnabled = false;
 
             // Draw grid
-            for (let y = 0; y < gridSize; y++) {
-                for (let x = 0; x < gridSize; x++) {
-                    const i = (y * gridSize + x) * 4;
-                    const color = AppState.pixelData[y * gridSize + x];
+            for (let y = 0; y < gridHeight; y++) {
+                for (let x = 0; x < gridWidth; x++) {
+                    const i = (y * gridWidth + x);
+                    const color = AppState.pixelData[i];
 
                     ctxResult.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
                     ctxResult.fillRect(x * scale, y * scale, scale, scale);
@@ -484,7 +711,7 @@
         function initExportPreview() {
             const exportImg = document.getElementById('export-preview');
             exportImg.src = resultCanvas.toDataURL();
-            document.getElementById('export-meta').innerText = `${AppState.gridSize}x${AppState.gridSize} • ${AppState.brand.charAt(0).toUpperCase() + AppState.brand.slice(1)}`;
+            document.getElementById('export-meta').innerText = `${AppState.gridWidth}x${AppState.gridHeight} • ${AppState.brand.charAt(0).toUpperCase() + AppState.brand.slice(1)}`;
         }
 
         function downloadImage() {
@@ -497,15 +724,16 @@
         function downloadSVG() {
             // Basic SVG generation
             const scale = 20;
-            const size = AppState.gridSize * scale;
-            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+            const width = AppState.gridWidth * scale;
+            const height = AppState.gridHeight * scale;
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
 
             // Background
-            svg += `<rect width="${size}" height="${size}" fill="#eee"/>`;
+            svg += `<rect width="${width}" height="${height}" fill="#eee"/>`;
 
             AppState.pixelData.forEach((color, i) => {
-                const x = (i % AppState.gridSize) * scale;
-                const y = Math.floor(i / AppState.gridSize) * scale;
+                const x = (i % AppState.gridWidth) * scale;
+                const y = Math.floor(i / AppState.gridWidth) * scale;
                 svg += `<circle cx="${x + scale / 2}" cy="${y + scale / 2}" r="${scale / 2 - 1}" fill="rgb(${color.r},${color.g},${color.b})" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>`;
             });
 
