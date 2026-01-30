@@ -183,10 +183,12 @@
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <label class="text-sm font-semibold text-gray-700">像素密度 (大小)</label>
-                    <span id="grid-size-display"
-                        class="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-primary font-bold">32x32</span>
+                    <div class="flex items-center space-x-2">
+                        <span id="board-size-display" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold">使用 52小板</span>
+                        <span id="grid-size-display" class="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-primary font-bold">32x32</span>
+                    </div>
                 </div>
-                <input type="range" id="grid-size-slider" min="16" max="64" step="4" value="32"
+                <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="32"
                     class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
             </div>
 
@@ -316,9 +318,10 @@
         // MVP 简化色卡。RGB 值为近似值。
         const PALETTES = {
             mard: [
-                // 数据来源于用户提供的 MARD 官方色卡图 (v:281830)
-                // 颜色值通过色卡图片中心点采样校准
-                // 第1组 (24色)
+                // 数据来源于用户提供的 MARD 官方色卡图 guige.png
+                // 分组定义：1-4 为数字组，A-E 为字母组，6-11 为扩展组
+                
+                // 第 1 组 (24色)
                 { id: 'B3', r: 88, g: 198, b: 145, groups: ['1', 'C'] },
                 { id: 'C3', r: 166, g: 227, b: 219, groups: ['1', 'A'] },
                 { id: 'D9', r: 201, g: 190, b: 222, groups: ['1', 'B'] },
@@ -337,14 +340,14 @@
                 { id: 'F5', r: 212, g: 30, b: 45, groups: ['1', 'D'] },
                 { id: 'G7', r: 156, g: 72, b: 58, groups: ['1', 'C'] },
                 { id: 'A7', r: 226, g: 125, b: 33, groups: ['1', 'D'] },
-                { id: 'H1', r: 255, g: 255, b: 255, groups: ['1', 'E'] },
+                { id: 'H1', r: 255, g: 255, b: 255, groups: ['1', 'A', 'E'] },
                 { id: 'H2', r: 224, g: 224, b: 224, groups: ['1', 'E'] },
                 { id: 'H3', r: 160, g: 160, b: 160, groups: ['1', 'E'] },
                 { id: 'H4', r: 96, g: 96, b: 96, groups: ['1', 'E'] },
                 { id: 'H5', r: 48, g: 48, b: 48, groups: ['1', 'E'] },
                 { id: 'H7', r: 0, g: 0, b: 0, groups: ['1', 'E'] },
 
-                // 第2组 (48色新增)
+                // 第 2 组 (48色新增)
                 { id: 'C2', r: 198, g: 236, b: 232, groups: ['2', 'A'] },
                 { id: 'C13', r: 178, g: 202, b: 228, groups: ['2', 'A'] },
                 { id: 'D19', r: 234, g: 210, b: 236, groups: ['2', 'B'] },
@@ -370,7 +373,7 @@
                 { id: 'F8', r: 172, g: 30, b: 45, groups: ['2', 'D'] },
                 { id: 'G8', r: 112, g: 76, b: 54, groups: ['2', 'C'] },
 
-                // 第3组 (72色新增)
+                // 第 3 组 (72色新增)
                 { id: 'A3', r: 255, g: 250, b: 180, groups: ['3', 'D'] },
                 { id: 'B20', r: 200, g: 240, b: 190, groups: ['3', 'C'] },
                 { id: 'D16', r: 170, g: 180, b: 220, groups: ['3', 'A'] },
@@ -396,34 +399,180 @@
                 { id: 'E13', r: 170, g: 0, b: 90, groups: ['3', 'B'] },
                 { id: 'F7', r: 150, g: 20, b: 60, groups: ['3', 'D'] },
 
-                // 第4组 (96色新增)
-                { id: 'M5', r: 150, g: 100, b: 60, groups: ['4', 'C'] },
+                // 第 4 组 (96色新增)
+                { id: 'E11', r: 255, g: 240, b: 230, groups: ['4', 'E'] },
+                { id: 'E14', r: 255, g: 220, b: 210, groups: ['4', 'E'] },
+                { id: 'F1', r: 212, g: 30, b: 45, groups: ['4', 'D'] },
+                { id: 'A14', r: 242, g: 150, b: 40, groups: ['4', 'D'] },
                 { id: 'M6', r: 120, g: 80, b: 40, groups: ['4', 'C'] },
-                { id: 'H6', r: 40, g: 40, b: 40, groups: ['4', 'E'] },
-                { id: 'B21', r: 160, g: 220, b: 180, groups: ['4', 'C'] },
-                { id: 'C15', r: 100, g: 200, b: 210, groups: ['4', 'A'] },
-                { id: 'D17', r: 180, g: 160, b: 210, groups: ['4', 'B'] },
+                { id: 'M5', r: 150, g: 100, b: 60, groups: ['4', 'C'] },
+                { id: 'E15', r: 255, g: 210, b: 200, groups: ['4', 'E'] },
+                { id: 'F14', r: 172, g: 30, b: 45, groups: ['4', 'D'] },
+                { id: 'F9', r: 200, g: 50, b: 50, groups: ['4', 'D'] },
+                { id: 'F2', r: 180, g: 20, b: 20, groups: ['4', 'D'] },
+                { id: 'G14', r: 150, g: 100, b: 80, groups: ['4', 'E'] },
+                { id: 'M9', r: 130, g: 90, b: 70, groups: ['4', 'E'] },
+                { id: 'E9', r: 255, g: 180, b: 190, groups: ['4', 'B'] },
                 { id: 'E6', r: 250, g: 160, b: 180, groups: ['4', 'B'] },
-                { id: 'G4', r: 240, g: 150, b: 120, groups: ['4', 'E'] },
-                { id: 'A2', r: 255, g: 255, b: 200, groups: ['4', 'D'] },
+                { id: 'F12', r: 150, g: 30, b: 30, groups: ['4', 'D'] },
+                { id: 'F3', r: 130, g: 20, b: 20, groups: ['4', 'D'] },
+                { id: 'F11', r: 160, g: 30, b: 60, groups: ['4', 'C'] },
+                { id: 'M12', r: 110, g: 70, b: 60, groups: ['4', 'E'] },
+                { id: 'D5', r: 100, g: 50, b: 150, groups: ['4', 'B'] },
+                { id: 'E10', r: 210, g: 50, b: 120, groups: ['4', 'B'] },
+                { id: 'F4', r: 120, g: 20, b: 20, groups: ['4', 'D'] },
+                { id: 'F6', r: 100, g: 10, b: 10, groups: ['4', 'D'] },
+                { id: 'G17', r: 130, g: 80, b: 60, groups: ['4', 'E'] },
+                { id: 'H6', r: 40, g: 40, b: 40, groups: ['4', 'E'] },
+                { id: 'H8', r: 250, g: 240, b: 230, groups: ['4', 'E'] },
+                { id: 'H9', r: 5, g: 5, b: 5, groups: ['4', 'E'] },
+                { id: 'H10', r: 200, g: 200, b: 200, groups: ['4', 'E'] },
+                { id: 'I5', r: 195, g: 165, b: 120, groups: ['4', 'A'] },
+                { id: 'I6', r: 170, g: 140, b: 100, groups: ['4', 'A'] },
+                { id: 'I7', r: 145, g: 115, b: 80, groups: ['4', 'A'] },
+                { id: 'I8', r: 120, g: 95, b: 65, groups: ['4', 'A'] },
+                { id: 'I9', r: 95, g: 75, b: 50, groups: ['4', 'A'] },
+                { id: 'I10', r: 225, g: 205, b: 165, groups: ['4', 'A'] },
 
-                // 第5组 (A-E/120色补充)
-                { id: 'C1', r: 245, g: 250, b: 240, groups: ['5', 'C', 'E'] },
-                { id: 'C4', r: 180, g: 220, b: 225, groups: ['5', 'A'] },
-                { id: 'C9', r: 30, g: 80, b: 120, groups: ['5', 'A'] },
-                { id: 'A1', r: 255, g: 255, b: 220, groups: ['5', 'E'] },
-                { id: 'A5', r: 250, g: 230, b: 100, groups: ['5', 'D'] },
-                { id: 'A8', r: 240, g: 200, b: 60, groups: ['5', 'D'] },
-                { id: 'A9', r: 230, g: 160, b: 30, groups: ['5', 'D'] },
-                { id: 'A12', r: 250, g: 210, b: 150, groups: ['5', 'E'] },
+                // A-E 组补全 (120色)
+                { id: 'D17', r: 180, g: 160, b: 210, groups: ['A', 'B'] },
+                { id: 'B6', r: 0, g: 150, b: 120, groups: ['A'] },
+                { id: 'C4', r: 180, g: 220, b: 225, groups: ['A'] },
+                { id: 'C17', r: 0, g: 170, b: 158, groups: ['A'] },
+                { id: 'D1', r: 20, g: 90, b: 140, groups: ['A'] },
+                { id: 'C15', r: 100, g: 200, b: 210, groups: ['A'] },
+                { id: 'C9', r: 30, g: 80, b: 120, groups: ['A'] },
+                { id: 'C14', r: 200, g: 240, b: 240, groups: ['C'] },
+                { id: 'C1', r: 245, g: 250, b: 240, groups: ['C', 'E'] },
+                { id: 'B16', r: 120, g: 200, b: 80, groups: ['C'] },
+                { id: 'B13', r: 140, g: 210, b: 60, groups: ['C'] },
+                { id: 'B1', r: 160, g: 220, b: 180, groups: ['C'] },
+                { id: 'B4', r: 100, g: 190, b: 150, groups: ['C'] },
+                { id: 'B2', r: 190, g: 230, b: 100, groups: ['C'] },
+                { id: 'B11', r: 60, g: 160, b: 140, groups: ['C'] },
+                { id: 'B15', r: 50, g: 174, b: 95, groups: ['C'] },
+                { id: 'A15', r: 255, g: 255, b: 220, groups: ['D'] },
+                { id: 'A9', r: 230, g: 160, b: 30, groups: ['D'] },
+                { id: 'A5', r: 250, g: 230, b: 100, groups: ['D'] },
+                { id: 'A8', r: 240, g: 200, b: 60, groups: ['D'] },
+                { id: 'A1', r: 255, g: 255, b: 220, groups: ['E'] },
+                { id: 'A12', r: 250, g: 210, b: 150, groups: ['E'] },
+                { id: 'H12', r: 240, g: 240, b: 240, groups: ['E'] },
+                { id: 'G6', r: 228, g: 87, b: 69, groups: ['E'] },
+                { id: 'A16', r: 190, g: 130, b: 40, groups: ['A'] },
+                { id: 'A17', r: 160, g: 100, b: 30, groups: ['A'] },
+                { id: 'A18', r: 130, g: 80, b: 20, groups: ['A'] },
+                { id: 'A19', r: 100, g: 60, b: 15, groups: ['A'] },
+                { id: 'A20', r: 255, g: 245, b: 150, groups: ['A'] },
+                { id: 'A21', r: 230, g: 175, b: 50, groups: ['A'] },
+                { id: 'A22', r: 200, g: 140, b: 30, groups: ['A'] },
+                { id: 'A23', r: 170, g: 110, b: 20, groups: ['A'] },
+                { id: 'B21', r: 90, g: 180, b: 115, groups: ['B'] },
+                { id: 'B22', r: 55, g: 155, b: 85, groups: ['B'] },
+                { id: 'B23', r: 30, g: 125, b: 65, groups: ['B'] },
+                { id: 'C18', r: 5, g: 80, b: 120, groups: ['C'] },
+                { id: 'C19', r: 2, g: 60, b: 90, groups: ['C'] },
+                { id: 'C20', r: 150, g: 215, b: 225, groups: ['C'] },
+                { id: 'C21', r: 60, g: 175, b: 200, groups: ['C'] },
+                { id: 'C22', r: 30, g: 145, b: 180, groups: ['C'] },
+                { id: 'C23', r: 15, g: 115, b: 160, groups: ['C'] },
+                { id: 'D12', r: 220, g: 210, b: 240, groups: ['D'] },
+                { id: 'D22', r: 115, g: 90, b: 195, groups: ['D'] },
+                { id: 'D23', r: 85, g: 65, b: 170, groups: ['D'] },
+                { id: 'E17', r: 145, g: 50, b: 100, groups: ['E'] },
+                { id: 'E18', r: 115, g: 35, b: 75, groups: ['E'] },
+                { id: 'E19', r: 85, g: 25, b: 55, groups: ['E'] },
+                { id: 'E20', r: 240, g: 200, b: 220, groups: ['E'] },
+                { id: 'E21', r: 210, g: 130, b: 170, groups: ['E'] },
+                { id: 'E22', r: 185, g: 90, b: 140, groups: ['E'] },
+                { id: 'E23', r: 160, g: 60, b: 110, groups: ['E'] },
 
-                // A-E 组其他核心颜色 (用于 120/144色)
-                { id: 'A-Core1', r: 255, g: 200, b: 50, groups: ['A', 'D'] },
-                { id: 'B-Core1', r: 200, g: 50, b: 255, groups: ['B'] },
-                { id: 'C-Core1', r: 50, g: 255, b: 100, groups: ['C'] },
-                { id: 'D-Core1', r: 100, g: 100, b: 255, groups: ['D'] },
-                { id: 'E-Core1', r: 200, g: 200, b: 200, groups: ['E'] }
-
+                // 扩展组 (144/216/264色)
+                { id: 'G15', r: 240, g: 200, b: 180, groups: ['6'] },
+                { id: 'A2', r: 255, g: 255, b: 200, groups: ['6'] },
+                { id: 'H13', r: 250, g: 230, b: 180, groups: ['6'] },
+                { id: 'G16', r: 240, g: 180, b: 160, groups: ['6'] },
+                { id: 'M1', r: 120, g: 120, b: 120, groups: ['6'] },
+                { id: 'P1', r: 255, g: 255, b: 255, groups: ['7'] },
+                { id: 'P18', r: 40, g: 40, b: 40, groups: ['7'] },
+                { id: 'P16', r: 255, g: 220, b: 150, groups: ['7'] },
+                { id: 'P3', r: 255, g: 255, b: 100, groups: ['7'] },
+                { id: 'P10', r: 0, g: 100, b: 50, groups: ['8'] },
+                { id: 'R11', r: 255, g: 50, b: 50, groups: ['8'] },
+                { id: 'Y2', r: 255, g: 255, b: 0, groups: ['8'] },
+                { id: 'Y3', r: 200, g: 255, b: 0, groups: ['8'] },
+                { id: 'H17', r: 230, g: 230, b: 230, groups: ['9'] },
+                { id: 'E16', r: 255, g: 150, b: 180, groups: ['9'] },
+                { id: 'A26', r: 240, g: 150, b: 50, groups: ['10'] },
+                { id: 'B26', r: 10, g: 150, b: 80, groups: ['10'] },
+                { id: 'F15', r: 200, g: 30, b: 30, groups: ['11'] },
+                { id: 'G20', r: 255, g: 180, b: 150, groups: ['11'] },
+                { id: 'A24', r: 255, g: 255, b: 180, groups: ['6'] },
+                { id: 'A25', r: 255, g: 240, b: 120, groups: ['6'] },
+                { id: 'B24', r: 180, g: 230, b: 140, groups: ['6'] },
+                { id: 'B25', r: 140, g: 210, b: 100, groups: ['6'] },
+                { id: 'C24', r: 180, g: 240, b: 240, groups: ['6'] },
+                { id: 'C25', r: 140, g: 220, b: 220, groups: ['6'] },
+                { id: 'D24', r: 200, g: 200, b: 240, groups: ['6'] },
+                { id: 'D25', r: 160, g: 160, b: 220, groups: ['6'] },
+                { id: 'E24', r: 255, g: 200, b: 230, groups: ['6'] },
+                { id: 'E25', r: 240, g: 160, b: 200, groups: ['6'] },
+                { id: 'G21', r: 255, g: 220, b: 200, groups: ['6'] },
+                { id: 'H14', r: 240, g: 240, b: 240, groups: ['6'] },
+                { id: 'H15', r: 180, g: 180, b: 180, groups: ['6'] },
+                { id: 'M13', r: 100, g: 100, b: 100, groups: ['6'] },
+                { id: 'F16', r: 180, g: 20, b: 20, groups: ['9'] },
+                { id: 'F17', r: 140, g: 10, b: 10, groups: ['9'] },
+                { id: 'G22', r: 220, g: 140, b: 100, groups: ['9'] },
+                { id: 'G23', r: 180, g: 100, b: 60, groups: ['9'] },
+                { id: 'H16', r: 120, g: 120, b: 120, groups: ['9'] },
+                { id: 'M14', r: 80, g: 60, b: 40, groups: ['9'] },
+                { id: 'M15', r: 60, g: 40, b: 20, groups: ['9'] },
+                { id: 'P2', r: 255, g: 250, b: 240, groups: ['7'] },
+                { id: 'P4', r: 255, g: 255, b: 150, groups: ['7'] },
+                { id: 'P5', r: 255, g: 240, b: 100, groups: ['7'] },
+                { id: 'P6', r: 255, g: 220, b: 50, groups: ['7'] },
+                { id: 'P7', r: 255, g: 200, b: 0, groups: ['7'] },
+                { id: 'P8', r: 255, g: 180, b: 0, groups: ['7'] },
+                { id: 'P9', r: 255, g: 150, b: 0, groups: ['7'] },
+                { id: 'P11', r: 0, g: 120, b: 60, groups: ['8'] },
+                { id: 'P12', r: 0, g: 140, b: 70, groups: ['8'] },
+                { id: 'P13', r: 0, g: 160, b: 80, groups: ['8'] },
+                { id: 'P14', r: 0, g: 180, b: 90, groups: ['8'] },
+                { id: 'P15', r: 0, g: 200, b: 100, groups: ['8'] },
+                { id: 'P17', r: 255, g: 200, b: 120, groups: ['7'] },
+                { id: 'P19', r: 30, g: 30, b: 30, groups: ['7'] },
+                { id: 'P20', r: 20, g: 20, b: 20, groups: ['7'] },
+                { id: 'R12', r: 220, g: 40, b: 40, groups: ['8'] },
+                { id: 'R13', r: 180, g: 30, b: 30, groups: ['8'] },
+                { id: 'R14', r: 140, g: 20, b: 20, groups: ['8'] },
+                { id: 'R15', r: 100, g: 10, b: 10, groups: ['8'] },
+                { id: 'Y4', r: 160, g: 220, b: 0, groups: ['8'] },
+                { id: 'Y5', r: 120, g: 180, b: 0, groups: ['8'] },
+                { id: 'A27', r: 220, g: 130, b: 40, groups: ['10'] },
+                { id: 'A28', r: 180, g: 110, b: 30, groups: ['10'] },
+                { id: 'B27', r: 20, g: 130, b: 70, groups: ['10'] },
+                { id: 'B28', r: 30, g: 110, b: 60, groups: ['10'] },
+                { id: 'F18', r: 160, g: 20, b: 20, groups: ['11'] },
+                { id: 'F19', r: 120, g: 10, b: 10, groups: ['11'] },
+                { id: 'G24', r: 240, g: 160, b: 130, groups: ['11'] },
+                { id: 'G25', r: 220, g: 140, b: 110, groups: ['11'] },
+                
+                { id: 'C29', r: 100, g: 100, b: 100, groups: ['other'] } // 排除色
+            ],
+            artkal: [
+                // Artkal Core 核心系列 (常用于 120/144色)
+                { id: 'A-Core1', r: 255, g: 200, b: 50, name: '核心黄' },
+                { id: 'B-Core1', r: 200, g: 50, b: 255, name: '核心紫' },
+                { id: 'C-Core1', r: 50, g: 255, b: 100, name: '核心绿' },
+                { id: 'D-Core1', r: 100, g: 100, b: 255, name: '核心蓝' },
+                { id: 'E-Core1', r: 200, g: 200, b: 200, name: '核心灰' },
+                // Artkal S 系列部分常用色
+                { id: 'S01', r: 255, g: 255, b: 255, name: '纯白' },
+                { id: 'S02', r: 0, g: 0, b: 0, name: '纯黑' },
+                { id: 'S13', r: 190, g: 0, b: 47, name: '红色' },
+                { id: 'S31', r: 28, g: 151, b: 210, name: '浅蓝' },
+                { id: 'S34', r: 105, g: 190, b: 90, name: '草绿' }
             ],
             perler: [
                 { id: 'P01', name: '白色', r: 255, g: 255, b: 255 },
@@ -539,6 +688,18 @@
             }
             
             sizeDisplay.innerText = `${AppState.gridWidth}x${AppState.gridHeight}`;
+            
+            // 计算板子规格 (52小板 或 104大板)
+            const boardDisplay = document.getElementById('board-size-display');
+            if (boardDisplay) {
+                if (AppState.gridWidth <= 52 && AppState.gridHeight <= 52) {
+                    boardDisplay.innerText = '使用 52小板';
+                    boardDisplay.className = 'text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold';
+                } else {
+                    boardDisplay.innerText = '使用 104大板';
+                    boardDisplay.className = 'text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-bold';
+                }
+            }
         });
 
         brandSelect.addEventListener('change', (e) => {
@@ -557,6 +718,18 @@
 
         function initSettingsCanvas() {
             if (!AppState.image) return;
+
+            // 初始计算板子规格
+            const boardDisplay = document.getElementById('board-size-display');
+            if (boardDisplay) {
+                if (AppState.gridWidth <= 52 && AppState.gridHeight <= 52) {
+                    boardDisplay.innerText = '使用 52小板';
+                    boardDisplay.className = 'text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold';
+                } else {
+                    boardDisplay.innerText = '使用 104大板';
+                    boardDisplay.className = 'text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-bold';
+                }
+            }
 
             const img = AppState.image;
             const container = document.getElementById('canvas-container');
@@ -821,25 +994,36 @@
             
             // 如果是 MARD，根据套装规格过滤颜色
             if (AppState.brand === 'mard') {
-                const set = String(AppState.mardSet); // 确保是字符串
+                const set = String(AppState.mardSet); 
                 palette = palette.filter(c => {
-                    // 1. 全实色/全色处理
-                    if (set === '264') return true;
-                    if (set === '216') return !c.groups.includes('trans');
+                    // 定义每个套装包含的组
+                    const setGroups = {
+                        '24': ['1'],
+                        '48': ['1', '2'],
+                        '72': ['1', '2', '3'],
+                        '96': ['1', '2', '3', '4'],
+                        '120': ['A', 'B', 'C', 'D', 'E'],
+                        '144': ['A', 'B', 'C', 'D', 'E', '6'],
+                        '216': ['A', 'B', 'C', 'D', 'E', '6', '9', '10', '11'],
+                        '264': ['A', 'B', 'C', 'D', 'E', '6', '7', '8', '9', '10', '11']
+                    };
                     
-                    // 2. 组号过滤 (1-11)
-                    const groupNum = parseInt(c.groups.find(g => !isNaN(g)));
-                    if (set === '24') return groupNum === 1;
-                    if (set === '48') return groupNum <= 2;
-                    if (set === '72') return groupNum <= 3;
-                    if (set === '96') return groupNum <= 4;
+                    const allowedGroups = setGroups[set] || [];
                     
-                    // 3. 字母组过滤 (A-E)
-                    const isLetterGroup = c.groups.some(g => ['A', 'B', 'C', 'D', 'E'].includes(g));
-                    if (set === '120') return isLetterGroup;
-                    if (set === '144') return isLetterGroup || groupNum === 6;
-                    
-                    return true;
+                    // 检查颜色是否属于允许的任何组
+                    const isAllowed = c.groups.some(g => allowedGroups.includes(g));
+
+                    // 特殊处理 216/264 的排除规则 (根据图片注释)
+                    if (set === '216') {
+                        // 216全实色，不含 C29, D10, B9, C12, D4
+                        if (['C29', 'D10', 'B9', 'C12', 'D4'].includes(c.id)) return false;
+                    }
+                    if (set === '264') {
+                        // 264全色，不含 C29
+                        if (c.id === 'C29') return false;
+                    }
+
+                    return isAllowed;
                 });
                 console.log(`MARD Palette filtered for set ${set}: ${palette.length} colors remaining.`);
             }
@@ -887,8 +1071,12 @@
             }
 
             goToStep(3);
-            renderResult(resultPixels, gridWidth, gridHeight);
+            renderResult(AppState.pixelData, gridWidth, gridHeight);
             calculateStats();
+            // 初始适配视图 (延迟一帧确保容器尺寸已更新)
+            requestAnimationFrame(() => {
+                resetZoom();
+            });
         }
 
         function findNearestColor(r, g, b, palette) {
@@ -934,7 +1122,11 @@
 
         // 初始化预览图缩放逻辑
         function updateResultTransform() {
-            resultCanvas.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
+            // 使用 translate3d 提高性能，并确保 x, y 是相对于父容器的绝对偏移
+            resultCanvas.style.transform = `translate3d(${zoomState.x}px, ${zoomState.y}px, 0) scale(${zoomState.scale})`;
+            
+            // 同步调整 transform-origin 为左上角，确保 translate 坐标系一致
+            resultCanvas.style.transformOrigin = '0 0';
             
             const resetBtn = document.getElementById('zoom-reset-btn');
             if (zoomState.scale !== 1 || zoomState.x !== 0 || zoomState.y !== 0) {
@@ -951,20 +1143,31 @@
             const factor = delta > 0 ? 1.1 : 0.9;
             
             // 限制缩放范围
-            const newScale = Math.min(Math.max(zoomState.scale * factor, 0.5), 10);
+            const minScale = 0.1;
+            const maxScale = 10;
+            const newScale = Math.min(Math.max(zoomState.scale * factor, minScale), maxScale);
             
-            // 以图片中心为基准缩放
             if (newScale !== zoomState.scale) {
-                // 获取画布中心点（相对于容器）
-                const centerX = resultCanvas.width / 2;
-                const centerY = resultCanvas.height / 2;
-                
-                const actualFactor = newScale / zoomState.scale;
-                
-                // 计算缩放前后的中心偏移，保持中心位置不变
-                zoomState.x -= (centerX / zoomState.scale) * (actualFactor - 1) * zoomState.scale;
-                zoomState.y -= (centerY / zoomState.scale) * (actualFactor - 1) * zoomState.scale;
+                // 获取鼠标在容器中的位置
+                const rect = resultContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // 计算鼠标位置相对于画布左上角的偏移 (在当前缩放级别下)
+                // 公式: mouseX = zoomState.x + canvasX * zoomState.scale
+                // => canvasX = (mouseX - zoomState.x) / zoomState.scale
+                const canvasX = (mouseX - zoomState.x) / zoomState.scale;
+                const canvasY = (mouseY - zoomState.y) / zoomState.scale;
+
+                // 更新缩放比例
+                const oldScale = zoomState.scale;
                 zoomState.scale = newScale;
+
+                // 根据新缩放比例调整 x, y，使鼠标指向的画布位置保持不变
+                // 新坐标: zoomState.x = mouseX - canvasX * newScale
+                zoomState.x = mouseX - canvasX * newScale;
+                zoomState.y = mouseY - canvasY * newScale;
+
                 updateResultTransform();
             }
         }, { passive: false });
@@ -994,6 +1197,13 @@
             zoomState.isDragging = false;
             resultCanvas.classList.remove('cursor-grabbing');
             resultCanvas.classList.add('cursor-grab');
+        });
+
+        // 窗口大小变化时重置缩放以适配
+        window.addEventListener('resize', () => {
+            if (AppState.currentStep === 3) {
+                resetZoom();
+            }
         });
 
         // 触摸支持 (缩放和平移)
@@ -1050,12 +1260,37 @@
         });
 
         function resetZoom() {
-            zoomState = { scale: 1, x: 0, y: 0, isDragging: false, lastX: 0, lastY: 0, lastDist: 0 };
-            resultCanvas.style.transition = 'transform 0.3s ease';
+            // 获取容器尺寸
+            const containerWidth = resultContainer.clientWidth;
+            const containerHeight = resultContainer.clientHeight;
+            
+            // 获取画布尺寸
+            const canvasWidth = resultCanvas.width;
+            const canvasHeight = resultCanvas.height;
+            
+            // 计算适配比例 (留出 40px 边距)
+            const padding = 40;
+            const scaleX = (containerWidth - padding) / canvasWidth;
+            const scaleY = (containerHeight - padding) / canvasHeight;
+            const fitScale = Math.min(scaleX, scaleY, 1.0); 
+            
+            // 重置状态，居中展示
+            // 计算居中位置: (容器尺寸 - 画布尺寸 * 缩放) / 2
+            zoomState = { 
+                scale: fitScale, 
+                x: (containerWidth - canvasWidth * fitScale) / 2, 
+                y: (containerHeight - canvasHeight * fitScale) / 2, 
+                isDragging: false, 
+                lastX: 0, 
+                lastY: 0, 
+                lastDist: 0 
+            };
+            
+            resultCanvas.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
             updateResultTransform();
             setTimeout(() => {
                 resultCanvas.style.transition = 'none';
-            }, 300);
+            }, 400);
         }
 
         function toggleColorHighlight(colorId) {
@@ -1069,29 +1304,48 @@
         }
 
         function renderResult(pixelArray, gridWidth, gridHeight) {
-            const scale = 30; // 稍微增大预览比例以容纳文字
-            resultCanvas.width = gridWidth * scale;
-            resultCanvas.height = gridHeight * scale;
+            // 确定背景板规格和出血位
+            const boardSize = Math.max(gridWidth, gridHeight) <= 52 ? 52 : 104;
+            const margin = boardSize === 52 ? 2 : 4;
+            const scale = 30; // 预览比例
+            
+            // 标尺占用一格空间，因此总尺寸增加 1 格
+            const totalGrids = boardSize + 1;
+            resultCanvas.width = totalGrids * scale;
+            resultCanvas.height = totalGrids * scale;
             
             ctxResult.imageSmoothingEnabled = false;
 
-            // 1. 绘制底层 (所有色块)
+            // 1. 绘制背景
+            ctxResult.fillStyle = '#ffffff';
+            ctxResult.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+
+            // 2. 绘制网格背景 (从 1, 1 开始)
+            const gridOffset = scale; // 标尺宽度
+
+            // 计算图案在 52/104 内部的居中偏移
+            const offsetX = Math.floor((boardSize - gridWidth) / 2);
+            const offsetY = Math.floor((boardSize - gridHeight) / 2);
+
+            // 绘制色块
             for (let y = 0; y < gridHeight; y++) {
                 for (let x = 0; x < gridWidth; x++) {
                     const i = (y * gridWidth + x);
-                    const color = AppState.pixelData[i];
+                    const color = pixelArray[i];
+                    // 实际绘制坐标 = (网格偏移) + (内部偏移 + 坐标) * 缩放
+                    const drawX = gridOffset + (x + offsetX) * scale;
+                    const drawY = gridOffset + (y + offsetY) * scale;
+
                     ctxResult.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
-                    ctxResult.fillRect(x * scale, y * scale, scale, scale);
+                    ctxResult.fillRect(drawX, drawY, scale, scale);
                 }
             }
 
-            // 2. 如果有高亮，应用遮罩和高亮效果
+            // 3. 如果有高亮，应用遮罩
             if (highlightedColorId !== null) {
-                // 柔和变暗层
                 ctxResult.fillStyle = 'rgba(0, 0, 0, 0.4)';
-                ctxResult.fillRect(0, 0, resultCanvas.width, resultCanvas.height);
+                ctxResult.fillRect(gridOffset, gridOffset, boardSize * scale, boardSize * scale);
 
-                // 重新绘制高亮色块，并增加阴影效果
                 ctxResult.shadowBlur = 15;
                 ctxResult.shadowColor = 'rgba(0,0,0,0.8)';
                 ctxResult.shadowOffsetX = 2;
@@ -1100,45 +1354,96 @@
                 for (let y = 0; y < gridHeight; y++) {
                     for (let x = 0; x < gridWidth; x++) {
                         const i = (y * gridWidth + x);
-                        const color = AppState.pixelData[i];
+                        const color = pixelArray[i];
                         if (color.id === highlightedColorId) {
+                            const drawX = gridOffset + (x + offsetX) * scale;
+                            const drawY = gridOffset + (y + offsetY) * scale;
                             ctxResult.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
-                            // 绘制带阴影的色块
-                            ctxResult.fillRect(x * scale + 1, y * scale + 1, scale - 2, scale - 2);
+                            ctxResult.fillRect(drawX + 1, drawY + 1, scale - 2, scale - 2);
                         }
                     }
                 }
-                
-                // 重置阴影，避免影响后续绘制
                 ctxResult.shadowBlur = 0;
                 ctxResult.shadowOffsetX = 0;
                 ctxResult.shadowOffsetY = 0;
             }
 
-            // 3. 绘制 ID 和网格线
+            // 4. 绘制网格线、辅助线、标尺和 ID
             ctxResult.textAlign = 'center';
             ctxResult.textBaseline = 'middle';
-            ctxResult.font = `bold ${Math.floor(scale * 0.4)}px Arial`;
 
+            // 4.1 绘制基础网格线 (仅限内部区域)
+            ctxResult.lineWidth = 1;
+            ctxResult.strokeStyle = 'rgba(0,0,0,0.05)';
+            for (let i = 0; i <= boardSize; i++) {
+                const pos = gridOffset + i * scale;
+                ctxResult.beginPath();
+                ctxResult.moveTo(pos, gridOffset); ctxResult.lineTo(pos, resultCanvas.height);
+                ctxResult.stroke();
+                ctxResult.beginPath();
+                ctxResult.moveTo(gridOffset, pos); ctxResult.lineTo(resultCanvas.width, pos);
+                ctxResult.stroke();
+            }
+
+            // 4.2 绘制 ID 文字
+            ctxResult.font = `bold ${Math.floor(scale * 0.4)}px Arial`;
             for (let y = 0; y < gridHeight; y++) {
                 for (let x = 0; x < gridWidth; x++) {
                     const i = (y * gridWidth + x);
-                    const color = AppState.pixelData[i];
-                    const isHighlighted = highlightedColorId === null || highlightedColorId === color.id;
-                    
-                    // 网格线
-                    ctxResult.strokeStyle = isHighlighted ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)';
-                    ctxResult.lineWidth = 1;
-                    ctxResult.strokeRect(x * scale, y * scale, scale, scale);
-
-                    // 绘制 ID 文本
-                    if (isHighlighted) {
-                        // 根据背景深浅计算文字颜色 (YIQ 算法)
+                    const color = pixelArray[i];
+                    if (highlightedColorId === null || highlightedColorId === color.id) {
+                        const drawX = gridOffset + (x + offsetX) * scale;
+                        const drawY = gridOffset + (y + offsetY) * scale;
                         const yiq = ((color.r * 299) + (color.g * 587) + (color.b * 114)) / 1000;
                         ctxResult.fillStyle = yiq >= 128 ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)';
-                        ctxResult.fillText(color.id, x * scale + scale / 2, y * scale + scale / 2);
+                        ctxResult.fillText(color.id, drawX + scale / 2, drawY + scale / 2);
                     }
                 }
+            }
+
+            // 4.3 绘制辅助线 (虚线和实线)
+            // 根据出血位（margin 和 boardSize - margin）绘制实线边界
+            const startNode = margin;
+            const endNode = boardSize - margin;
+
+            for (let i = 0; i <= boardSize; i++) {
+                const pos = gridOffset + i * scale;
+                
+                // 绘制逻辑：边界、出血位、或 5/10 倍数
+                const isBleedEdge = (i === startNode || i === endNode);
+                const isMainGrid = (i > startNode && i < endNode && (i - startNode) % 5 === 0);
+                
+                if (isBleedEdge || isMainGrid || i === 0 || i === boardSize) {
+                    ctxResult.beginPath();
+                    // 实线条件：0, boardSize, 出血位, 或 10 的倍数 (相对于出血位)
+                    const isSolid = i === 0 || i === boardSize || isBleedEdge || ((i - startNode) % 10 === 0);
+                    
+                    if (isSolid) {
+                        ctxResult.setLineDash([]);
+                        ctxResult.strokeStyle = isBleedEdge ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)';
+                        ctxResult.lineWidth = isBleedEdge ? 3 : 2;
+                    } else {
+                        ctxResult.setLineDash([5, 5]);
+                        ctxResult.strokeStyle = 'rgba(0,0,0,0.3)';
+                        ctxResult.lineWidth = 1;
+                    }
+                    ctxResult.moveTo(pos, gridOffset); ctxResult.lineTo(pos, gridOffset + boardSize * scale);
+                    ctxResult.stroke();
+                    ctxResult.moveTo(gridOffset, pos); ctxResult.lineTo(gridOffset + boardSize * scale, pos);
+                    ctxResult.stroke();
+                    ctxResult.setLineDash([]); 
+                }
+            }
+
+            // 4.4 绘制外部标尺 (数字)
+            ctxResult.font = `bold ${Math.floor(scale * 0.4)}px Arial`;
+            ctxResult.fillStyle = 'rgba(0,0,0,0.6)';
+            for (let i = 1; i <= boardSize; i++) {
+                const textPos = gridOffset + (i - 1) * scale + scale / 2;
+                // 上边缘标尺
+                ctxResult.fillText(i.toString(), textPos, scale / 2);
+                // 左边缘标尺
+                ctxResult.fillText(i.toString(), scale / 2, textPos);
             }
         }
 
@@ -1157,16 +1462,20 @@
             document.getElementById('color-types-count').innerText = `${sorted.length} 种颜色`;
 
             const container = document.getElementById('color-stats');
-            container.innerHTML = sorted.map(c => `
-                <div onclick="toggleColorHighlight('${c.id}')" 
-                    class="flex items-center p-1.5 rounded-lg border transition-all cursor-pointer active:scale-95 ${highlightedColorId === c.id ? 'bg-primary/20 border-primary shadow-[0_0_8px_rgba(255,107,107,0.3)]' : 'bg-gray-700/40 border-white/5 hover:bg-gray-700/60'} space-x-1.5">
-                    <div class="w-4 h-4 rounded-sm border border-white/10 shrink-0" style="background-color: rgb(${c.r},${c.g},${c.b})"></div>
-                    <div class="min-w-0 flex-1 flex flex-col justify-center">
-                        <div class="text-[9px] font-bold text-white font-mono leading-tight truncate">${c.id}</div>
-                        <div class="text-[8px] text-primary/90 font-bold leading-tight">x${c.count}</div>
+            container.innerHTML = sorted.map(c => {
+                const yiq = ((c.r * 299) + (c.g * 587) + (c.b * 114)) / 1000;
+                const textColor = yiq >= 128 ? 'text-black/80' : 'text-white/90';
+                const isSelected = highlightedColorId === c.id;
+                
+                return `
+                    <div onclick="toggleColorHighlight('${c.id}')" 
+                        class="flex items-center justify-between px-3 py-1.5 rounded-full transition-all cursor-pointer active:scale-95 border-2 ${isSelected ? 'border-primary ring-2 ring-primary/30 shadow-lg' : 'border-transparent opacity-90 hover:opacity-100'}" 
+                        style="background-color: rgb(${c.r},${c.g},${c.b})">
+                        <span class="text-[11px] font-bold font-mono ${textColor}">${c.id}</span>
+                        <span class="text-[10px] font-medium ml-2 ${textColor}">(${c.count})</span>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // --- 第四步：导出 ---
@@ -1177,21 +1486,43 @@
         }
 
         function downloadImage() {
-            // 创建一个临时 Canvas 用于高清导出
+            const stats = {};
+            AppState.pixelData.forEach(p => {
+                if (!stats[p.id]) stats[p.id] = { ...p, count: 0 };
+                stats[p.id].count++;
+            });
+            const sortedStats = Object.values(stats).sort((a, b) => b.count - a.count);
+
+            // 1. 确定规格 (与预览保持一致)
+            const boardSize = Math.max(AppState.gridWidth, AppState.gridHeight) <= 52 ? 52 : 104;
+            const margin = boardSize === 52 ? 2 : 4;
+            const exportScale = 60; // 导出比例
+            const gridOffset = exportScale; // 标尺偏移
+            
+            const boardPxSize = (boardSize + 1) * exportScale;
+            const offsetX = Math.floor((boardSize - AppState.gridWidth) / 2);
+            const offsetY = Math.floor((boardSize - AppState.gridHeight) / 2);
+
+            // 2. 计算底部清单布局
+            const padding = 80;
+            const cardWidth = 240;
+            const cardHeight = 80;
+            const gap = 30;
+            const cardsPerRow = Math.max(1, Math.floor((boardPxSize - padding * 2 + gap) / (cardWidth + gap)));
+            const rows = Math.ceil(sortedStats.length / cardsPerRow);
+            const statsHeight = rows * (cardHeight + gap) + padding * 2 + 60; 
+            
             const exportCanvas = document.createElement('canvas');
             const exportCtx = exportCanvas.getContext('2d');
-            const exportScale = 60; // 导出比例，确保足够清晰
             
-            exportCanvas.width = AppState.gridWidth * exportScale;
-            exportCanvas.height = AppState.gridHeight * exportScale;
+            exportCanvas.width = boardPxSize;
+            exportCanvas.height = boardPxSize + statsHeight;
             
-            exportCtx.imageSmoothingEnabled = false;
-
-            // 1. 绘制背景
+            // 3. 填充整体背景 (白色)
             exportCtx.fillStyle = '#ffffff';
             exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
-            // 2. 绘制色块和 ID
+            // 4. 绘制图案 (居中于 52/104 内部)
             exportCtx.textAlign = 'center';
             exportCtx.textBaseline = 'middle';
             exportCtx.font = `bold ${Math.floor(exportScale * 0.4)}px Arial`;
@@ -1200,22 +1531,115 @@
                 for (let x = 0; x < AppState.gridWidth; x++) {
                     const i = (y * AppState.gridWidth + x);
                     const color = AppState.pixelData[i];
-                    
+                    const drawX = gridOffset + (x + offsetX) * exportScale;
+                    const drawY = gridOffset + (y + offsetY) * exportScale;
+
                     // 绘制色块
                     exportCtx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
-                    exportCtx.fillRect(x * exportScale, y * exportScale, exportScale, exportScale);
+                    exportCtx.fillRect(drawX, drawY, exportScale, exportScale);
 
-                    // 绘制网格线
-                    exportCtx.strokeStyle = 'rgba(0,0,0,0.1)';
-                    exportCtx.lineWidth = 1;
-                    exportCtx.strokeRect(x * exportScale, y * exportScale, exportScale, exportScale);
-
-                    // 绘制 ID 文本 (带智能对比度)
+                    // 绘制色块 ID
                     const yiq = ((color.r * 299) + (color.g * 587) + (color.b * 114)) / 1000;
                     exportCtx.fillStyle = yiq >= 128 ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)';
-                    exportCtx.fillText(color.id, x * exportScale + exportScale / 2, y * exportScale + exportScale / 2);
+                    exportCtx.fillText(color.id, drawX + exportScale / 2, drawY + exportScale / 2);
                 }
             }
+
+            // 5. 绘制网格、辅助线和标尺
+            // 5.1 基础网格 (仅限内部区域)
+            exportCtx.lineWidth = 1;
+            exportCtx.strokeStyle = 'rgba(0,0,0,0.1)';
+            for (let i = 0; i <= boardSize; i++) {
+                const pos = gridOffset + i * exportScale;
+                exportCtx.beginPath();
+                exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSize);
+                exportCtx.stroke();
+                exportCtx.beginPath();
+                exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSize, pos);
+                exportCtx.stroke();
+            }
+
+            // 5.2 辅助线 (虚线和实线)
+            // 根据出血位（margin 和 boardSize - margin）绘制实线边界
+            const startNode = margin;
+            const endNode = boardSize - margin;
+
+            for (let i = 0; i <= boardSize; i++) {
+                const pos = gridOffset + i * exportScale;
+                
+                // 绘制逻辑：边界、出血位、或 5/10 倍数
+                const isBleedEdge = (i === startNode || i === endNode);
+                const isMainGrid = (i > startNode && i < endNode && (i - startNode) % 5 === 0);
+
+                if (isBleedEdge || isMainGrid || i === 0 || i === boardSize) {
+                    exportCtx.beginPath();
+                    // 实线条件：0, boardSize, 出血位, 或 10 的倍数 (相对于出血位)
+                    const isSolid = i === 0 || i === boardSize || isBleedEdge || ((i - startNode) % 10 === 0);
+
+                    if (isSolid) {
+                        exportCtx.setLineDash([]);
+                        exportCtx.strokeStyle = isBleedEdge ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)';
+                        exportCtx.lineWidth = isBleedEdge ? 4 : 3;
+                    } else {
+                        exportCtx.setLineDash([10, 10]);
+                        exportCtx.strokeStyle = 'rgba(0,0,0,0.3)';
+                        exportCtx.lineWidth = 2;
+                    }
+                    exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, gridOffset + boardSize * exportScale);
+                    exportCtx.stroke();
+                    exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(gridOffset + boardSize * exportScale, pos);
+                    exportCtx.stroke();
+                    exportCtx.setLineDash([]);
+                }
+            }
+
+            // 5.3 外部标尺 (数字)
+            exportCtx.fillStyle = 'rgba(0,0,0,0.7)';
+            exportCtx.font = `bold ${Math.floor(exportScale * 0.4)}px Arial`;
+            exportCtx.textAlign = 'center';
+            exportCtx.textBaseline = 'middle';
+            for (let i = 1; i <= boardSize; i++) {
+                const textPos = gridOffset + (i - 1) * exportScale + exportScale / 2;
+                // 上边缘标尺
+                exportCtx.fillText(i.toString(), textPos, exportScale / 2);
+                // 左边缘标尺
+                exportCtx.fillText(i.toString(), exportScale / 2, textPos);
+            }
+
+            // 6. 绘制清单标题
+            const statsStartY = boardPxSize + padding;
+            exportCtx.textAlign = 'left';
+            exportCtx.textBaseline = 'top';
+            exportCtx.fillStyle = '#333333';
+            exportCtx.font = 'bold 48px Arial';
+            exportCtx.fillText('颜色清单 (Color List)', padding, statsStartY - 60);
+
+            // 7. 绘制清单卡片 (胶囊样式)
+            sortedStats.forEach((c, index) => {
+                const row = Math.floor(index / cardsPerRow);
+                const col = index % cardsPerRow;
+                const x = padding + col * (cardWidth + gap);
+                const y = statsStartY + row * (cardHeight + gap);
+
+                // 绘制圆角矩形背景 (胶囊型)
+                const radius = cardHeight / 2;
+                exportCtx.beginPath();
+                exportCtx.roundRect(x, y, cardWidth, cardHeight, radius);
+                exportCtx.fillStyle = `rgb(${c.r},${c.g},${c.b})`;
+                exportCtx.fill();
+
+                // 绘制文字 (ID + Count)
+                const yiq = ((c.r * 299) + (c.g * 587) + (c.b * 114)) / 1000;
+                exportCtx.fillStyle = yiq >= 128 ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.9)';
+                
+                exportCtx.font = 'bold 32px Arial';
+                exportCtx.textAlign = 'left';
+                exportCtx.fillText(c.id, x + 30, y + cardHeight / 2 + 10);
+                
+                exportCtx.textAlign = 'right';
+                exportCtx.font = 'bold 26px Arial';
+                exportCtx.fillText(`(${c.count})`, x + cardWidth - 30, y + cardHeight / 2 + 10);
+            });
 
             const link = document.createElement('a');
             link.download = `perler-pattern-${AppState.gridWidth}x${AppState.gridHeight}-${Date.now()}.png`;
