@@ -209,6 +209,7 @@
                     <select id="mard-set-select"
                         class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
                         <option value="264">MARD 264色全色 (不含C29)</option>
+                        <option value="221">MARD 221色全实色</option>
                         <option value="216">MARD 216色全实色</option>
                         <option value="144">MARD 144色 (A-E+6)</option>
                         <option value="120">MARD 120色 (A-E)</option>
@@ -463,71 +464,72 @@
                 { id: 'A17', r: 160, g: 100, b: 30, groups: ['A'] },
                 { id: 'A18', r: 130, g: 80, b: 20, groups: ['A'] },
                 { id: 'A19', r: 100, g: 60, b: 15, groups: ['A'] },
-                { id: 'A20', r: 255, g: 245, b: 150, groups: ['A'] },
-                { id: 'A21', r: 230, g: 175, b: 50, groups: ['A'] },
-                { id: 'A22', r: 200, g: 140, b: 30, groups: ['A'] },
-                { id: 'A23', r: 170, g: 110, b: 20, groups: ['A'] },
-                { id: 'B21', r: 90, g: 180, b: 115, groups: ['B'] },
-                { id: 'B22', r: 55, g: 155, b: 85, groups: ['B'] },
-                { id: 'B23', r: 30, g: 125, b: 65, groups: ['B'] },
-                { id: 'C18', r: 5, g: 80, b: 120, groups: ['C'] },
-                { id: 'C19', r: 2, g: 60, b: 90, groups: ['C'] },
-                { id: 'C20', r: 150, g: 215, b: 225, groups: ['C'] },
-                { id: 'C21', r: 60, g: 175, b: 200, groups: ['C'] },
-                { id: 'C22', r: 30, g: 145, b: 180, groups: ['C'] },
-                { id: 'C23', r: 15, g: 115, b: 160, groups: ['C'] },
-                { id: 'D12', r: 220, g: 210, b: 240, groups: ['D'] },
-                { id: 'D22', r: 115, g: 90, b: 195, groups: ['D'] },
-                { id: 'D23', r: 85, g: 65, b: 170, groups: ['D'] },
-                { id: 'E17', r: 145, g: 50, b: 100, groups: ['E'] },
-                { id: 'E18', r: 115, g: 35, b: 75, groups: ['E'] },
-                { id: 'E19', r: 85, g: 25, b: 55, groups: ['E'] },
-                { id: 'E20', r: 240, g: 200, b: 220, groups: ['E'] },
-                { id: 'E21', r: 210, g: 130, b: 170, groups: ['E'] },
-                { id: 'E22', r: 185, g: 90, b: 140, groups: ['E'] },
-                { id: 'E23', r: 160, g: 60, b: 110, groups: ['E'] },
-
-                // 扩展组 (144/216/264色)
-                { id: 'G15', r: 240, g: 200, b: 180, groups: ['6'] },
-                { id: 'A2', r: 255, g: 255, b: 200, groups: ['6'] },
-                { id: 'H13', r: 250, g: 230, b: 180, groups: ['6'] },
-                { id: 'G16', r: 240, g: 180, b: 160, groups: ['6'] },
-                { id: 'M1', r: 120, g: 120, b: 120, groups: ['6'] },
-                { id: 'P1', r: 255, g: 255, b: 255, groups: ['7'] },
-                { id: 'P18', r: 40, g: 40, b: 40, groups: ['7'] },
-                { id: 'P16', r: 255, g: 220, b: 150, groups: ['7'] },
-                { id: 'P3', r: 255, g: 255, b: 100, groups: ['7'] },
-                { id: 'P10', r: 0, g: 100, b: 50, groups: ['8'] },
-                { id: 'R11', r: 255, g: 50, b: 50, groups: ['8'] },
-                { id: 'Y2', r: 255, g: 255, b: 0, groups: ['8'] },
-                { id: 'Y3', r: 200, g: 255, b: 0, groups: ['8'] },
-                { id: 'H17', r: 230, g: 230, b: 230, groups: ['9'] },
-                { id: 'E16', r: 255, g: 150, b: 180, groups: ['9'] },
-                { id: 'A26', r: 240, g: 150, b: 50, groups: ['10'] },
-                { id: 'B26', r: 10, g: 150, b: 80, groups: ['10'] },
-                { id: 'F15', r: 200, g: 30, b: 30, groups: ['11'] },
-                { id: 'G20', r: 255, g: 180, b: 150, groups: ['11'] },
-                { id: 'A24', r: 255, g: 255, b: 180, groups: ['6'] },
-                { id: 'A25', r: 255, g: 240, b: 120, groups: ['6'] },
-                { id: 'B24', r: 180, g: 230, b: 140, groups: ['6'] },
-                { id: 'B25', r: 140, g: 210, b: 100, groups: ['6'] },
-                { id: 'C24', r: 180, g: 240, b: 240, groups: ['6'] },
-                { id: 'C25', r: 140, g: 220, b: 220, groups: ['6'] },
-                { id: 'D24', r: 200, g: 200, b: 240, groups: ['6'] },
-                { id: 'D25', r: 160, g: 160, b: 220, groups: ['6'] },
-                { id: 'E24', r: 255, g: 200, b: 230, groups: ['6'] },
-                { id: 'E25', r: 240, g: 160, b: 200, groups: ['6'] },
-                { id: 'G21', r: 255, g: 220, b: 200, groups: ['6'] },
-                { id: 'H14', r: 240, g: 240, b: 240, groups: ['6'] },
-                { id: 'H15', r: 180, g: 180, b: 180, groups: ['6'] },
-                { id: 'M13', r: 100, g: 100, b: 100, groups: ['6'] },
-                { id: 'F16', r: 180, g: 20, b: 20, groups: ['9'] },
-                { id: 'F17', r: 140, g: 10, b: 10, groups: ['9'] },
-                { id: 'G22', r: 220, g: 140, b: 100, groups: ['9'] },
-                { id: 'G23', r: 180, g: 100, b: 60, groups: ['9'] },
-                { id: 'H16', r: 120, g: 120, b: 120, groups: ['9'] },
-                { id: 'M14', r: 80, g: 60, b: 40, groups: ['9'] },
-                { id: 'M15', r: 60, g: 40, b: 20, groups: ['9'] },
+                { id: 'A20', r: 255, g: 245, b: 150, groups: ['A', '221'] },
+                { id: 'A21', r: 230, g: 175, b: 50, groups: ['A', '221'] },
+                { id: 'A22', r: 200, g: 140, b: 30, groups: ['A', '221'] },
+                { id: 'A23', r: 170, g: 110, b: 20, groups: ['A', '221'] },
+                { id: 'A24', r: 255, g: 255, b: 180, groups: ['6', '221'] },
+                { id: 'A25', r: 255, g: 240, b: 120, groups: ['6', '221'] },
+                { id: 'A26', r: 240, g: 150, b: 50, groups: ['10', '221'] },
+                { id: 'B21', r: 90, g: 180, b: 115, groups: ['B', '221'] },
+                { id: 'B22', r: 55, g: 155, b: 85, groups: ['B', '221'] },
+                { id: 'B23', r: 30, g: 125, b: 65, groups: ['B', '221'] },
+                { id: 'B24', r: 180, g: 230, b: 140, groups: ['6', '221'] },
+                { id: 'B25', r: 140, g: 210, b: 100, groups: ['6', '221'] },
+                { id: 'B26', r: 10, g: 150, b: 80, groups: ['10', '221'] },
+                { id: 'B27', r: 20, g: 130, b: 70, groups: ['10', '221'] },
+                { id: 'B28', r: 30, g: 110, b: 60, groups: ['10', '221'] },
+                { id: 'C24', r: 180, g: 240, b: 240, groups: ['6', '221'] },
+                { id: 'C25', r: 140, g: 220, b: 220, groups: ['6', '221'] },
+                { id: 'C26', r: 120, g: 200, b: 200, groups: ['6', '221'] },
+                { id: 'D24', r: 200, g: 200, b: 240, groups: ['6', '221'] },
+                { id: 'D25', r: 160, g: 160, b: 220, groups: ['6', '221'] },
+                { id: 'D26', r: 140, g: 140, b: 200, groups: ['10', '221'] },
+                { id: 'E24', r: 255, g: 200, b: 230, groups: ['6', '221'] },
+                { id: 'F1', r: 212, g: 30, b: 45, groups: ['4', 'F', '221'] },
+                { id: 'F2', r: 180, g: 20, b: 20, groups: ['4', 'F', '221'] },
+                { id: 'F3', r: 130, g: 20, b: 20, groups: ['4', 'F', '221'] },
+                { id: 'F4', r: 120, g: 20, b: 20, groups: ['4', 'F', '221'] },
+                { id: 'F5', r: 212, g: 30, b: 45, groups: ['1', 'D', 'F', '221'] },
+                { id: 'F6', r: 100, g: 10, b: 10, groups: ['4', 'F', '221'] },
+                { id: 'F7', r: 150, g: 20, b: 60, groups: ['3', 'D', 'F', '221'] },
+                { id: 'F8', r: 172, g: 30, b: 45, groups: ['2', 'D', 'F', '221'] },
+                { id: 'F9', r: 200, g: 50, b: 50, groups: ['4', 'F', '221'] },
+                { id: 'F10', r: 160, g: 30, b: 60, groups: ['3', 'C', 'F', '221'] },
+                { id: 'F11', r: 160, g: 30, b: 60, groups: ['4', 'C', 'F', '221'] },
+                { id: 'F12', r: 150, g: 30, b: 30, groups: ['4', 'F', '221'] },
+                { id: 'F13', r: 216, g: 46, b: 40, groups: ['2', 'D', 'F', '221'] },
+                { id: 'F14', r: 172, g: 30, b: 45, groups: ['4', 'F', '221'] },
+                { id: 'F15', r: 200, g: 30, b: 30, groups: ['11', 'F', '221'] },
+                { id: 'F16', r: 180, g: 20, b: 20, groups: ['9', 'F', '221'] },
+                { id: 'F17', r: 140, g: 10, b: 10, groups: ['9', 'F', '221'] },
+                { id: 'F18', r: 160, g: 20, b: 20, groups: ['11', 'F', '221'] },
+                { id: 'F19', r: 120, g: 10, b: 10, groups: ['11', 'F', '221'] },
+                { id: 'G21', r: 255, g: 220, b: 200, groups: ['6', 'G', '221'] },
+                { id: 'H1', r: 255, g: 255, b: 255, groups: ['1', 'A', 'E', 'H', '221'] },
+                { id: 'H2', r: 224, g: 224, b: 224, groups: ['1', 'E', 'H', '221'] },
+                { id: 'H3', r: 160, g: 160, b: 160, groups: ['1', 'E', 'H', '221'] },
+                { id: 'H4', r: 96, g: 96, b: 96, groups: ['1', 'E', 'H', '221'] },
+                { id: 'H5', r: 48, g: 48, b: 48, groups: ['1', 'E', 'H', '221'] },
+                { id: 'H6', r: 40, g: 40, b: 40, groups: ['4', 'E', 'H', '221'] },
+                { id: 'H7', r: 0, g: 0, b: 0, groups: ['1', 'E', 'H', '221'] },
+                { id: 'H8', r: 250, g: 240, b: 230, groups: ['4', 'H', '221'] },
+                { id: 'H9', r: 5, g: 5, b: 5, groups: ['4', 'H', '221'] },
+                { id: 'H10', r: 200, g: 200, b: 200, groups: ['4', 'H', '221'] },
+                { id: 'H12', r: 240, g: 240, b: 240, groups: ['E', 'H', '221'] },
+                { id: 'H13', r: 250, g: 230, b: 180, groups: ['6', 'H', '221'] },
+                { id: 'H14', r: 240, g: 240, b: 240, groups: ['6', 'H', '221'] },
+                { id: 'H15', r: 180, g: 180, b: 180, groups: ['6', 'H', '221'] },
+                { id: 'H16', r: 120, g: 120, b: 120, groups: ['9', 'H', '221'] },
+                { id: 'H17', r: 230, g: 230, b: 230, groups: ['9', 'H', '221'] },
+                { id: 'M1', r: 120, g: 120, b: 120, groups: ['6', 'M', '221'] },
+                { id: 'M5', r: 150, g: 100, b: 60, groups: ['4', 'C', 'M', '221'] },
+                { id: 'M6', r: 120, g: 80, b: 40, groups: ['4', 'C', 'M', '221'] },
+                { id: 'M9', r: 130, g: 90, b: 70, groups: ['4', 'E', 'M', '221'] },
+                { id: 'M12', r: 110, g: 70, b: 60, groups: ['4', 'E', 'M', '221'] },
+                { id: 'M13', r: 100, g: 100, b: 100, groups: ['6', 'M', '221'] },
+                { id: 'M14', r: 80, g: 60, b: 40, groups: ['9', 'M', '221'] },
+                { id: 'M15', r: 60, g: 40, b: 20, groups: ['9', 'M', '221'] },
                 { id: 'P2', r: 255, g: 250, b: 240, groups: ['7'] },
                 { id: 'P4', r: 255, g: 255, b: 150, groups: ['7'] },
                 { id: 'P5', r: 255, g: 240, b: 100, groups: ['7'] },
@@ -549,16 +551,49 @@
                 { id: 'R15', r: 100, g: 10, b: 10, groups: ['8'] },
                 { id: 'Y4', r: 160, g: 220, b: 0, groups: ['8'] },
                 { id: 'Y5', r: 120, g: 180, b: 0, groups: ['8'] },
-                { id: 'A27', r: 220, g: 130, b: 40, groups: ['10'] },
-                { id: 'A28', r: 180, g: 110, b: 30, groups: ['10'] },
-                { id: 'B27', r: 20, g: 130, b: 70, groups: ['10'] },
-                { id: 'B28', r: 30, g: 110, b: 60, groups: ['10'] },
-                { id: 'F18', r: 160, g: 20, b: 20, groups: ['11'] },
-                { id: 'F19', r: 120, g: 10, b: 10, groups: ['11'] },
-                { id: 'G24', r: 240, g: 160, b: 130, groups: ['11'] },
-                { id: 'G25', r: 220, g: 140, b: 110, groups: ['11'] },
-                
-                { id: 'C29', r: 100, g: 100, b: 100, groups: ['other'] } // 排除色
+                { id: 'C26', r: 120, g: 200, b: 200, groups: ['6', '221'] },
+                { id: 'C27', r: 100, g: 180, b: 180, groups: ['221'] },
+                { id: 'C28', r: 80, g: 160, b: 160, groups: ['221'] },
+                { id: 'D26', r: 140, g: 140, b: 200, groups: ['10', '221'] },
+                { id: 'G1', r: 248, g: 214, b: 206, groups: ['1', 'E', 'G', '221'] },
+                { id: 'G2', r: 240, g: 210, b: 190, groups: ['3', 'E', 'G', '221'] },
+                { id: 'G3', r: 230, g: 170, b: 140, groups: ['3', 'E', 'G', '221'] },
+                { id: 'G4', r: 220, g: 150, b: 120, groups: ['G', '221'] },
+                { id: 'G5', r: 228, g: 87, b: 69, groups: ['1', 'E', 'G', '221'] },
+                { id: 'G6', r: 228, g: 87, b: 69, groups: ['E', 'G', '221'] },
+                { id: 'G7', r: 156, g: 72, b: 58, groups: ['1', 'C', 'G', '221'] },
+                { id: 'G8', r: 112, g: 76, b: 54, groups: ['2', 'C', 'G', '221'] },
+                { id: 'G9', r: 206, g: 158, b: 118, groups: ['2', 'E', 'G', '221'] },
+                { id: 'G10', r: 180, g: 140, b: 100, groups: ['G', '221'] },
+                { id: 'G11', r: 160, g: 120, b: 80, groups: ['G', '221'] },
+                { id: 'G12', r: 140, g: 100, b: 60, groups: ['G', '221'] },
+                { id: 'G13', r: 172, g: 112, b: 66, groups: ['2', 'C', 'G', '221'] },
+                { id: 'G14', r: 150, g: 100, b: 80, groups: ['4', 'E', 'G', '221'] },
+                { id: 'G15', r: 240, g: 200, b: 180, groups: ['6', 'G', '221'] },
+                { id: 'G16', r: 240, g: 180, b: 160, groups: ['6', 'G', '221'] },
+                { id: 'G17', r: 130, g: 80, b: 60, groups: ['4', 'E', 'G', '221'] },
+                { id: 'G18', r: 110, g: 70, b: 50, groups: ['G', '221'] },
+                { id: 'G19', r: 90, g: 60, b: 40, groups: ['G', '221'] },
+                { id: 'G20', r: 255, g: 180, b: 150, groups: ['11', 'G', '221'] },
+                { id: 'G21', r: 255, g: 220, b: 200, groups: ['6', 'G', '221'] },
+                { id: 'G24', r: 240, g: 160, b: 130, groups: ['11', 'G', '221'] },
+                { id: 'G25', r: 220, g: 140, b: 110, groups: ['11', 'G', '221'] },
+                { id: 'H11', r: 220, g: 220, b: 220, groups: ['H', '221'] },
+                { id: 'H18', r: 40, g: 40, b: 40, groups: ['H', '221'] },
+                { id: 'H19', r: 30, g: 30, b: 30, groups: ['H', '221'] },
+                { id: 'H20', r: 20, g: 20, b: 20, groups: ['H', '221'] },
+                { id: 'H21', r: 255, g: 245, b: 230, groups: ['H', '221'] },
+                { id: 'H22', r: 245, g: 235, b: 220, groups: ['H', '221'] },
+                { id: 'H23', r: 235, g: 225, b: 210, groups: ['H', '221'] },
+                { id: 'M2', r: 100, g: 100, b: 100, groups: ['M', '221'] },
+                { id: 'M3', r: 80, g: 80, b: 80, groups: ['M', '221'] },
+                { id: 'M4', r: 60, g: 60, b: 60, groups: ['M', '221'] },
+                { id: 'M7', r: 140, g: 100, b: 60, groups: ['M', '221'] },
+                { id: 'M8', r: 120, g: 80, b: 40, groups: ['M', '221'] },
+                { id: 'M10', r: 100, g: 70, b: 50, groups: ['M', '221'] },
+                { id: 'M11', r: 80, g: 50, b: 30, groups: ['M', '221'] },
+
+                { id: 'C29', r: 100, g: 100, b: 100, groups: ['other', '221'] } // 排除色，但在 221 中包含
             ],
             artkal: [
                 // Artkal Core 核心系列 (常用于 120/144色)
@@ -1005,6 +1040,7 @@
                         '120': ['A', 'B', 'C', 'D', 'E'],
                         '144': ['A', 'B', 'C', 'D', 'E', '6'],
                         '216': ['A', 'B', 'C', 'D', 'E', '6', '9', '10', '11'],
+                        '221': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'M'],
                         '264': ['A', 'B', 'C', 'D', 'E', '6', '7', '8', '9', '10', '11']
                     };
                     
@@ -1046,27 +1082,41 @@
                     for (let sy = startY; sy < endY; sy++) {
                         for (let sx = startX; sx < endX; sx++) {
                             const idx = (sy * sourceWidth + sx) * 4;
-                            rSum += sourceData[idx];
-                            gSum += sourceData[idx + 1];
-                            bSum += sourceData[idx + 2];
-                            count++;
+                            const alpha = sourceData[idx + 3];
+                            
+                            // 仅统计非透明像素
+                            if (alpha > 0) {
+                                rSum += sourceData[idx];
+                                gSum += sourceData[idx + 1];
+                                bSum += sourceData[idx + 2];
+                                count++;
+                            }
                         }
                     }
 
-                    // 计算平均值
-                    const rAvg = count > 0 ? rSum / count : 255;
-                    const gAvg = count > 0 ? gSum / count : 255;
-                    const bAvg = count > 0 ? bSum / count : 255;
-
-                    // 匹配最近颜色
-                    const matched = findNearestColor(rAvg, gAvg, bAvg, palette);
-                    AppState.pixelData.push(matched);
-
                     const outIdx = (y * gridWidth + x) * 4;
-                    resultPixels[outIdx] = matched.r;
-                    resultPixels[outIdx + 1] = matched.g;
-                    resultPixels[outIdx + 2] = matched.b;
-                    resultPixels[outIdx + 3] = 255;
+                    if (count > 0) {
+                        // 计算平均值
+                        const rAvg = rSum / count;
+                        const gAvg = gSum / count;
+                        const bAvg = bSum / count;
+
+                        // 匹配最近颜色
+                        const matched = findNearestColor(rAvg, gAvg, bAvg, palette);
+                        AppState.pixelData.push(matched);
+
+                        resultPixels[outIdx] = matched.r;
+                        resultPixels[outIdx + 1] = matched.g;
+                        resultPixels[outIdx + 2] = matched.b;
+                        resultPixels[outIdx + 3] = 255;
+                    } else {
+                        // 全透明块
+                        AppState.pixelData.push(null);
+                        resultPixels[outIdx] = 0;
+                        resultPixels[outIdx + 1] = 0;
+                        resultPixels[outIdx + 2] = 0;
+                        resultPixels[outIdx + 3] = 0;
+                    }
                 }
             }
 
@@ -1332,6 +1382,8 @@
                 for (let x = 0; x < gridWidth; x++) {
                     const i = (y * gridWidth + x);
                     const color = pixelArray[i];
+                    if (!color) continue; // 跳过透明像素
+                    
                     // 实际绘制坐标 = (网格偏移) + (内部偏移 + 坐标) * 缩放
                     const drawX = gridOffset + (x + offsetX) * scale;
                     const drawY = gridOffset + (y + offsetY) * scale;
@@ -1355,7 +1407,7 @@
                     for (let x = 0; x < gridWidth; x++) {
                         const i = (y * gridWidth + x);
                         const color = pixelArray[i];
-                        if (color.id === highlightedColorId) {
+                        if (color && color.id === highlightedColorId) {
                             const drawX = gridOffset + (x + offsetX) * scale;
                             const drawY = gridOffset + (y + offsetY) * scale;
                             ctxResult.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
@@ -1391,6 +1443,7 @@
                 for (let x = 0; x < gridWidth; x++) {
                     const i = (y * gridWidth + x);
                     const color = pixelArray[i];
+                    if (!color) continue; // 跳过透明像素
                     if (highlightedColorId === null || highlightedColorId === color.id) {
                         const drawX = gridOffset + (x + offsetX) * scale;
                         const drawY = gridOffset + (y + offsetY) * scale;
@@ -1451,6 +1504,7 @@
             const stats = {};
             let total = 0;
             AppState.pixelData.forEach(p => {
+                if (!p) return; // 跳过透明
                 if (!stats[p.id]) stats[p.id] = { ...p, count: 0 };
                 stats[p.id].count++;
                 total++;
@@ -1488,6 +1542,7 @@
         function downloadImage() {
             const stats = {};
             AppState.pixelData.forEach(p => {
+                if (!p) return; // 跳过透明
                 if (!stats[p.id]) stats[p.id] = { ...p, count: 0 };
                 stats[p.id].count++;
             });
@@ -1531,6 +1586,7 @@
                 for (let x = 0; x < AppState.gridWidth; x++) {
                     const i = (y * AppState.gridWidth + x);
                     const color = AppState.pixelData[i];
+                    if (!color) continue; // 跳过透明像素
                     const drawX = gridOffset + (x + offsetX) * exportScale;
                     const drawY = gridOffset + (y + offsetY) * exportScale;
 
@@ -1658,6 +1714,7 @@
             svg += `<rect width="${width}" height="${height}" fill="#eee"/>`;
 
             AppState.pixelData.forEach((color, i) => {
+                if (!color) return; // 跳过透明像素
                 const x = (i % AppState.gridWidth) * scale;
                 const y = Math.floor(i / AppState.gridWidth) * scale;
                 svg += `<circle cx="${x + scale / 2}" cy="${y + scale / 2}" r="${scale / 2 - 1}" fill="rgb(${color.r},${color.g},${color.b})" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>`;
