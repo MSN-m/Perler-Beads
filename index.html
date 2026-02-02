@@ -6,20 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>拼豆图案生成器</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 备用样式，以防 JS 加载失败 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" integrity="sha512-wnea99uKIC3mpJF7V4EONKoqGWheWLCWJVYoPaDU8MS5n6GIQ9lP3V7LDl6bmp2JCIXC6mLRsh6naU6cdKvg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#FF7F50', // 活力橙
-                        secondary: '#4ECDC4', // 天蓝
-                        background: '#F7F9FC',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+        if (window.tailwind) {
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#FF7F50', // 活力橙
+                            secondary: '#4ECDC4', // 天蓝
+                            background: '#F7F9FC',
+                        },
+                        fontFamily: {
+                            sans: ['Inter', 'system-ui', 'sans-serif'],
+                        }
                     }
                 }
             }
+        } else {
+            console.warn('Tailwind CDN 加载失败，正在尝试备用方案...');
         }
     </script>
     <style>
@@ -182,11 +188,12 @@
             <!-- Grid Size Slider -->
             <div>
                 <div class="flex justify-between items-center mb-2">
-                    <label class="text-sm font-semibold text-gray-700">像素密度 (大小)</label>
                     <div class="flex items-center space-x-2">
-                        <span id="board-size-display" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold">使用 52小板</span>
-                        <span id="grid-size-display" class="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-primary font-bold">32x32</span>
+                        <label class="text-sm font-semibold text-gray-700">像素密度 (大小)</label>
+                        <span id="board-size-display" class="text-[10px] px-1.5 py-0.5 rounded-md font-bold"></span>
                     </div>
+                    <span id="grid-size-display"
+                        class="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-primary font-bold">32x32</span>
                 </div>
                 <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="32"
                     class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
@@ -209,7 +216,6 @@
                     <select id="mard-set-select"
                         class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
                         <option value="264">MARD 264色全色 (不含C29)</option>
-                        <option value="221">MARD 221色全实色</option>
                         <option value="216">MARD 216色全实色</option>
                         <option value="144">MARD 144色 (A-E+6)</option>
                         <option value="120">MARD 120色 (A-E)</option>
@@ -218,6 +224,35 @@
                         <option value="48">MARD 48色 (1-2)</option>
                         <option value="24">MARD 24色 (1组)</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- 颜色限制逻辑 (新功能) -->
+            <div class="p-4 bg-gray-50 rounded-2xl space-y-4 border border-gray-100">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-bold text-gray-700">限制颜色数量</label>
+                        <span class="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">BETA</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="color-limit-toggle" class="sr-only peer" onchange="toggleColorLimit()">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+                
+                <div id="color-limit-controls" class="space-y-2 opacity-40 pointer-events-none transition-opacity">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-500">最大允许颜色种类</span>
+                        <span id="max-colors-display" class="text-xs font-mono font-bold text-primary bg-white px-2 py-0.5 rounded border border-primary/20">24</span>
+                    </div>
+                    <input type="range" id="max-colors-slider" min="2" max="64" value="24" step="1"
+                        class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                        oninput="updateMaxColorsDisplay()">
+                    
+                    <div class="flex items-center space-x-2 pt-1">
+                        <input type="checkbox" id="dithering-toggle" checked class="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary">
+                        <label for="dithering-toggle" class="text-[11px] text-gray-500">启用抖动算法 (更细节，但颗粒感稍强)</label>
+                    </div>
                 </div>
             </div>
 
@@ -464,72 +499,71 @@
                 { id: 'A17', r: 160, g: 100, b: 30, groups: ['A'] },
                 { id: 'A18', r: 130, g: 80, b: 20, groups: ['A'] },
                 { id: 'A19', r: 100, g: 60, b: 15, groups: ['A'] },
-                { id: 'A20', r: 255, g: 245, b: 150, groups: ['A', '221'] },
-                { id: 'A21', r: 230, g: 175, b: 50, groups: ['A', '221'] },
-                { id: 'A22', r: 200, g: 140, b: 30, groups: ['A', '221'] },
-                { id: 'A23', r: 170, g: 110, b: 20, groups: ['A', '221'] },
-                { id: 'A24', r: 255, g: 255, b: 180, groups: ['6', '221'] },
-                { id: 'A25', r: 255, g: 240, b: 120, groups: ['6', '221'] },
-                { id: 'A26', r: 240, g: 150, b: 50, groups: ['10', '221'] },
-                { id: 'B21', r: 90, g: 180, b: 115, groups: ['B', '221'] },
-                { id: 'B22', r: 55, g: 155, b: 85, groups: ['B', '221'] },
-                { id: 'B23', r: 30, g: 125, b: 65, groups: ['B', '221'] },
-                { id: 'B24', r: 180, g: 230, b: 140, groups: ['6', '221'] },
-                { id: 'B25', r: 140, g: 210, b: 100, groups: ['6', '221'] },
-                { id: 'B26', r: 10, g: 150, b: 80, groups: ['10', '221'] },
-                { id: 'B27', r: 20, g: 130, b: 70, groups: ['10', '221'] },
-                { id: 'B28', r: 30, g: 110, b: 60, groups: ['10', '221'] },
-                { id: 'C24', r: 180, g: 240, b: 240, groups: ['6', '221'] },
-                { id: 'C25', r: 140, g: 220, b: 220, groups: ['6', '221'] },
-                { id: 'C26', r: 120, g: 200, b: 200, groups: ['6', '221'] },
-                { id: 'D24', r: 200, g: 200, b: 240, groups: ['6', '221'] },
-                { id: 'D25', r: 160, g: 160, b: 220, groups: ['6', '221'] },
-                { id: 'D26', r: 140, g: 140, b: 200, groups: ['10', '221'] },
-                { id: 'E24', r: 255, g: 200, b: 230, groups: ['6', '221'] },
-                { id: 'F1', r: 212, g: 30, b: 45, groups: ['4', 'F', '221'] },
-                { id: 'F2', r: 180, g: 20, b: 20, groups: ['4', 'F', '221'] },
-                { id: 'F3', r: 130, g: 20, b: 20, groups: ['4', 'F', '221'] },
-                { id: 'F4', r: 120, g: 20, b: 20, groups: ['4', 'F', '221'] },
-                { id: 'F5', r: 212, g: 30, b: 45, groups: ['1', 'D', 'F', '221'] },
-                { id: 'F6', r: 100, g: 10, b: 10, groups: ['4', 'F', '221'] },
-                { id: 'F7', r: 150, g: 20, b: 60, groups: ['3', 'D', 'F', '221'] },
-                { id: 'F8', r: 172, g: 30, b: 45, groups: ['2', 'D', 'F', '221'] },
-                { id: 'F9', r: 200, g: 50, b: 50, groups: ['4', 'F', '221'] },
-                { id: 'F10', r: 160, g: 30, b: 60, groups: ['3', 'C', 'F', '221'] },
-                { id: 'F11', r: 160, g: 30, b: 60, groups: ['4', 'C', 'F', '221'] },
-                { id: 'F12', r: 150, g: 30, b: 30, groups: ['4', 'F', '221'] },
-                { id: 'F13', r: 216, g: 46, b: 40, groups: ['2', 'D', 'F', '221'] },
-                { id: 'F14', r: 172, g: 30, b: 45, groups: ['4', 'F', '221'] },
-                { id: 'F15', r: 200, g: 30, b: 30, groups: ['11', 'F', '221'] },
-                { id: 'F16', r: 180, g: 20, b: 20, groups: ['9', 'F', '221'] },
-                { id: 'F17', r: 140, g: 10, b: 10, groups: ['9', 'F', '221'] },
-                { id: 'F18', r: 160, g: 20, b: 20, groups: ['11', 'F', '221'] },
-                { id: 'F19', r: 120, g: 10, b: 10, groups: ['11', 'F', '221'] },
-                { id: 'G21', r: 255, g: 220, b: 200, groups: ['6', 'G', '221'] },
-                { id: 'H1', r: 255, g: 255, b: 255, groups: ['1', 'A', 'E', 'H', '221'] },
-                { id: 'H2', r: 224, g: 224, b: 224, groups: ['1', 'E', 'H', '221'] },
-                { id: 'H3', r: 160, g: 160, b: 160, groups: ['1', 'E', 'H', '221'] },
-                { id: 'H4', r: 96, g: 96, b: 96, groups: ['1', 'E', 'H', '221'] },
-                { id: 'H5', r: 48, g: 48, b: 48, groups: ['1', 'E', 'H', '221'] },
-                { id: 'H6', r: 40, g: 40, b: 40, groups: ['4', 'E', 'H', '221'] },
-                { id: 'H7', r: 0, g: 0, b: 0, groups: ['1', 'E', 'H', '221'] },
-                { id: 'H8', r: 250, g: 240, b: 230, groups: ['4', 'H', '221'] },
-                { id: 'H9', r: 5, g: 5, b: 5, groups: ['4', 'H', '221'] },
-                { id: 'H10', r: 200, g: 200, b: 200, groups: ['4', 'H', '221'] },
-                { id: 'H12', r: 240, g: 240, b: 240, groups: ['E', 'H', '221'] },
-                { id: 'H13', r: 250, g: 230, b: 180, groups: ['6', 'H', '221'] },
-                { id: 'H14', r: 240, g: 240, b: 240, groups: ['6', 'H', '221'] },
-                { id: 'H15', r: 180, g: 180, b: 180, groups: ['6', 'H', '221'] },
-                { id: 'H16', r: 120, g: 120, b: 120, groups: ['9', 'H', '221'] },
-                { id: 'H17', r: 230, g: 230, b: 230, groups: ['9', 'H', '221'] },
-                { id: 'M1', r: 120, g: 120, b: 120, groups: ['6', 'M', '221'] },
-                { id: 'M5', r: 150, g: 100, b: 60, groups: ['4', 'C', 'M', '221'] },
-                { id: 'M6', r: 120, g: 80, b: 40, groups: ['4', 'C', 'M', '221'] },
-                { id: 'M9', r: 130, g: 90, b: 70, groups: ['4', 'E', 'M', '221'] },
-                { id: 'M12', r: 110, g: 70, b: 60, groups: ['4', 'E', 'M', '221'] },
-                { id: 'M13', r: 100, g: 100, b: 100, groups: ['6', 'M', '221'] },
-                { id: 'M14', r: 80, g: 60, b: 40, groups: ['9', 'M', '221'] },
-                { id: 'M15', r: 60, g: 40, b: 20, groups: ['9', 'M', '221'] },
+                { id: 'A20', r: 255, g: 245, b: 150, groups: ['A'] },
+                { id: 'A21', r: 230, g: 175, b: 50, groups: ['A'] },
+                { id: 'A22', r: 200, g: 140, b: 30, groups: ['A'] },
+                { id: 'A23', r: 170, g: 110, b: 20, groups: ['A'] },
+                { id: 'B21', r: 90, g: 180, b: 115, groups: ['B'] },
+                { id: 'B22', r: 55, g: 155, b: 85, groups: ['B'] },
+                { id: 'B23', r: 30, g: 125, b: 65, groups: ['B'] },
+                { id: 'C18', r: 5, g: 80, b: 120, groups: ['C'] },
+                { id: 'C19', r: 2, g: 60, b: 90, groups: ['C'] },
+                { id: 'C20', r: 150, g: 215, b: 225, groups: ['C'] },
+                { id: 'C21', r: 60, g: 175, b: 200, groups: ['C'] },
+                { id: 'C22', r: 30, g: 145, b: 180, groups: ['C'] },
+                { id: 'C23', r: 15, g: 115, b: 160, groups: ['C'] },
+                { id: 'D12', r: 220, g: 210, b: 240, groups: ['D'] },
+                { id: 'D22', r: 115, g: 90, b: 195, groups: ['D'] },
+                { id: 'D23', r: 85, g: 65, b: 170, groups: ['D'] },
+                { id: 'E17', r: 145, g: 50, b: 100, groups: ['E'] },
+                { id: 'E18', r: 115, g: 35, b: 75, groups: ['E'] },
+                { id: 'E19', r: 85, g: 25, b: 55, groups: ['E'] },
+                { id: 'E20', r: 240, g: 200, b: 220, groups: ['E'] },
+                { id: 'E21', r: 210, g: 130, b: 170, groups: ['E'] },
+                { id: 'E22', r: 185, g: 90, b: 140, groups: ['E'] },
+                { id: 'E23', r: 160, g: 60, b: 110, groups: ['E'] },
+
+                // 扩展组 (144/216/264色)
+                { id: 'G15', r: 240, g: 200, b: 180, groups: ['6'] },
+                { id: 'A2', r: 255, g: 255, b: 200, groups: ['6'] },
+                { id: 'H13', r: 250, g: 230, b: 180, groups: ['6'] },
+                { id: 'G16', r: 240, g: 180, b: 160, groups: ['6'] },
+                { id: 'M1', r: 120, g: 120, b: 120, groups: ['6'] },
+                { id: 'P1', r: 255, g: 255, b: 255, groups: ['7'] },
+                { id: 'P18', r: 40, g: 40, b: 40, groups: ['7'] },
+                { id: 'P16', r: 255, g: 220, b: 150, groups: ['7'] },
+                { id: 'P3', r: 255, g: 255, b: 100, groups: ['7'] },
+                { id: 'P10', r: 0, g: 100, b: 50, groups: ['8'] },
+                { id: 'R11', r: 255, g: 50, b: 50, groups: ['8'] },
+                { id: 'Y2', r: 255, g: 255, b: 0, groups: ['8'] },
+                { id: 'Y3', r: 200, g: 255, b: 0, groups: ['8'] },
+                { id: 'H17', r: 230, g: 230, b: 230, groups: ['9'] },
+                { id: 'E16', r: 255, g: 150, b: 180, groups: ['9'] },
+                { id: 'A26', r: 240, g: 150, b: 50, groups: ['10'] },
+                { id: 'B26', r: 10, g: 150, b: 80, groups: ['10'] },
+                { id: 'F15', r: 200, g: 30, b: 30, groups: ['11'] },
+                { id: 'G20', r: 255, g: 180, b: 150, groups: ['11'] },
+                { id: 'A24', r: 255, g: 255, b: 180, groups: ['6'] },
+                { id: 'A25', r: 255, g: 240, b: 120, groups: ['6'] },
+                { id: 'B24', r: 180, g: 230, b: 140, groups: ['6'] },
+                { id: 'B25', r: 140, g: 210, b: 100, groups: ['6'] },
+                { id: 'C24', r: 180, g: 240, b: 240, groups: ['6'] },
+                { id: 'C25', r: 140, g: 220, b: 220, groups: ['6'] },
+                { id: 'D24', r: 200, g: 200, b: 240, groups: ['6'] },
+                { id: 'D25', r: 160, g: 160, b: 220, groups: ['6'] },
+                { id: 'E24', r: 255, g: 200, b: 230, groups: ['6'] },
+                { id: 'E25', r: 240, g: 160, b: 200, groups: ['6'] },
+                { id: 'G21', r: 255, g: 220, b: 200, groups: ['6'] },
+                { id: 'H14', r: 240, g: 240, b: 240, groups: ['6'] },
+                { id: 'H15', r: 180, g: 180, b: 180, groups: ['6'] },
+                { id: 'M13', r: 100, g: 100, b: 100, groups: ['6'] },
+                { id: 'F16', r: 180, g: 20, b: 20, groups: ['9'] },
+                { id: 'F17', r: 140, g: 10, b: 10, groups: ['9'] },
+                { id: 'G22', r: 220, g: 140, b: 100, groups: ['9'] },
+                { id: 'G23', r: 180, g: 100, b: 60, groups: ['9'] },
+                { id: 'H16', r: 120, g: 120, b: 120, groups: ['9'] },
+                { id: 'M14', r: 80, g: 60, b: 40, groups: ['9'] },
+                { id: 'M15', r: 60, g: 40, b: 20, groups: ['9'] },
                 { id: 'P2', r: 255, g: 250, b: 240, groups: ['7'] },
                 { id: 'P4', r: 255, g: 255, b: 150, groups: ['7'] },
                 { id: 'P5', r: 255, g: 240, b: 100, groups: ['7'] },
@@ -551,49 +585,16 @@
                 { id: 'R15', r: 100, g: 10, b: 10, groups: ['8'] },
                 { id: 'Y4', r: 160, g: 220, b: 0, groups: ['8'] },
                 { id: 'Y5', r: 120, g: 180, b: 0, groups: ['8'] },
-                { id: 'C26', r: 120, g: 200, b: 200, groups: ['6', '221'] },
-                { id: 'C27', r: 100, g: 180, b: 180, groups: ['221'] },
-                { id: 'C28', r: 80, g: 160, b: 160, groups: ['221'] },
-                { id: 'D26', r: 140, g: 140, b: 200, groups: ['10', '221'] },
-                { id: 'G1', r: 248, g: 214, b: 206, groups: ['1', 'E', 'G', '221'] },
-                { id: 'G2', r: 240, g: 210, b: 190, groups: ['3', 'E', 'G', '221'] },
-                { id: 'G3', r: 230, g: 170, b: 140, groups: ['3', 'E', 'G', '221'] },
-                { id: 'G4', r: 220, g: 150, b: 120, groups: ['G', '221'] },
-                { id: 'G5', r: 228, g: 87, b: 69, groups: ['1', 'E', 'G', '221'] },
-                { id: 'G6', r: 228, g: 87, b: 69, groups: ['E', 'G', '221'] },
-                { id: 'G7', r: 156, g: 72, b: 58, groups: ['1', 'C', 'G', '221'] },
-                { id: 'G8', r: 112, g: 76, b: 54, groups: ['2', 'C', 'G', '221'] },
-                { id: 'G9', r: 206, g: 158, b: 118, groups: ['2', 'E', 'G', '221'] },
-                { id: 'G10', r: 180, g: 140, b: 100, groups: ['G', '221'] },
-                { id: 'G11', r: 160, g: 120, b: 80, groups: ['G', '221'] },
-                { id: 'G12', r: 140, g: 100, b: 60, groups: ['G', '221'] },
-                { id: 'G13', r: 172, g: 112, b: 66, groups: ['2', 'C', 'G', '221'] },
-                { id: 'G14', r: 150, g: 100, b: 80, groups: ['4', 'E', 'G', '221'] },
-                { id: 'G15', r: 240, g: 200, b: 180, groups: ['6', 'G', '221'] },
-                { id: 'G16', r: 240, g: 180, b: 160, groups: ['6', 'G', '221'] },
-                { id: 'G17', r: 130, g: 80, b: 60, groups: ['4', 'E', 'G', '221'] },
-                { id: 'G18', r: 110, g: 70, b: 50, groups: ['G', '221'] },
-                { id: 'G19', r: 90, g: 60, b: 40, groups: ['G', '221'] },
-                { id: 'G20', r: 255, g: 180, b: 150, groups: ['11', 'G', '221'] },
-                { id: 'G21', r: 255, g: 220, b: 200, groups: ['6', 'G', '221'] },
-                { id: 'G24', r: 240, g: 160, b: 130, groups: ['11', 'G', '221'] },
-                { id: 'G25', r: 220, g: 140, b: 110, groups: ['11', 'G', '221'] },
-                { id: 'H11', r: 220, g: 220, b: 220, groups: ['H', '221'] },
-                { id: 'H18', r: 40, g: 40, b: 40, groups: ['H', '221'] },
-                { id: 'H19', r: 30, g: 30, b: 30, groups: ['H', '221'] },
-                { id: 'H20', r: 20, g: 20, b: 20, groups: ['H', '221'] },
-                { id: 'H21', r: 255, g: 245, b: 230, groups: ['H', '221'] },
-                { id: 'H22', r: 245, g: 235, b: 220, groups: ['H', '221'] },
-                { id: 'H23', r: 235, g: 225, b: 210, groups: ['H', '221'] },
-                { id: 'M2', r: 100, g: 100, b: 100, groups: ['M', '221'] },
-                { id: 'M3', r: 80, g: 80, b: 80, groups: ['M', '221'] },
-                { id: 'M4', r: 60, g: 60, b: 60, groups: ['M', '221'] },
-                { id: 'M7', r: 140, g: 100, b: 60, groups: ['M', '221'] },
-                { id: 'M8', r: 120, g: 80, b: 40, groups: ['M', '221'] },
-                { id: 'M10', r: 100, g: 70, b: 50, groups: ['M', '221'] },
-                { id: 'M11', r: 80, g: 50, b: 30, groups: ['M', '221'] },
-
-                { id: 'C29', r: 100, g: 100, b: 100, groups: ['other', '221'] } // 排除色，但在 221 中包含
+                { id: 'A27', r: 220, g: 130, b: 40, groups: ['10'] },
+                { id: 'A28', r: 180, g: 110, b: 30, groups: ['10'] },
+                { id: 'B27', r: 20, g: 130, b: 70, groups: ['10'] },
+                { id: 'B28', r: 30, g: 110, b: 60, groups: ['10'] },
+                { id: 'F18', r: 160, g: 20, b: 20, groups: ['11'] },
+                { id: 'F19', r: 120, g: 10, b: 10, groups: ['11'] },
+                { id: 'G24', r: 240, g: 160, b: 130, groups: ['11'] },
+                { id: 'G25', r: 220, g: 140, b: 110, groups: ['11'] },
+                
+                { id: 'C29', r: 100, g: 100, b: 100, groups: ['other'] } // 排除色
             ],
             artkal: [
                 // Artkal Core 核心系列 (常用于 120/144色)
@@ -709,6 +710,18 @@
         const mardSetSelect = document.getElementById('mard-set-select');
         const mardSetContainer = document.getElementById('mard-set-container');
         const sizeDisplay = document.getElementById('grid-size-display');
+        const boardSizeDisplay = document.getElementById('board-size-display');
+
+        function updateBoardSizeUI() {
+            const maxDim = Math.max(AppState.gridWidth, AppState.gridHeight);
+            if (maxDim <= 52) {
+                boardSizeDisplay.innerText = '52小板';
+                boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-blue-100 text-blue-600';
+            } else {
+                boardSizeDisplay.innerText = '104大板';
+                boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-purple-100 text-purple-600';
+            }
+        }
 
         slider.addEventListener('input', (e) => {
             const val = parseInt(e.target.value);
@@ -723,18 +736,7 @@
             }
             
             sizeDisplay.innerText = `${AppState.gridWidth}x${AppState.gridHeight}`;
-            
-            // 计算板子规格 (52小板 或 104大板)
-            const boardDisplay = document.getElementById('board-size-display');
-            if (boardDisplay) {
-                if (AppState.gridWidth <= 52 && AppState.gridHeight <= 52) {
-                    boardDisplay.innerText = '使用 52小板';
-                    boardDisplay.className = 'text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold';
-                } else {
-                    boardDisplay.innerText = '使用 104大板';
-                    boardDisplay.className = 'text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-bold';
-                }
-            }
+            updateBoardSizeUI();
         });
 
         brandSelect.addEventListener('change', (e) => {
@@ -753,18 +755,6 @@
 
         function initSettingsCanvas() {
             if (!AppState.image) return;
-
-            // 初始计算板子规格
-            const boardDisplay = document.getElementById('board-size-display');
-            if (boardDisplay) {
-                if (AppState.gridWidth <= 52 && AppState.gridHeight <= 52) {
-                    boardDisplay.innerText = '使用 52小板';
-                    boardDisplay.className = 'text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold';
-                } else {
-                    boardDisplay.innerText = '使用 104大板';
-                    boardDisplay.className = 'text-[10px] bg-purple-50 text-purple-600 px-2 py-0.5 rounded font-bold';
-                }
-            }
 
             const img = AppState.image;
             const container = document.getElementById('canvas-container');
@@ -814,6 +804,7 @@
                 AppState.gridWidth = Math.round(val * imgRatio);
             }
             sizeDisplay.innerText = `${AppState.gridWidth}x${AppState.gridHeight}`;
+            updateBoardSizeUI();
 
             // 绑定事件
             sourceCanvas.onclick = handleCanvasClick;
@@ -855,6 +846,21 @@
 
         function updateTolerance(val) {
             document.getElementById('tolerance-value').innerText = val;
+        }
+
+        function toggleColorLimit() {
+            const isEnabled = document.getElementById('color-limit-toggle').checked;
+            const controls = document.getElementById('color-limit-controls');
+            if (isEnabled) {
+                controls.classList.remove('opacity-40', 'pointer-events-none');
+            } else {
+                controls.classList.add('opacity-40', 'pointer-events-none');
+            }
+        }
+
+        function updateMaxColorsDisplay() {
+            const val = document.getElementById('max-colors-slider').value;
+            document.getElementById('max-colors-display').innerText = val;
         }
 
         function handleCanvasClick(e) {
@@ -1015,6 +1021,61 @@
             }
         }
 
+        // --- 核心算法：中值切分法 (Median Cut) 颜色量化 ---
+        function medianCut(pixels, maxColors) {
+            let boxes = [pixels];
+            while (boxes.length < maxColors) {
+                // 找到包含颜色差异最大的盒子
+                let boxIndex = -1;
+                let maxRange = -1;
+                let splitAxis = 'r';
+
+                for (let i = 0; i < boxes.length; i++) {
+                    if (boxes[i].length <= 1) continue;
+                    
+                    let minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
+                    for (let p of boxes[i]) {
+                        if (p.r < minR) minR = p.r; if (p.r > maxR) maxR = p.r;
+                        if (p.g < minG) minG = p.g; if (p.g > maxG) maxG = p.g;
+                        if (p.b < minB) minB = p.b; if (p.b > maxB) maxB = p.b;
+                    }
+                    
+                    let rangeR = maxR - minR;
+                    let rangeG = maxG - minG;
+                    let rangeB = maxB - minB;
+                    let currentMaxRange = Math.max(rangeR, rangeG, rangeB);
+                    
+                    if (currentMaxRange > maxRange) {
+                        maxRange = currentMaxRange;
+                        boxIndex = i;
+                        splitAxis = rangeR >= rangeG && rangeR >= rangeB ? 'r' : (rangeG >= rangeB ? 'g' : 'b');
+                    }
+                }
+
+                if (boxIndex === -1) break;
+
+                // 切分选中的盒子
+                let box = boxes.splice(boxIndex, 1)[0];
+                box.sort((a, b) => a[splitAxis] - b[splitAxis]);
+                let median = Math.floor(box.length / 2);
+                boxes.push(box.slice(0, median));
+                boxes.push(box.slice(median));
+            }
+
+            // 计算每个盒子的平均色作为代表色
+            return boxes.map(box => {
+                let sumR = 0, sumG = 0, sumB = 0;
+                for (let p of box) {
+                    sumR += p.r; sumG += p.g; sumB += p.b;
+                }
+                return {
+                    r: Math.round(sumR / box.length),
+                    g: Math.round(sumG / box.length),
+                    b: Math.round(sumB / box.length)
+                };
+            });
+        }
+
         // --- 核心算法：像素化与颜色匹配 ---
         function generatePattern() {
             const gridWidth = AppState.gridWidth;
@@ -1031,91 +1092,121 @@
             if (AppState.brand === 'mard') {
                 const set = String(AppState.mardSet); 
                 palette = palette.filter(c => {
-                    // 定义每个套装包含的组
                     const setGroups = {
-                        '24': ['1'],
-                        '48': ['1', '2'],
-                        '72': ['1', '2', '3'],
-                        '96': ['1', '2', '3', '4'],
-                        '120': ['A', 'B', 'C', 'D', 'E'],
-                        '144': ['A', 'B', 'C', 'D', 'E', '6'],
+                        '24': ['1'], '48': ['1', '2'], '72': ['1', '2', '3'], '96': ['1', '2', '3', '4'],
+                        '120': ['A', 'B', 'C', 'D', 'E'], '144': ['A', 'B', 'C', 'D', 'E', '6'],
                         '216': ['A', 'B', 'C', 'D', 'E', '6', '9', '10', '11'],
-                        '221': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'M'],
                         '264': ['A', 'B', 'C', 'D', 'E', '6', '7', '8', '9', '10', '11']
                     };
-                    
                     const allowedGroups = setGroups[set] || [];
-                    
-                    // 检查颜色是否属于允许的任何组
                     const isAllowed = c.groups.some(g => allowedGroups.includes(g));
-
-                    // 特殊处理 216/264 的排除规则 (根据图片注释)
-                    if (set === '216') {
-                        // 216全实色，不含 C29, D10, B9, C12, D4
-                        if (['C29', 'D10', 'B9', 'C12', 'D4'].includes(c.id)) return false;
-                    }
-                    if (set === '264') {
-                        // 264全色，不含 C29
-                        if (c.id === 'C29') return false;
-                    }
-
+                    if (set === '216' && ['C29', 'D10', 'B9', 'C12', 'D4'].includes(c.id)) return false;
+                    if (set === '264' && c.id === 'C29') return false;
                     return isAllowed;
                 });
-                console.log(`MARD Palette filtered for set ${set}: ${palette.length} colors remaining.`);
+            }
+
+            // --- 颜色限制逻辑 ---
+            let finalPalette = palette;
+            const isColorLimitEnabled = document.getElementById('color-limit-toggle').checked;
+            if (isColorLimitEnabled) {
+                const maxColors = parseInt(document.getElementById('max-colors-slider').value);
+                // 采样原始颜色用于量化
+                let sampledPixels = [];
+                const sampleStep = Math.max(1, Math.floor((gridWidth * gridHeight) / 2000)); 
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x += sampleStep) {
+                        const startX = Math.floor((x / gridWidth) * sourceWidth);
+                        const startY = Math.floor((y / gridHeight) * sourceHeight);
+                        const idx = (startY * sourceWidth + startX) * 4;
+                        if (sourceData[idx + 3] > 128) { // 仅采样非透明像素
+                            sampledPixels.push({ r: sourceData[idx], g: sourceData[idx + 1], b: sourceData[idx + 2] });
+                        }
+                    }
+                }
+                
+                if (sampledPixels.length > 0) {
+                    const representativeColors = medianCut(sampledPixels, maxColors);
+                    // 将代表色映射到当前选中的品牌色库中，形成最终精简色板
+                    const reducedPaletteMap = new Map();
+                    representativeColors.forEach(rep => {
+                        const nearest = findNearestColor(rep.r, rep.g, rep.b, palette);
+                        reducedPaletteMap.set(nearest.id, nearest);
+                    });
+                    finalPalette = Array.from(reducedPaletteMap.values());
+                }
             }
 
             AppState.pixelData = [];
-            const resultPixels = new Uint8ClampedArray(gridWidth * gridHeight * 4);
+            const isDitheringEnabled = document.getElementById('dithering-toggle').checked;
+            
+            // 准备误差扩散缓存
+            let errorBuffer = null;
+            if (isDitheringEnabled) {
+                errorBuffer = new Float32Array(gridWidth * gridHeight * 3);
+            }
 
-            // 使用块平均法 (Box Sampling) 进行下采样，确保精准度
             for (let y = 0; y < gridHeight; y++) {
                 for (let x = 0; x < gridWidth; x++) {
-                    // 计算每个网格在源图中的范围
+                    // 1. 获取当前网格的平均原始颜色
                     const startX = Math.floor((x / gridWidth) * sourceWidth);
                     const startY = Math.floor((y / gridHeight) * sourceHeight);
                     const endX = Math.floor(((x + 1) / gridWidth) * sourceWidth);
                     const endY = Math.floor(((y + 1) / gridHeight) * sourceHeight);
 
-                    let rSum = 0, gSum = 0, bSum = 0, count = 0;
-
-                    // 遍历块内所有源像素
+                    let rSum = 0, gSum = 0, bSum = 0, count = 0, alphaSum = 0;
                     for (let sy = startY; sy < endY; sy++) {
                         for (let sx = startX; sx < endX; sx++) {
                             const idx = (sy * sourceWidth + sx) * 4;
-                            const alpha = sourceData[idx + 3];
-                            
-                            // 仅统计非透明像素
-                            if (alpha > 0) {
-                                rSum += sourceData[idx];
-                                gSum += sourceData[idx + 1];
-                                bSum += sourceData[idx + 2];
-                                count++;
-                            }
+                            rSum += sourceData[idx];
+                            gSum += sourceData[idx + 1];
+                            bSum += sourceData[idx + 2];
+                            alphaSum += sourceData[idx + 3];
+                            count++;
                         }
                     }
 
-                    const outIdx = (y * gridWidth + x) * 4;
-                    if (count > 0) {
-                        // 计算平均值
-                        const rAvg = rSum / count;
-                        const gAvg = gSum / count;
-                        const bAvg = bSum / count;
+                    let r = count > 0 ? rSum / count : 255;
+                    let g = count > 0 ? gSum / count : 255;
+                    let b = count > 0 ? bSum / count : 255;
+                    const a = count > 0 ? alphaSum / count : 0;
 
-                        // 匹配最近颜色
-                        const matched = findNearestColor(rAvg, gAvg, bAvg, palette);
-                        AppState.pixelData.push(matched);
+                    if (a < 128) {
+                        AppState.pixelData.push({ id: 'NONE', r: 255, g: 255, b: 255, a: 0 });
+                        continue;
+                    }
 
-                        resultPixels[outIdx] = matched.r;
-                        resultPixels[outIdx + 1] = matched.g;
-                        resultPixels[outIdx + 2] = matched.b;
-                        resultPixels[outIdx + 3] = 255;
-                    } else {
-                        // 全透明块
-                        AppState.pixelData.push(null);
-                        resultPixels[outIdx] = 0;
-                        resultPixels[outIdx + 1] = 0;
-                        resultPixels[outIdx + 2] = 0;
-                        resultPixels[outIdx + 3] = 0;
+                    // 2. 应用抖动误差
+                    if (isDitheringEnabled) {
+                        const errIdx = (y * gridWidth + x) * 3;
+                        r = Math.max(0, Math.min(255, r + errorBuffer[errIdx]));
+                        g = Math.max(0, Math.min(255, g + errorBuffer[errIdx + 1]));
+                        b = Math.max(0, Math.min(255, b + errorBuffer[errIdx + 2]));
+                    }
+
+                    // 3. 匹配颜色
+                    const matched = findNearestColor(r, g, b, finalPalette);
+                    AppState.pixelData.push(matched);
+
+                    // 4. 扩散误差 (Floyd-Steinberg)
+                    if (isDitheringEnabled) {
+                        const errR = r - matched.r;
+                        const errG = g - matched.g;
+                        const errB = b - matched.b;
+
+                        const distributeError = (nx, ny, weight) => {
+                            if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                                const nIdx = (ny * gridWidth + nx) * 3;
+                                errorBuffer[nIdx] += errR * weight;
+                                errorBuffer[nIdx + 1] += errG * weight;
+                                errorBuffer[nIdx + 2] += errB * weight;
+                            }
+                        };
+
+                        distributeError(x + 1, y, 7 / 16);
+                        distributeError(x - 1, y + 1, 3 / 16);
+                        distributeError(x, y + 1, 5 / 16);
+                        distributeError(x + 1, y + 1, 1 / 16);
                     }
                 }
             }
@@ -1123,10 +1214,7 @@
             goToStep(3);
             renderResult(AppState.pixelData, gridWidth, gridHeight);
             calculateStats();
-            // 初始适配视图 (延迟一帧确保容器尺寸已更新)
-            requestAnimationFrame(() => {
-                resetZoom();
-            });
+            requestAnimationFrame(() => resetZoom());
         }
 
         function findNearestColor(r, g, b, palette) {
@@ -1382,8 +1470,6 @@
                 for (let x = 0; x < gridWidth; x++) {
                     const i = (y * gridWidth + x);
                     const color = pixelArray[i];
-                    if (!color) continue; // 跳过透明像素
-                    
                     // 实际绘制坐标 = (网格偏移) + (内部偏移 + 坐标) * 缩放
                     const drawX = gridOffset + (x + offsetX) * scale;
                     const drawY = gridOffset + (y + offsetY) * scale;
@@ -1407,7 +1493,7 @@
                     for (let x = 0; x < gridWidth; x++) {
                         const i = (y * gridWidth + x);
                         const color = pixelArray[i];
-                        if (color && color.id === highlightedColorId) {
+                        if (color.id === highlightedColorId) {
                             const drawX = gridOffset + (x + offsetX) * scale;
                             const drawY = gridOffset + (y + offsetY) * scale;
                             ctxResult.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
@@ -1443,7 +1529,6 @@
                 for (let x = 0; x < gridWidth; x++) {
                     const i = (y * gridWidth + x);
                     const color = pixelArray[i];
-                    if (!color) continue; // 跳过透明像素
                     if (highlightedColorId === null || highlightedColorId === color.id) {
                         const drawX = gridOffset + (x + offsetX) * scale;
                         const drawY = gridOffset + (y + offsetY) * scale;
@@ -1455,36 +1540,28 @@
             }
 
             // 4.3 绘制辅助线 (虚线和实线)
-            // 根据出血位（margin 和 boardSize - margin）绘制实线边界
-            const startNode = margin;
-            const endNode = boardSize - margin;
+            for (let gridIdx = 1; gridIdx < boardSize; gridIdx++) {
+                const pos = gridOffset + gridIdx * scale;
+                const isMarginLine = (gridIdx === margin || gridIdx === boardSize - margin);
+                const isMajorLine = (gridIdx % 10 === 0);
+                const isMinorLine = (gridIdx % 5 === 0);
 
-            for (let i = 0; i <= boardSize; i++) {
-                const pos = gridOffset + i * scale;
-                
-                // 绘制逻辑：边界、出血位、或 5/10 倍数
-                const isBleedEdge = (i === startNode || i === endNode);
-                const isMainGrid = (i > startNode && i < endNode && (i - startNode) % 5 === 0);
-                
-                if (isBleedEdge || isMainGrid || i === 0 || i === boardSize) {
+                if (isMarginLine || isMinorLine) {
                     ctxResult.beginPath();
-                    // 实线条件：0, boardSize, 出血位, 或 10 的倍数 (相对于出血位)
-                    const isSolid = i === 0 || i === boardSize || isBleedEdge || ((i - startNode) % 10 === 0);
-                    
-                    if (isSolid) {
+                    if (isMarginLine || isMajorLine) {
                         ctxResult.setLineDash([]);
-                        ctxResult.strokeStyle = isBleedEdge ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)';
-                        ctxResult.lineWidth = isBleedEdge ? 3 : 2;
+                        ctxResult.strokeStyle = 'rgba(0,0,0,0.4)';
+                        ctxResult.lineWidth = 2;
                     } else {
                         ctxResult.setLineDash([5, 5]);
                         ctxResult.strokeStyle = 'rgba(0,0,0,0.3)';
                         ctxResult.lineWidth = 1;
                     }
-                    ctxResult.moveTo(pos, gridOffset); ctxResult.lineTo(pos, gridOffset + boardSize * scale);
+                    ctxResult.moveTo(pos, gridOffset); ctxResult.lineTo(pos, resultCanvas.height);
                     ctxResult.stroke();
-                    ctxResult.moveTo(gridOffset, pos); ctxResult.lineTo(gridOffset + boardSize * scale, pos);
+                    ctxResult.moveTo(gridOffset, pos); ctxResult.lineTo(resultCanvas.width, pos);
                     ctxResult.stroke();
-                    ctxResult.setLineDash([]); 
+                    ctxResult.setLineDash([]);
                 }
             }
 
@@ -1504,7 +1581,6 @@
             const stats = {};
             let total = 0;
             AppState.pixelData.forEach(p => {
-                if (!p) return; // 跳过透明
                 if (!stats[p.id]) stats[p.id] = { ...p, count: 0 };
                 stats[p.id].count++;
                 total++;
@@ -1542,7 +1618,6 @@
         function downloadImage() {
             const stats = {};
             AppState.pixelData.forEach(p => {
-                if (!p) return; // 跳过透明
                 if (!stats[p.id]) stats[p.id] = { ...p, count: 0 };
                 stats[p.id].count++;
             });
@@ -1586,7 +1661,6 @@
                 for (let x = 0; x < AppState.gridWidth; x++) {
                     const i = (y * AppState.gridWidth + x);
                     const color = AppState.pixelData[i];
-                    if (!color) continue; // 跳过透明像素
                     const drawX = gridOffset + (x + offsetX) * exportScale;
                     const drawY = gridOffset + (y + offsetY) * exportScale;
 
@@ -1615,35 +1689,27 @@
                 exportCtx.stroke();
             }
 
-            // 5.2 辅助线 (虚线和实线)
-            // 根据出血位（margin 和 boardSize - margin）绘制实线边界
-            const startNode = margin;
-            const endNode = boardSize - margin;
+            // 5.2 辅助线 (缝隙间)
+            for (let gridIdx = 1; gridIdx < boardSize; gridIdx++) {
+                const pos = gridOffset + gridIdx * exportScale;
+                const isMarginLine = (gridIdx === margin || gridIdx === boardSize - margin);
+                const isMajorLine = (gridIdx % 10 === 0);
+                const isMinorLine = (gridIdx % 5 === 0);
 
-            for (let i = 0; i <= boardSize; i++) {
-                const pos = gridOffset + i * exportScale;
-                
-                // 绘制逻辑：边界、出血位、或 5/10 倍数
-                const isBleedEdge = (i === startNode || i === endNode);
-                const isMainGrid = (i > startNode && i < endNode && (i - startNode) % 5 === 0);
-
-                if (isBleedEdge || isMainGrid || i === 0 || i === boardSize) {
+                if (isMarginLine || isMinorLine) {
                     exportCtx.beginPath();
-                    // 实线条件：0, boardSize, 出血位, 或 10 的倍数 (相对于出血位)
-                    const isSolid = i === 0 || i === boardSize || isBleedEdge || ((i - startNode) % 10 === 0);
-
-                    if (isSolid) {
+                    if (isMarginLine || isMajorLine) {
                         exportCtx.setLineDash([]);
-                        exportCtx.strokeStyle = isBleedEdge ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)';
-                        exportCtx.lineWidth = isBleedEdge ? 4 : 3;
+                        exportCtx.strokeStyle = 'rgba(0,0,0,0.4)';
+                        exportCtx.lineWidth = 3;
                     } else {
                         exportCtx.setLineDash([10, 10]);
                         exportCtx.strokeStyle = 'rgba(0,0,0,0.3)';
                         exportCtx.lineWidth = 2;
                     }
-                    exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, gridOffset + boardSize * exportScale);
+                    exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSize);
                     exportCtx.stroke();
-                    exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(gridOffset + boardSize * exportScale, pos);
+                    exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSize, pos);
                     exportCtx.stroke();
                     exportCtx.setLineDash([]);
                 }
@@ -1668,9 +1734,10 @@
             exportCtx.textBaseline = 'top';
             exportCtx.fillStyle = '#333333';
             exportCtx.font = 'bold 48px Arial';
-            exportCtx.fillText('颜色清单 (Color List)', padding, statsStartY - 60);
+            exportCtx.fillText(`颜色清单 (Color List) - 共 ${sortedStats.length} 种颜色`, padding, statsStartY - 60);
 
             // 7. 绘制清单卡片 (胶囊样式)
+            exportCtx.textBaseline = 'middle'; // 设置为垂直居中
             sortedStats.forEach((c, index) => {
                 const row = Math.floor(index / cardsPerRow);
                 const col = index % cardsPerRow;
@@ -1690,11 +1757,11 @@
                 
                 exportCtx.font = 'bold 32px Arial';
                 exportCtx.textAlign = 'left';
-                exportCtx.fillText(c.id, x + 30, y + cardHeight / 2 + 10);
+                exportCtx.fillText(c.id, x + 30, y + cardHeight / 2);
                 
                 exportCtx.textAlign = 'right';
                 exportCtx.font = 'bold 26px Arial';
-                exportCtx.fillText(`(${c.count})`, x + cardWidth - 30, y + cardHeight / 2 + 10);
+                exportCtx.fillText(`(${c.count})`, x + cardWidth - 30, y + cardHeight / 2);
             });
 
             const link = document.createElement('a');
@@ -1714,7 +1781,6 @@
             svg += `<rect width="${width}" height="${height}" fill="#eee"/>`;
 
             AppState.pixelData.forEach((color, i) => {
-                if (!color) return; // 跳过透明像素
                 const x = (i % AppState.gridWidth) * scale;
                 const y = Math.floor(i / AppState.gridWidth) * scale;
                 svg += `<circle cx="${x + scale / 2}" cy="${y + scale / 2}" r="${scale / 2 - 1}" fill="rgb(${color.r},${color.g},${color.b})" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>`;
