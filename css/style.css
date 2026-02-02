@@ -1,0 +1,26 @@
+/* Custom Utilities */
+.step-section {
+    display: none;
+    height: 100vh;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.step-section.active {
+    display: flex;
+}
+
+/* Hide scrollbar for gallery but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+}
+
+@supports (scrollbar-width: none) {
+    .no-scrollbar {
+        scrollbar-width: none;
+    }
+}
