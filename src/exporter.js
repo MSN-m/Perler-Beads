@@ -50,6 +50,7 @@ export function downloadImage() {
         for (let x = 0; x < AppState.gridWidth; x++) {
             const i = (y * AppState.gridWidth + x);
             const color = AppState.pixelData[i];
+            if (color.id === 'NONE') continue;
             const drawX = gridOffset + (x + offsetX) * exportScale;
             const drawY = gridOffset + (y + offsetY) * exportScale;
 

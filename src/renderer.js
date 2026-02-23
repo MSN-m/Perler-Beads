@@ -37,6 +37,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         for (let x = 0; x < gridWidth; x++) {
             const i = (y * gridWidth + x);
             const color = pixelArray[i];
+            if (color.id === 'NONE') continue;
             const drawX = gridOffset + (x + offsetX) * scale;
             const drawY = gridOffset + (y + offsetY) * scale;
 
@@ -95,6 +96,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         for (let x = 0; x < gridWidth; x++) {
             const i = (y * gridWidth + x);
             const color = pixelArray[i];
+            if (color.id === 'NONE') continue;
             if (highlightedColorId === null || highlightedColorId === color.id) {
                 const drawX = gridOffset + (x + offsetX) * scale;
                 const drawY = gridOffset + (y + offsetY) * scale;

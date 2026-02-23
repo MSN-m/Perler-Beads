@@ -1,0 +1,1424 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MARD Color Check</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+        .series-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 120px;
+        }
+        .series-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .color-card {
+            width: 120px;
+            height: 80px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .color-info-box {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .color-id {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .color-hex {
+            font-size: 12px;
+            color: #666;
+            font-family: monospace;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="series-column">
+            <div class="series-title">A系列</div>
+            <div class="color-card" style="background-color: #FFFBD6;">
+                <div class="color-info-box">
+                    <div class="color-id">A1</div>
+                    <div class="color-hex">#FFFBD6</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFFDDE;">
+                <div class="color-info-box">
+                    <div class="color-id">A2</div>
+                    <div class="color-hex">#FFFDDE</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFFF8C;">
+                <div class="color-info-box">
+                    <div class="color-id">A3</div>
+                    <div class="color-hex">#FFFF8C</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFF15E;">
+                <div class="color-info-box">
+                    <div class="color-id">A4</div>
+                    <div class="color-hex">#FFF15E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFE550;">
+                <div class="color-info-box">
+                    <div class="color-id">A5</div>
+                    <div class="color-hex">#FFE550</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFC445;">
+                <div class="color-info-box">
+                    <div class="color-id">A6</div>
+                    <div class="color-hex">#FFC445</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FF9435;">
+                <div class="color-info-box">
+                    <div class="color-id">A7</div>
+                    <div class="color-hex">#FF9435</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FADE45;">
+                <div class="color-info-box">
+                    <div class="color-id">A8</div>
+                    <div class="color-hex">#FADE45</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FDA873;">
+                <div class="color-info-box">
+                    <div class="color-id">A9</div>
+                    <div class="color-hex">#FDA873</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FDA954;">
+                <div class="color-info-box">
+                    <div class="color-id">A10</div>
+                    <div class="color-hex">#FDA954</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FDD79A;">
+                <div class="color-info-box">
+                    <div class="color-id">A11</div>
+                    <div class="color-hex">#FDD79A</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFC0A1;">
+                <div class="color-info-box">
+                    <div class="color-id">A12</div>
+                    <div class="color-hex">#FFC0A1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FBC84C;">
+                <div class="color-info-box">
+                    <div class="color-id">A13</div>
+                    <div class="color-hex">#FBC84C</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FB6D51;">
+                <div class="color-info-box">
+                    <div class="color-id">A14</div>
+                    <div class="color-hex">#FB6D51</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEFE62;">
+                <div class="color-info-box">
+                    <div class="color-id">A15</div>
+                    <div class="color-hex">#FEFE62</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FDFDB4;">
+                <div class="color-info-box">
+                    <div class="color-id">A16</div>
+                    <div class="color-hex">#FDFDB4</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEE07B;">
+                <div class="color-info-box">
+                    <div class="color-id">A17</div>
+                    <div class="color-hex">#FEE07B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FCCEA3;">
+                <div class="color-info-box">
+                    <div class="color-id">A18</div>
+                    <div class="color-hex">#FCCEA3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FA8772;">
+                <div class="color-info-box">
+                    <div class="color-id">A19</div>
+                    <div class="color-hex">#FA8772</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FCDB62;">
+                <div class="color-info-box">
+                    <div class="color-id">A20</div>
+                    <div class="color-hex">#FCDB62</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FDE695;">
+                <div class="color-info-box">
+                    <div class="color-id">A21</div>
+                    <div class="color-hex">#FDE695</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FDF69F;">
+                <div class="color-info-box">
+                    <div class="color-id">A22</div>
+                    <div class="color-hex">#FDF69F</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F9E5D6;">
+                <div class="color-info-box">
+                    <div class="color-id">A23</div>
+                    <div class="color-hex">#F9E5D6</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F6FED1;">
+                <div class="color-info-box">
+                    <div class="color-id">A24</div>
+                    <div class="color-hex">#F6FED1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FCDD59;">
+                <div class="color-info-box">
+                    <div class="color-id">A25</div>
+                    <div class="color-hex">#FCDD59</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFC426;">
+                <div class="color-info-box">
+                    <div class="color-id">A26</div>
+                    <div class="color-hex">#FFC426</div>
+                </div>
+            </div>
+        </div>
+        <div class="series-column">
+            <div class="series-title">B系列</div>
+            <div class="color-card" style="background-color: #E1E94D;">
+                <div class="color-info-box">
+                    <div class="color-id">B1</div>
+                    <div class="color-hex">#E1E94D</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #77FB50;">
+                <div class="color-info-box">
+                    <div class="color-id">B2</div>
+                    <div class="color-hex">#77FB50</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B8FEBE;">
+                <div class="color-info-box">
+                    <div class="color-id">B3</div>
+                    <div class="color-hex">#B8FEBE</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #6EF547;">
+                <div class="color-info-box">
+                    <div class="color-id">B4</div>
+                    <div class="color-hex">#6EF547</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #4FDF68;">
+                <div class="color-info-box">
+                    <div class="color-id">B5</div>
+                    <div class="color-hex">#4FDF68</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #77F3C0;">
+                <div class="color-info-box">
+                    <div class="color-id">B6</div>
+                    <div class="color-hex">#77F3C0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #0BA58E;">
+                <div class="color-info-box">
+                    <div class="color-id">B7</div>
+                    <div class="color-hex">#0BA58E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #08A447;">
+                <div class="color-info-box">
+                    <div class="color-id">B8</div>
+                    <div class="color-hex">#08A447</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #20663F;">
+                <div class="color-info-box">
+                    <div class="color-id">B9</div>
+                    <div class="color-hex">#20663F</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #7CD4BB;">
+                <div class="color-info-box">
+                    <div class="color-id">B10</div>
+                    <div class="color-hex">#7CD4BB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #5B722B;">
+                <div class="color-info-box">
+                    <div class="color-id">B11</div>
+                    <div class="color-hex">#5B722B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #00936D;">
+                <div class="color-info-box">
+                    <div class="color-id">B12</div>
+                    <div class="color-hex">#00936D</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #DBF385;">
+                <div class="color-info-box">
+                    <div class="color-id">B13</div>
+                    <div class="color-hex">#DBF385</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #EAFEC8;">
+                <div class="color-info-box">
+                    <div class="color-id">B14</div>
+                    <div class="color-hex">#EAFEC8</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #11641E;">
+                <div class="color-info-box">
+                    <div class="color-id">B15</div>
+                    <div class="color-hex">#11641E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D4F199;">
+                <div class="color-info-box">
+                    <div class="color-id">B16</div>
+                    <div class="color-hex">#D4F199</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C0D659;">
+                <div class="color-info-box">
+                    <div class="color-id">B17</div>
+                    <div class="color-hex">#C0D659</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E0F146;">
+                <div class="color-info-box">
+                    <div class="color-id">B18</div>
+                    <div class="color-hex">#E0F146</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #29B896;">
+                <div class="color-info-box">
+                    <div class="color-id">B19</div>
+                    <div class="color-hex">#29B896</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D8F9DB;">
+                <div class="color-info-box">
+                    <div class="color-id">B20</div>
+                    <div class="color-hex">#D8F9DB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #0E9F8B;">
+                <div class="color-info-box">
+                    <div class="color-id">B21</div>
+                    <div class="color-hex">#0E9F8B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #004546;">
+                <div class="color-info-box">
+                    <div class="color-id">B22</div>
+                    <div class="color-hex">#004546</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #344415;">
+                <div class="color-info-box">
+                    <div class="color-id">B23</div>
+                    <div class="color-hex">#344415</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #EAF3BE;">
+                <div class="color-info-box">
+                    <div class="color-id">B24</div>
+                    <div class="color-hex">#EAF3BE</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #648870;">
+                <div class="color-info-box">
+                    <div class="color-id">B25</div>
+                    <div class="color-hex">#648870</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #8F7D46;">
+                <div class="color-info-box">
+                    <div class="color-id">B26</div>
+                    <div class="color-hex">#8F7D46</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #BFCE9C;">
+                <div class="color-info-box">
+                    <div class="color-id">B27</div>
+                    <div class="color-hex">#BFCE9C</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #A9F5C5;">
+                <div class="color-info-box">
+                    <div class="color-id">B28</div>
+                    <div class="color-hex">#A9F5C5</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D0E35B;">
+                <div class="color-info-box">
+                    <div class="color-id">B29</div>
+                    <div class="color-hex">#D0E35B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F1FAD0;">
+                <div class="color-info-box">
+                    <div class="color-id">B30</div>
+                    <div class="color-hex">#F1FAD0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C7E8B8;">
+                <div class="color-info-box">
+                    <div class="color-id">B31</div>
+                    <div class="color-hex">#C7E8B8</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C2D35A;">
+                <div class="color-info-box">
+                    <div class="color-id">B32</div>
+                    <div class="color-hex">#C2D35A</div>
+                </div>
+            </div>
+        </div>
+        <div class="series-column">
+            <div class="series-title">C系列</div>
+            <div class="color-card" style="background-color: #E7FEF2;">
+                <div class="color-info-box">
+                    <div class="color-id">C1</div>
+                    <div class="color-hex">#E7FEF2</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D2FAFF;">
+                <div class="color-info-box">
+                    <div class="color-id">C2</div>
+                    <div class="color-hex">#D2FAFF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #BFECFF;">
+                <div class="color-info-box">
+                    <div class="color-id">C3</div>
+                    <div class="color-hex">#BFECFF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #7CCAF1;">
+                <div class="color-info-box">
+                    <div class="color-id">C4</div>
+                    <div class="color-hex">#7CCAF1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #2CB2EB;">
+                <div class="color-info-box">
+                    <div class="color-id">C5</div>
+                    <div class="color-hex">#2CB2EB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #7DBBED;">
+                <div class="color-info-box">
+                    <div class="color-id">C6</div>
+                    <div class="color-hex">#7DBBED</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #3E92DB;">
+                <div class="color-info-box">
+                    <div class="color-id">C7</div>
+                    <div class="color-hex">#3E92DB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #1A64C2;">
+                <div class="color-info-box">
+                    <div class="color-id">C8</div>
+                    <div class="color-hex">#1A64C2</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #1346CD;">
+                <div class="color-info-box">
+                    <div class="color-id">C9</div>
+                    <div class="color-hex">#1346CD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #4BB7E1;">
+                <div class="color-info-box">
+                    <div class="color-id">C10</div>
+                    <div class="color-hex">#4BB7E1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #23C6D3;">
+                <div class="color-info-box">
+                    <div class="color-id">C11</div>
+                    <div class="color-hex">#23C6D3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #074E5F;">
+                <div class="color-info-box">
+                    <div class="color-id">C12</div>
+                    <div class="color-hex">#074E5F</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #CEE8FF;">
+                <div class="color-info-box">
+                    <div class="color-id">C13</div>
+                    <div class="color-hex">#CEE8FF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E7FAFD;">
+                <div class="color-info-box">
+                    <div class="color-id">C14</div>
+                    <div class="color-hex">#E7FAFD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #26D3D3;">
+                <div class="color-info-box">
+                    <div class="color-id">C15</div>
+                    <div class="color-hex">#26D3D3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #2A5B8F;">
+                <div class="color-info-box">
+                    <div class="color-id">C16</div>
+                    <div class="color-hex">#2A5B8F</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #71D8E8;">
+                <div class="color-info-box">
+                    <div class="color-id">C17</div>
+                    <div class="color-hex">#71D8E8</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #1F4246;">
+                <div class="color-info-box">
+                    <div class="color-id">C18</div>
+                    <div class="color-hex">#1F4246</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #0096A0;">
+                <div class="color-info-box">
+                    <div class="color-id">C19</div>
+                    <div class="color-hex">#0096A0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #3A86C3;">
+                <div class="color-info-box">
+                    <div class="color-id">C20</div>
+                    <div class="color-hex">#3A86C3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E3F1FC;">
+                <div class="color-info-box">
+                    <div class="color-id">C21</div>
+                    <div class="color-hex">#E3F1FC</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #97D1D7;">
+                <div class="color-info-box">
+                    <div class="color-id">C22</div>
+                    <div class="color-hex">#97D1D7</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D8EBF3;">
+                <div class="color-info-box">
+                    <div class="color-id">C23</div>
+                    <div class="color-hex">#D8EBF3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #98D3FE;">
+                <div class="color-info-box">
+                    <div class="color-id">C24</div>
+                    <div class="color-hex">#98D3FE</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #CBF2EF;">
+                <div class="color-info-box">
+                    <div class="color-id">C25</div>
+                    <div class="color-hex">#CBF2EF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #4BAED4;">
+                <div class="color-info-box">
+                    <div class="color-id">C26</div>
+                    <div class="color-hex">#4BAED4</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E9F2FA;">
+                <div class="color-info-box">
+                    <div class="color-id">C27</div>
+                    <div class="color-hex">#E9F2FA</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E3EDFD;">
+                <div class="color-info-box">
+                    <div class="color-id">C28</div>
+                    <div class="color-hex">#E3EDFD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #3B4E81;">
+                <div class="color-info-box">
+                    <div class="color-id">C29</div>
+                    <div class="color-hex">#3B4E81</div>
+                </div>
+            </div>
+        </div>
+        <div class="series-column">
+            <div class="series-title">D系列</div>
+            <div class="color-card" style="background-color: #99B9F9;">
+                <div class="color-info-box">
+                    <div class="color-id">D1</div>
+                    <div class="color-hex">#99B9F9</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #8695DC;">
+                <div class="color-info-box">
+                    <div class="color-id">D2</div>
+                    <div class="color-hex">#8695DC</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #193EB0;">
+                <div class="color-info-box">
+                    <div class="color-id">D3</div>
+                    <div class="color-hex">#193EB0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #013575;">
+                <div class="color-info-box">
+                    <div class="color-id">D4</div>
+                    <div class="color-hex">#013575</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B159B5;">
+                <div class="color-info-box">
+                    <div class="color-id">D5</div>
+                    <div class="color-hex">#B159B5</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #A97DDC;">
+                <div class="color-info-box">
+                    <div class="color-id">D6</div>
+                    <div class="color-hex">#A97DDC</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #7E47A3;">
+                <div class="color-info-box">
+                    <div class="color-id">D7</div>
+                    <div class="color-hex">#7E47A3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E4D3FF;">
+                <div class="color-info-box">
+                    <div class="color-id">D8</div>
+                    <div class="color-hex">#E4D3FF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D6BAF5;">
+                <div class="color-info-box">
+                    <div class="color-id">D9</div>
+                    <div class="color-hex">#D6BAF5</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #2D1D4D;">
+                <div class="color-info-box">
+                    <div class="color-id">D10</div>
+                    <div class="color-hex">#2D1D4D</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B4BBEF;">
+                <div class="color-info-box">
+                    <div class="color-id">D11</div>
+                    <div class="color-hex">#B4BBEF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E6B0F1;">
+                <div class="color-info-box">
+                    <div class="color-id">D12</div>
+                    <div class="color-hex">#E6B0F1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D00C96;">
+                <div class="color-info-box">
+                    <div class="color-id">D13</div>
+                    <div class="color-hex">#D00C96</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #9D3E9E;">
+                <div class="color-info-box">
+                    <div class="color-id">D14</div>
+                    <div class="color-hex">#9D3E9E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #0A365B;">
+                <div class="color-info-box">
+                    <div class="color-id">D15</div>
+                    <div class="color-hex">#0A365B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E3EDFD;">
+                <div class="color-info-box">
+                    <div class="color-id">D16</div>
+                    <div class="color-hex">#E3EDFD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D1E0FC;">
+                <div class="color-info-box">
+                    <div class="color-id">D17</div>
+                    <div class="color-hex">#D1E0FC</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #9B64C2;">
+                <div class="color-info-box">
+                    <div class="color-id">D18</div>
+                    <div class="color-hex">#9B64C2</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #EAD5E7;">
+                <div class="color-info-box">
+                    <div class="color-id">D19</div>
+                    <div class="color-hex">#EAD5E7</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #9D55B7;">
+                <div class="color-info-box">
+                    <div class="color-id">D20</div>
+                    <div class="color-hex">#9D55B7</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #963896;">
+                <div class="color-info-box">
+                    <div class="color-id">D21</div>
+                    <div class="color-hex">#963896</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #4655B1;">
+                <div class="color-info-box">
+                    <div class="color-id">D22</div>
+                    <div class="color-hex">#4655B1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F0E9FB;">
+                <div class="color-info-box">
+                    <div class="color-id">D23</div>
+                    <div class="color-hex">#F0E9FB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #7C8EE6;">
+                <div class="color-info-box">
+                    <div class="color-id">D24</div>
+                    <div class="color-hex">#7C8EE6</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #4452CD;">
+                <div class="color-info-box">
+                    <div class="color-id">D25</div>
+                    <div class="color-hex">#4452CD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D8BDF5;">
+                <div class="color-info-box">
+                    <div class="color-id">D26</div>
+                    <div class="color-hex">#D8BDF5</div>
+                </div>
+            </div>
+        </div>
+        <div class="series-column">
+            <div class="series-title">E系列</div>
+            <div class="color-card" style="background-color: #FEE6DF;">
+                <div class="color-info-box">
+                    <div class="color-id">E1</div>
+                    <div class="color-hex">#FEE6DF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFD2E8;">
+                <div class="color-info-box">
+                    <div class="color-id">E2</div>
+                    <div class="color-hex">#FFD2E8</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F6B2CD;">
+                <div class="color-info-box">
+                    <div class="color-id">E3</div>
+                    <div class="color-hex">#F6B2CD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #ED7FAF;">
+                <div class="color-info-box">
+                    <div class="color-id">E4</div>
+                    <div class="color-hex">#ED7FAF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E8599E;">
+                <div class="color-info-box">
+                    <div class="color-id">E5</div>
+                    <div class="color-hex">#E8599E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FD4D82;">
+                <div class="color-info-box">
+                    <div class="color-id">E6</div>
+                    <div class="color-hex">#FD4D82</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #9C024E;">
+                <div class="color-info-box">
+                    <div class="color-id">E7</div>
+                    <div class="color-hex">#9C024E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFE6EB;">
+                <div class="color-info-box">
+                    <div class="color-id">E8</div>
+                    <div class="color-hex">#FFE6EB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #EFC6F3;">
+                <div class="color-info-box">
+                    <div class="color-id">E9</div>
+                    <div class="color-hex">#EFC6F3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B21762;">
+                <div class="color-info-box">
+                    <div class="color-id">E10</div>
+                    <div class="color-hex">#B21762</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEE8DB;">
+                <div class="color-info-box">
+                    <div class="color-id">E11</div>
+                    <div class="color-hex">#FEE8DB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEA7D5;">
+                <div class="color-info-box">
+                    <div class="color-id">E12</div>
+                    <div class="color-hex">#FEA7D5</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #970566;">
+                <div class="color-info-box">
+                    <div class="color-id">E13</div>
+                    <div class="color-hex">#970566</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFDAC1;">
+                <div class="color-info-box">
+                    <div class="color-id">E14</div>
+                    <div class="color-hex">#FFDAC1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEE1E2;">
+                <div class="color-info-box">
+                    <div class="color-id">E15</div>
+                    <div class="color-hex">#FEE1E2</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEF9F0;">
+                <div class="color-info-box">
+                    <div class="color-id">E16</div>
+                    <div class="color-hex">#FEF9F0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F7E8EE;">
+                <div class="color-info-box">
+                    <div class="color-id">E17</div>
+                    <div class="color-hex">#F7E8EE</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FBD5E0;">
+                <div class="color-info-box">
+                    <div class="color-id">E18</div>
+                    <div class="color-hex">#FBD5E0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F9E0F5;">
+                <div class="color-info-box">
+                    <div class="color-id">E19</div>
+                    <div class="color-hex">#F9E0F5</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #EFDDEB;">
+                <div class="color-info-box">
+                    <div class="color-id">E20</div>
+                    <div class="color-hex">#EFDDEB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D3B0B5;">
+                <div class="color-info-box">
+                    <div class="color-id">E21</div>
+                    <div class="color-hex">#D3B0B5</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C490AD;">
+                <div class="color-info-box">
+                    <div class="color-id">E22</div>
+                    <div class="color-hex">#C490AD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #927D89;">
+                <div class="color-info-box">
+                    <div class="color-id">E23</div>
+                    <div class="color-hex">#927D89</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEF7FB;">
+                <div class="color-info-box">
+                    <div class="color-id">E24</div>
+                    <div class="color-hex">#FEF7FB</div>
+                </div>
+            </div>
+        </div>
+        <div class="series-column">
+            <div class="series-title">F系列</div>
+            <div class="color-card" style="background-color: #FE8F74;">
+                <div class="color-info-box">
+                    <div class="color-id">F1</div>
+                    <div class="color-hex">#FE8F74</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FE6643;">
+                <div class="color-info-box">
+                    <div class="color-id">F2</div>
+                    <div class="color-hex">#FE6643</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #EC625B;">
+                <div class="color-info-box">
+                    <div class="color-id">F3</div>
+                    <div class="color-hex">#EC625B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #DD514A;">
+                <div class="color-info-box">
+                    <div class="color-id">F4</div>
+                    <div class="color-hex">#DD514A</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D24A44;">
+                <div class="color-info-box">
+                    <div class="color-id">F5</div>
+                    <div class="color-hex">#D24A44</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #974335;">
+                <div class="color-info-box">
+                    <div class="color-id">F6</div>
+                    <div class="color-hex">#974335</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #862226;">
+                <div class="color-info-box">
+                    <div class="color-id">F7</div>
+                    <div class="color-hex">#862226</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #A04037;">
+                <div class="color-info-box">
+                    <div class="color-id">F8</div>
+                    <div class="color-hex">#A04037</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEA773;">
+                <div class="color-info-box">
+                    <div class="color-id">F9</div>
+                    <div class="color-hex">#FEA773</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #965538;">
+                <div class="color-info-box">
+                    <div class="color-id">F10</div>
+                    <div class="color-hex">#965538</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #6A311D;">
+                <div class="color-info-box">
+                    <div class="color-id">F11</div>
+                    <div class="color-hex">#6A311D</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FE4D6B;">
+                <div class="color-info-box">
+                    <div class="color-id">F12</div>
+                    <div class="color-hex">#FE4D6B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E44F3F;">
+                <div class="color-info-box">
+                    <div class="color-id">F13</div>
+                    <div class="color-hex">#E44F3F</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEB6B6;">
+                <div class="color-info-box">
+                    <div class="color-id">F14</div>
+                    <div class="color-hex">#FEB6B6</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C23131;">
+                <div class="color-info-box">
+                    <div class="color-id">F15</div>
+                    <div class="color-hex">#C23131</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FED1B6;">
+                <div class="color-info-box">
+                    <div class="color-id">F16</div>
+                    <div class="color-hex">#FED1B6</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F8AC89;">
+                <div class="color-info-box">
+                    <div class="color-id">F17</div>
+                    <div class="color-hex">#F8AC89</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F39467;">
+                <div class="color-info-box">
+                    <div class="color-id">F18</div>
+                    <div class="color-hex">#F39467</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C0444A;">
+                <div class="color-info-box">
+                    <div class="color-id">F19</div>
+                    <div class="color-hex">#C0444A</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #BE8D8D;">
+                <div class="color-info-box">
+                    <div class="color-id">F20</div>
+                    <div class="color-hex">#BE8D8D</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F2BDC4;">
+                <div class="color-info-box">
+                    <div class="color-id">F21</div>
+                    <div class="color-hex">#F2BDC4</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEBDC0;">
+                <div class="color-info-box">
+                    <div class="color-id">F22</div>
+                    <div class="color-hex">#FEBDC0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E87561;">
+                <div class="color-info-box">
+                    <div class="color-id">F23</div>
+                    <div class="color-hex">#E87561</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FEBDC4;">
+                <div class="color-info-box">
+                    <div class="color-id">F24</div>
+                    <div class="color-hex">#FEBDC4</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FE6A6A;">
+                <div class="color-info-box">
+                    <div class="color-id">F25</div>
+                    <div class="color-hex">#FE6A6A</div>
+                </div>
+            </div>
+        </div>
+        <div class="series-column">
+            <div class="series-title">G系列</div>
+            <div class="color-card" style="background-color: #FDEED7;">
+                <div class="color-info-box">
+                    <div class="color-id">G1</div>
+                    <div class="color-hex">#FDEED7</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFD9C0;">
+                <div class="color-info-box">
+                    <div class="color-id">G2</div>
+                    <div class="color-hex">#FFD9C0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F4CDA6;">
+                <div class="color-info-box">
+                    <div class="color-id">G3</div>
+                    <div class="color-hex">#F4CDA6</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E0B483;">
+                <div class="color-info-box">
+                    <div class="color-id">G4</div>
+                    <div class="color-hex">#E0B483</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #ED9E60;">
+                <div class="color-info-box">
+                    <div class="color-id">G5</div>
+                    <div class="color-hex">#ED9E60</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E49150;">
+                <div class="color-info-box">
+                    <div class="color-id">G6</div>
+                    <div class="color-hex">#E49150</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #A26F4A;">
+                <div class="color-info-box">
+                    <div class="color-id">G7</div>
+                    <div class="color-hex">#A26F4A</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #4A2D1B;">
+                <div class="color-info-box">
+                    <div class="color-id">G8</div>
+                    <div class="color-hex">#4A2D1B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F2BE90;">
+                <div class="color-info-box">
+                    <div class="color-id">G9</div>
+                    <div class="color-hex">#F2BE90</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C28A50;">
+                <div class="color-info-box">
+                    <div class="color-id">G10</div>
+                    <div class="color-hex">#C28A50</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #DFD0A3;">
+                <div class="color-info-box">
+                    <div class="color-id">G11</div>
+                    <div class="color-hex">#DFD0A3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F0CC92;">
+                <div class="color-info-box">
+                    <div class="color-id">G12</div>
+                    <div class="color-hex">#F0CC92</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B67B59;">
+                <div class="color-info-box">
+                    <div class="color-id">G13</div>
+                    <div class="color-hex">#B67B59</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #8C604E;">
+                <div class="color-info-box">
+                    <div class="color-id">G14</div>
+                    <div class="color-hex">#8C604E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F9F4E3;">
+                <div class="color-info-box">
+                    <div class="color-id">G15</div>
+                    <div class="color-hex">#F9F4E3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #EEE4CA;">
+                <div class="color-info-box">
+                    <div class="color-id">G16</div>
+                    <div class="color-hex">#EEE4CA</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #514331;">
+                <div class="color-info-box">
+                    <div class="color-id">G17</div>
+                    <div class="color-hex">#514331</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FCF9EC;">
+                <div class="color-info-box">
+                    <div class="color-id">G18</div>
+                    <div class="color-hex">#FCF9EC</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #EEA750;">
+                <div class="color-info-box">
+                    <div class="color-id">G19</div>
+                    <div class="color-hex">#EEA750</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #A65737;">
+                <div class="color-info-box">
+                    <div class="color-id">G20</div>
+                    <div class="color-hex">#A65737</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C09374;">
+                <div class="color-info-box">
+                    <div class="color-id">G21</div>
+                    <div class="color-hex">#C09374</div>
+                </div>
+            </div>
+        </div>
+        <div class="series-column">
+            <div class="series-title">H系列</div>
+            <div class="color-card" style="background-color: #FBFBFD;">
+                <div class="color-info-box">
+                    <div class="color-id">H1</div>
+                    <div class="color-hex">#FBFBFD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FFFEFF;">
+                <div class="color-info-box">
+                    <div class="color-id">H2</div>
+                    <div class="color-hex">#FFFEFF</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #BBBBBB;">
+                <div class="color-info-box">
+                    <div class="color-id">H3</div>
+                    <div class="color-hex">#BBBBBB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #88848B;">
+                <div class="color-info-box">
+                    <div class="color-id">H4</div>
+                    <div class="color-hex">#88848B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #49474D;">
+                <div class="color-info-box">
+                    <div class="color-id">H5</div>
+                    <div class="color-hex">#49474D</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #2F2A2E;">
+                <div class="color-info-box">
+                    <div class="color-id">H6</div>
+                    <div class="color-hex">#2F2A2E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #050505;">
+                <div class="color-info-box">
+                    <div class="color-id">H7</div>
+                    <div class="color-hex">#050505</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F4EBF1;">
+                <div class="color-info-box">
+                    <div class="color-id">H8</div>
+                    <div class="color-hex">#F4EBF1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F4F2F0;">
+                <div class="color-info-box">
+                    <div class="color-id">H9</div>
+                    <div class="color-hex">#F4F2F0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #ECE8EA;">
+                <div class="color-info-box">
+                    <div class="color-id">H10</div>
+                    <div class="color-hex">#ECE8EA</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #CCCCC1;">
+                <div class="color-info-box">
+                    <div class="color-id">H11</div>
+                    <div class="color-hex">#CCCCC1</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FDFCF3;">
+                <div class="color-info-box">
+                    <div class="color-id">H12</div>
+                    <div class="color-hex">#FDFCF3</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F6EDD8;">
+                <div class="color-info-box">
+                    <div class="color-id">H13</div>
+                    <div class="color-hex">#F6EDD8</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D9E1E0;">
+                <div class="color-info-box">
+                    <div class="color-id">H14</div>
+                    <div class="color-hex">#D9E1E0</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #9AA5A8;">
+                <div class="color-info-box">
+                    <div class="color-id">H15</div>
+                    <div class="color-hex">#9AA5A8</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #392D26;">
+                <div class="color-info-box">
+                    <div class="color-id">H16</div>
+                    <div class="color-hex">#392D26</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F3F5F4;">
+                <div class="color-info-box">
+                    <div class="color-id">H17</div>
+                    <div class="color-hex">#F3F5F4</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F9F9F9;">
+                <div class="color-info-box">
+                    <div class="color-id">H18</div>
+                    <div class="color-hex">#F9F9F9</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F7F9F2;">
+                <div class="color-info-box">
+                    <div class="color-id">H19</div>
+                    <div class="color-hex">#F7F9F2</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #95A2A4;">
+                <div class="color-info-box">
+                    <div class="color-id">H20</div>
+                    <div class="color-hex">#95A2A4</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #FDFDF5;">
+                <div class="color-info-box">
+                    <div class="color-id">H21</div>
+                    <div class="color-hex">#FDFDF5</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #F3F1F2;">
+                <div class="color-info-box">
+                    <div class="color-id">H22</div>
+                    <div class="color-hex">#F3F1F2</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B2BAA8;">
+                <div class="color-info-box">
+                    <div class="color-id">H23</div>
+                    <div class="color-hex">#B2BAA8</div>
+                </div>
+            </div>
+        </div>
+        <div class="series-column">
+            <div class="series-title">M系列</div>
+            <div class="color-card" style="background-color: #D0D9CD;">
+                <div class="color-info-box">
+                    <div class="color-id">M1</div>
+                    <div class="color-hex">#D0D9CD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #8CA386;">
+                <div class="color-info-box">
+                    <div class="color-id">M2</div>
+                    <div class="color-hex">#8CA386</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #6A7E7E;">
+                <div class="color-info-box">
+                    <div class="color-id">M3</div>
+                    <div class="color-hex">#6A7E7E</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #E5D2BB;">
+                <div class="color-info-box">
+                    <div class="color-id">M4</div>
+                    <div class="color-hex">#E5D2BB</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #D1CCA9;">
+                <div class="color-info-box">
+                    <div class="color-id">M5</div>
+                    <div class="color-hex">#D1CCA9</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B0A781;">
+                <div class="color-info-box">
+                    <div class="color-id">M6</div>
+                    <div class="color-hex">#B0A781</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B4A498;">
+                <div class="color-info-box">
+                    <div class="color-id">M7</div>
+                    <div class="color-hex">#B4A498</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #B79891;">
+                <div class="color-info-box">
+                    <div class="color-id">M8</div>
+                    <div class="color-hex">#B79891</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #AC907B;">
+                <div class="color-info-box">
+                    <div class="color-id">M9</div>
+                    <div class="color-hex">#AC907B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #BCA4AD;">
+                <div class="color-info-box">
+                    <div class="color-id">M10</div>
+                    <div class="color-hex">#BCA4AD</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #997D8A;">
+                <div class="color-info-box">
+                    <div class="color-id">M11</div>
+                    <div class="color-hex">#997D8A</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #625049;">
+                <div class="color-info-box">
+                    <div class="color-id">M12</div>
+                    <div class="color-hex">#625049</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #BD8D71;">
+                <div class="color-info-box">
+                    <div class="color-id">M13</div>
+                    <div class="color-hex">#BD8D71</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #C4796B;">
+                <div class="color-info-box">
+                    <div class="color-id">M14</div>
+                    <div class="color-hex">#C4796B</div>
+                </div>
+            </div>
+            <div class="color-card" style="background-color: #717976;">
+                <div class="color-info-box">
+                    <div class="color-id">M15</div>
+                    <div class="color-hex">#717976</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
