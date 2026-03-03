@@ -14,7 +14,12 @@ import {
     updateTolerance,
     toggleColorLimit,
     updateMaxColorsDisplay,
-    resetZoom
+    resetZoom,
+    toggleAdjustMode,
+    handleResultCanvasClickForAdjust,
+    adjustUndo,
+    adjustCancel,
+    adjustApply
 } from './ui.js';
 import { downloadImage, downloadSVG } from './exporter.js';
 import { updateResultTransform } from './renderer.js';
@@ -218,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 鼠标平移
         resultContainer.addEventListener('mousedown', (e) => {
+            if (AppState.editMode === 'eyedropper' || AppState.editMode === 'adjust') return;
             AppState.zoomState.isDragging = true;
             AppState.zoomState.lastX = e.clientX;
             AppState.zoomState.lastY = e.clientY;
@@ -226,7 +232,12 @@ document.addEventListener('DOMContentLoaded', () => {
             resultCanvas.classList.add('cursor-grabbing');
         });
 
+        resultCanvas.addEventListener('click', (e) => {
+            if (AppState.editMode === 'adjust') handleResultCanvasClickForAdjust(e);
+        });
+
         window.addEventListener('mousemove', (e) => {
+            if (AppState.editMode === 'adjust') return;
             if (!AppState.zoomState || !AppState.zoomState.isDragging) return;
             const dx = e.clientX - AppState.zoomState.lastX;
             const dy = e.clientY - AppState.zoomState.lastY;
@@ -238,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         window.addEventListener('mouseup', () => {
+            if (AppState.editMode === 'adjust') return;
             AppState.zoomState.isDragging = false;
             resultCanvas.classList.remove('cursor-grabbing');
             resultCanvas.classList.add('cursor-grab');
@@ -252,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 触摸支持 (缩放和平移)
         resultContainer.addEventListener('touchstart', (e) => {
+            if (AppState.editMode === 'adjust') return;
             if (e.touches.length === 1) {
                 AppState.zoomState.isDragging = true;
                 AppState.zoomState.lastX = e.touches[0].clientX;
@@ -266,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
 
         resultContainer.addEventListener('touchmove', (e) => {
+            if (AppState.editMode === 'adjust') return;
             if (!AppState.zoomState) return;
             e.preventDefault();
             if (e.touches.length === 1 && AppState.zoomState.isDragging) {
@@ -306,9 +320,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
 
         resultContainer.addEventListener('touchend', () => {
+            if (AppState.editMode === 'adjust') return;
             if (AppState.zoomState) {
                 AppState.zoomState.isDragging = false;
             }
         });
+    }
+
+    const adjustBtn = document.getElementById('toggle-adjust-btn');
+    if (adjustBtn) {
+        adjustBtn.addEventListener('click', toggleAdjustMode);
+    }
+    const undoBtn = document.getElementById('adjust-undo-btn');
+    if (undoBtn) {
+        undoBtn.addEventListener('click', adjustUndo);
+    }
+    const cancelBtn = document.getElementById('adjust-cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', adjustCancel);
+    }
+    const applyBtn = document.getElementById('adjust-apply-btn');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', adjustApply);
     }
 });

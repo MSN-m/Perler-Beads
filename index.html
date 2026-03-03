@@ -240,7 +240,13 @@
                 </svg>
             </button>
             <h2 class="font-bold text-lg">图纸预览</h2>
-            <button id="next-to-step-4" class="text-primary font-bold text-sm px-2">下一步</button>
+            <div class="flex items-center space-x-2">
+                <button id="toggle-adjust-btn" class="text-sm px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-white">颜色调整</button>
+                <button id="adjust-undo-btn" class="text-sm px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-white hidden">撤回</button>
+                <button id="adjust-cancel-btn" class="text-sm px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-white hidden">取消</button>
+                <button id="adjust-apply-btn" class="text-sm px-2 py-1 rounded bg-primary text-white hidden">确认</button>
+                <button id="next-to-step-4" class="text-primary font-bold text-sm px-2">下一步</button>
+            </div>
         </div>
 
         <div class="flex-1 relative overflow-hidden p-4" id="result-container">

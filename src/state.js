@@ -23,5 +23,20 @@ export const AppState = {
         lastX: 0,
         lastY: 0,
         lastDist: 0
+    },
+    editMode: 'none',
+    adjustPhase: 'waiting_receiver',
+    receiverIndex: null,
+    stagedPixelData: null,
+    stagedActions: [],
+    preAdjustZoomState: null
+    ,
+    batchReplace: {
+        active: false,
+        mode: null,
+        sourceColorId: null,
+        nearCandidates: [],
+        nearBaseline: null,
+        nearCurrentId: null
     }
 };
