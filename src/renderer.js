@@ -13,56 +13,79 @@ import { AppState } from './state.js';
  */
 export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highlightedColorId = null) {
     const ctx = canvas.getContext('2d');
-    const boardSize = Math.max(gridWidth, gridHeight) <= 52 ? 52 : 104;
-    const margin = boardSize === 52 ? 2 : 4;
     const scale = 30; // 预览比例
     
-    const totalGrids = boardSize + 1;
-    canvas.width = totalGrids * scale;
-    canvas.height = totalGrids * scale;
-    
-    ctx.imageSmoothingEnabled = false;
-
-    // 1. 绘制背景
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 2. 绘制网格背景 (从 1, 1 开始)
-    const gridOffset = scale; // 标尺宽度
-    const offsetX = Math.floor((boardSize - gridWidth) / 2);
-    const offsetY = Math.floor((boardSize - gridHeight) / 2);
-
-    // 绘制色块
+    // 1. 计算非透明色块的最小包围盒
+    let minX = gridWidth, minY = gridHeight, maxX = -1, maxY = -1;
+    let hasContent = false;
     for (let y = 0; y < gridHeight; y++) {
         for (let x = 0; x < gridWidth; x++) {
             const i = (y * gridWidth + x);
+            if (pixelArray[i].id !== 'NONE') {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+                hasContent = true;
+            }
+        }
+    }
+
+    // 如果没有任何内容，默认显示 1x1
+    if (!hasContent) {
+        minX = 0; minY = 0; maxX = 0; maxY = 0;
+    }
+
+    const contentWidth = maxX - minX + 1;
+    const contentHeight = maxY - minY + 1;
+
+    // 动态计算画布尺寸：有效内容宽度/高度 + 左上标尺 (1个单位)
+    const totalGridX = contentWidth + 1;
+    const totalGridY = contentHeight + 1;
+    
+    canvas.width = totalGridX * scale;
+    canvas.height = totalGridY * scale;
+    
+    ctx.imageSmoothingEnabled = false;
+
+    // 2. 绘制背景
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 3. 绘制内容
+    const gridOffset = scale; // 标尺宽度
+    
+    // 绘制色块 (注意：需要减去 minX/minY 偏移)
+    for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
+            const i = (y * gridWidth + x);
             const color = pixelArray[i];
             if (color.id === 'NONE') continue;
-            const drawX = gridOffset + (x + offsetX) * scale;
-            const drawY = gridOffset + (y + offsetY) * scale;
+            const drawX = gridOffset + (x - minX) * scale;
+            const drawY = gridOffset + (y - minY) * scale;
 
             ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
             ctx.fillRect(drawX, drawY, scale, scale);
         }
     }
 
-    // 3. 高亮处理
+    // 4. 高亮处理
     if (highlightedColorId !== null) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.fillRect(gridOffset, gridOffset, boardSize * scale, boardSize * scale);
+        ctx.fillRect(gridOffset, gridOffset, contentWidth * scale, contentHeight * scale);
 
         ctx.shadowBlur = 15;
         ctx.shadowColor = 'rgba(0,0,0,0.8)';
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 4;
 
-        for (let y = 0; y < gridHeight; y++) {
-            for (let x = 0; x < gridWidth; x++) {
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
                 const i = (y * gridWidth + x);
                 const color = pixelArray[i];
                 if (color.id === highlightedColorId) {
-                    const drawX = gridOffset + (x + offsetX) * scale;
-                    const drawY = gridOffset + (y + offsetY) * scale;
+                    const drawX = gridOffset + (x - minX) * scale;
+                    const drawY = gridOffset + (y - minY) * scale;
                     ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
                     ctx.fillRect(drawX + 1, drawY + 1, scale - 2, scale - 2);
                 }
@@ -73,33 +96,38 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         ctx.shadowOffsetY = 0;
     }
 
-    // 4. 网格线、辅助线、标尺和 ID
+    // 5. 网格线、辅助线、标尺和 ID
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // 4.1 基础网格线
+    // 5.1 基础网格线
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-    for (let i = 0; i <= boardSize; i++) {
+    // 垂直线
+    for (let i = 0; i <= contentWidth; i++) {
         const pos = gridOffset + i * scale;
         ctx.beginPath();
         ctx.moveTo(pos, gridOffset); ctx.lineTo(pos, canvas.height);
         ctx.stroke();
+    }
+    // 水平线
+    for (let i = 0; i <= contentHeight; i++) {
+        const pos = gridOffset + i * scale;
         ctx.beginPath();
         ctx.moveTo(gridOffset, pos); ctx.lineTo(canvas.width, pos);
         ctx.stroke();
     }
 
-    // 4.2 ID 文字
+    // 5.2 ID 文字
     ctx.font = `bold ${Math.floor(scale * 0.4)}px Arial`;
-    for (let y = 0; y < gridHeight; y++) {
-        for (let x = 0; x < gridWidth; x++) {
+    for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
             const i = (y * gridWidth + x);
             const color = pixelArray[i];
             if (color.id === 'NONE') continue;
             if (highlightedColorId === null || highlightedColorId === color.id) {
-                const drawX = gridOffset + (x + offsetX) * scale;
-                const drawY = gridOffset + (y + offsetY) * scale;
+                const drawX = gridOffset + (x - minX) * scale;
+                const drawY = gridOffset + (y - minY) * scale;
                 const yiq = ((color.r * 299) + (color.g * 587) + (color.b * 114)) / 1000;
                 ctx.fillStyle = yiq >= 128 ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)';
                 ctx.fillText(color.id, drawX + scale / 2, drawY + scale / 2);
@@ -107,16 +135,19 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         }
     }
 
-    // 4.3 辅助线
-    for (let gridIdx = 1; gridIdx < boardSize; gridIdx++) {
-        const pos = gridOffset + gridIdx * scale;
-        const isMarginLine = (gridIdx === margin || gridIdx === boardSize - margin);
-        const isMajorLine = (gridIdx % 10 === 0);
-        const isMinorLine = (gridIdx % 5 === 0);
+    // 5.3 辅助线 (基于全局坐标计算是否为 5/10 倍数)
+    // 垂直辅助线
+    for (let x = minX + 1; x <= maxX; x++) {
+        // 只有当全局坐标是 5 的倍数时才画辅助线
+        const isMajorLine = (x % 10 === 0);
+        const isMinorLine = (x % 5 === 0);
 
-        if (isMarginLine || isMinorLine) {
+        if (isMinorLine) {
+            // 计算在当前画布上的绘制位置
+            const pos = gridOffset + (x - minX) * scale;
+            
             ctx.beginPath();
-            if (isMarginLine || isMajorLine) {
+            if (isMajorLine) {
                 ctx.setLineDash([]);
                 ctx.strokeStyle = 'rgba(0,0,0,0.4)';
                 ctx.lineWidth = 2;
@@ -127,19 +158,47 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             }
             ctx.moveTo(pos, gridOffset); ctx.lineTo(pos, canvas.height);
             ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    }
+    // 水平辅助线
+    for (let y = minY + 1; y <= maxY; y++) {
+        const isMajorLine = (y % 10 === 0);
+        const isMinorLine = (y % 5 === 0);
+
+        if (isMinorLine) {
+            const pos = gridOffset + (y - minY) * scale;
+
+            ctx.beginPath();
+            if (isMajorLine) {
+                ctx.setLineDash([]);
+                ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+                ctx.lineWidth = 2;
+            } else {
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+                ctx.lineWidth = 1;
+            }
             ctx.moveTo(gridOffset, pos); ctx.lineTo(canvas.width, pos);
             ctx.stroke();
             ctx.setLineDash([]);
         }
     }
 
-    // 4.4 外部标尺
+    // 5.4 外部标尺 (显示全局坐标)
     ctx.font = `bold ${Math.floor(scale * 0.4)}px Arial`;
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    for (let i = 1; i <= boardSize; i++) {
-        const textPos = gridOffset + (i - 1) * scale + scale / 2;
-        ctx.fillText(i.toString(), textPos, scale / 2);
-        ctx.fillText(i.toString(), scale / 2, textPos);
+    // 横向标尺
+    for (let i = 0; i < contentWidth; i++) {
+        const globalX = minX + i + 1; // 标尺从1开始
+        const textPos = gridOffset + i * scale + scale / 2;
+        ctx.fillText(globalX.toString(), textPos, scale / 2);
+    }
+    // 纵向标尺
+    for (let i = 0; i < contentHeight; i++) {
+        const globalY = minY + i + 1; // 标尺从1开始
+        const textPos = gridOffset + i * scale + scale / 2;
+        ctx.fillText(globalY.toString(), scale / 2, textPos);
     }
 }
 

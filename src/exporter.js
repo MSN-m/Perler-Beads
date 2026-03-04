@@ -20,24 +20,56 @@ export function downloadImage() {
     const exportScale = 60;
     const gridOffset = exportScale;
     
-    const boardPxSize = (boardSize + 1) * exportScale;
-    const offsetX = Math.floor((boardSize - AppState.gridWidth) / 2);
-    const offsetY = Math.floor((boardSize - AppState.gridHeight) / 2);
+    // 1. 计算非透明色块的最小包围盒
+    let minX = AppState.gridWidth, minY = AppState.gridHeight, maxX = -1, maxY = -1;
+    let hasContent = false;
+    for (let y = 0; y < AppState.gridHeight; y++) {
+        for (let x = 0; x < AppState.gridWidth; x++) {
+            const i = (y * AppState.gridWidth + x);
+            if (AppState.pixelData[i].id !== 'NONE') {
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+                hasContent = true;
+            }
+        }
+    }
+
+    // 如果没有任何内容，默认显示 1x1
+    if (!hasContent) {
+        minX = 0; minY = 0; maxX = 0; maxY = 0;
+    }
+
+    const contentWidth = maxX - minX + 1;
+    const contentHeight = maxY - minY + 1;
+
+    // 动态计算导出尺寸：有效内容宽度/高度 + 左上标尺 (1个单位)
+    const boardPxSizeX = (contentWidth + 1) * exportScale;
+    const boardPxSizeY = (contentHeight + 1) * exportScale;
+    
+    // 不再居中，紧贴标尺
+    const offsetX = 0;
+    const offsetY = 0;
 
     // 计算底部清单布局
     const padding = 80;
     const cardWidth = 240;
     const cardHeight = 80;
     const gap = 30;
-    const cardsPerRow = Math.max(1, Math.floor((boardPxSize - padding * 2 + gap) / (cardWidth + gap)));
+    // 确保画布宽度至少能容纳一个卡片，或者与内容同宽
+    const minWidthForStats = padding * 2 + cardWidth;
+    const finalCanvasWidth = Math.max(boardPxSizeX, minWidthForStats);
+    
+    const cardsPerRow = Math.max(1, Math.floor((finalCanvasWidth - padding * 2 + gap) / (cardWidth + gap)));
     const rows = Math.ceil(sortedStats.length / cardsPerRow);
     const statsHeight = rows * (cardHeight + gap) + padding * 2 + 60; 
     
     const exportCanvas = document.createElement('canvas');
     const exportCtx = exportCanvas.getContext('2d');
     
-    exportCanvas.width = boardPxSize;
-    exportCanvas.height = boardPxSize + statsHeight;
+    exportCanvas.width = finalCanvasWidth;
+    exportCanvas.height = boardPxSizeY + statsHeight;
     
     exportCtx.fillStyle = '#ffffff';
     exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
@@ -46,13 +78,13 @@ export function downloadImage() {
     exportCtx.textBaseline = 'middle';
     exportCtx.font = `bold ${Math.floor(exportScale * 0.4)}px Arial`;
 
-    for (let y = 0; y < AppState.gridHeight; y++) {
-        for (let x = 0; x < AppState.gridWidth; x++) {
+    for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
             const i = (y * AppState.gridWidth + x);
             const color = AppState.pixelData[i];
             if (color.id === 'NONE') continue;
-            const drawX = gridOffset + (x + offsetX) * exportScale;
-            const drawY = gridOffset + (y + offsetY) * exportScale;
+            const drawX = gridOffset + (x - minX) * exportScale;
+            const drawY = gridOffset + (y - minY) * exportScale;
 
             exportCtx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
             exportCtx.fillRect(drawX, drawY, exportScale, exportScale);
@@ -66,25 +98,33 @@ export function downloadImage() {
     // 绘制网格和辅助线
     exportCtx.lineWidth = 1;
     exportCtx.strokeStyle = 'rgba(0,0,0,0.1)';
-    for (let i = 0; i <= boardSize; i++) {
+    // 垂直线
+    for (let i = 0; i <= contentWidth; i++) {
         const pos = gridOffset + i * exportScale;
         exportCtx.beginPath();
-        exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSize);
+        exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSizeY);
         exportCtx.stroke();
+    }
+    // 水平线
+    for (let i = 0; i <= contentHeight; i++) {
+        const pos = gridOffset + i * exportScale;
         exportCtx.beginPath();
-        exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSize, pos);
+        exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSizeX, pos);
         exportCtx.stroke();
     }
 
-    for (let gridIdx = 1; gridIdx < boardSize; gridIdx++) {
-        const pos = gridOffset + gridIdx * exportScale;
-        const isMarginLine = (gridIdx === margin || gridIdx === boardSize - margin);
-        const isMajorLine = (gridIdx % 10 === 0);
-        const isMinorLine = (gridIdx % 5 === 0);
+    // 垂直辅助线 (基于全局坐标计算是否为 5/10 倍数)
+    for (let x = minX + 1; x <= maxX; x++) {
+        // 只有当全局坐标是 5 的倍数时才画辅助线
+        const isMajorLine = (x % 10 === 0);
+        const isMinorLine = (x % 5 === 0);
 
-        if (isMarginLine || isMinorLine) {
+        if (isMinorLine) {
+            // 计算在当前画布上的绘制位置
+            const pos = gridOffset + (x - minX) * exportScale;
+            
             exportCtx.beginPath();
-            if (isMarginLine || isMajorLine) {
+            if (isMajorLine) {
                 exportCtx.setLineDash([]);
                 exportCtx.strokeStyle = 'rgba(0,0,0,0.4)';
                 exportCtx.lineWidth = 3;
@@ -93,9 +133,30 @@ export function downloadImage() {
                 exportCtx.strokeStyle = 'rgba(0,0,0,0.3)';
                 exportCtx.lineWidth = 2;
             }
-            exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSize);
+            exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSizeY);
             exportCtx.stroke();
-            exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSize, pos);
+            exportCtx.setLineDash([]);
+        }
+    }
+    // 水平辅助线
+    for (let y = minY + 1; y <= maxY; y++) {
+        const isMajorLine = (y % 10 === 0);
+        const isMinorLine = (y % 5 === 0);
+
+        if (isMinorLine) {
+            const pos = gridOffset + (y - minY) * exportScale;
+
+            exportCtx.beginPath();
+            if (isMajorLine) {
+                exportCtx.setLineDash([]);
+                exportCtx.strokeStyle = 'rgba(0,0,0,0.4)';
+                exportCtx.lineWidth = 3;
+            } else {
+                exportCtx.setLineDash([10, 10]);
+                exportCtx.strokeStyle = 'rgba(0,0,0,0.3)';
+                exportCtx.lineWidth = 2;
+            }
+            exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSizeX, pos);
             exportCtx.stroke();
             exportCtx.setLineDash([]);
         }
@@ -104,19 +165,39 @@ export function downloadImage() {
     // 标尺
     exportCtx.fillStyle = 'rgba(0,0,0,0.7)';
     exportCtx.font = `bold ${Math.floor(exportScale * 0.4)}px Arial`;
-    for (let i = 1; i <= boardSize; i++) {
-        const textPos = gridOffset + (i - 1) * exportScale + exportScale / 2;
-        exportCtx.fillText(i.toString(), textPos, exportScale / 2);
-        exportCtx.fillText(i.toString(), exportScale / 2, textPos);
+    // 横向标尺
+    for (let i = 0; i < contentWidth; i++) {
+        const globalX = minX + i + 1; // 标尺从1开始
+        const textPos = gridOffset + i * exportScale + exportScale / 2;
+        exportCtx.fillText(globalX.toString(), textPos, exportScale / 2);
+    }
+    // 纵向标尺
+    for (let i = 0; i < contentHeight; i++) {
+        const globalY = minY + i + 1; // 标尺从1开始
+        const textPos = gridOffset + i * exportScale + exportScale / 2;
+        exportCtx.fillText(globalY.toString(), exportScale / 2, textPos);
     }
 
     // 清单标题
-    const statsStartY = boardPxSize + padding;
+    const statsStartY = boardPxSizeY + padding;
     exportCtx.textAlign = 'left';
     exportCtx.textBaseline = 'top';
     exportCtx.fillStyle = '#333333';
     exportCtx.font = 'bold 48px Arial';
-    exportCtx.fillText(`颜色清单 (Color List) - 共 ${sortedStats.length} 种颜色`, padding, statsStartY - 60);
+    
+    // 构建标题文本
+    const brandMap = {
+        'mard': 'MARD',
+        'perler': 'PERLER',
+        'artkal': 'ARTKAL',
+        'unk': 'UNKNOWN'
+    };
+    let brandText = brandMap[AppState.brand] || AppState.brand.toUpperCase();
+    if (AppState.brand === 'mard' && AppState.mardSet) {
+        brandText += `-${AppState.mardSet}色`;
+    }
+    const title = `颜色清单(${brandText})-共${sortedStats.length}种颜色`;
+    exportCtx.fillText(title, padding, statsStartY - 60);
 
     // 清单卡片
     exportCtx.textBaseline = 'middle';

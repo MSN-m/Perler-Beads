@@ -11,7 +11,7 @@ export const AppState = {
     gridWidth: 32, // 数量
     gridHeight: 32, // 数量
     brand: 'mard',
-    mardSet: 216,
+    mardSet: 221,
     pixelData: [], // 颜色对象数组
     isBgRemoving: false, // 是否处于移除背景模式
     highlightedColorId: null, // 当前高亮的颜色 ID

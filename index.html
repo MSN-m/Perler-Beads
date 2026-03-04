@@ -180,7 +180,7 @@
                     <select id="mard-set-select"
                         class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
                         <option value="264">MARD 264色全色 (不含C29)</option>
-                        <option value="221">MARD 221色全实色 (含C29)</option>
+                        <option value="221" selected>MARD 221色全实色 (含C29)</option>
                         <option value="216">MARD 216色全实色</option>
                         <option value="144">MARD 144色 (A-E+6)</option>
                         <option value="120">MARD 120色 (A-E)</option>
@@ -200,12 +200,12 @@
                         <span class="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">BETA</span>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="color-limit-toggle" class="sr-only peer">
+                        <input type="checkbox" id="color-limit-toggle" class="sr-only peer" checked>
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                 </div>
                 
-                <div id="color-limit-controls" class="space-y-2 opacity-40 pointer-events-none transition-opacity">
+                <div id="color-limit-controls" class="space-y-2 transition-opacity">
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-gray-500">最大允许颜色种类</span>
                         <span id="max-colors-display" class="text-xs font-mono font-bold text-primary bg-white px-2 py-0.5 rounded border border-primary/20">24</span>
