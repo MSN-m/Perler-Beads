@@ -19,7 +19,9 @@ import {
     handleResultCanvasClickForAdjust,
     adjustUndo,
     adjustCancel,
-    adjustApply
+    adjustApply,
+    toggleEdgeAdjustMode,
+    toggleDeleteMode
 } from './ui.js';
 import { downloadImage, downloadSVG } from './exporter.js';
 import { updateResultTransform } from './renderer.js';
@@ -233,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         resultCanvas.addEventListener('click', (e) => {
-            if (AppState.editMode === 'adjust') handleResultCanvasClickForAdjust(e);
+            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') handleResultCanvasClickForAdjust(e);
         });
 
         window.addEventListener('mousemove', (e) => {
@@ -330,6 +332,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const adjustBtn = document.getElementById('toggle-adjust-btn');
     if (adjustBtn) {
         adjustBtn.addEventListener('click', toggleAdjustMode);
+    }
+    const edgeAdjustBtn = document.getElementById('toggle-edge-adjust-btn');
+    if (edgeAdjustBtn) {
+        edgeAdjustBtn.addEventListener('click', toggleEdgeAdjustMode);
+    }
+    const deleteBtn = document.getElementById('toggle-delete-btn');
+    console.log('Delete button element:', deleteBtn);
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', toggleDeleteMode);
     }
     const undoBtn = document.getElementById('adjust-undo-btn');
     if (undoBtn) {

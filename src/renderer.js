@@ -1,6 +1,3 @@
-/**
- * 拼豆图纸生成器 - Canvas 渲染与视图控制
- */
 import { AppState } from './state.js';
 
 /**
@@ -39,6 +36,12 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
     const contentWidth = maxX - minX + 1;
     const contentHeight = maxY - minY + 1;
 
+    // 将渲染相关的偏移量和尺寸存储到 AppState
+    AppState.renderedMinX = minX;
+    AppState.renderedMinY = minY;
+    AppState.renderedContentWidth = contentWidth;
+    AppState.renderedContentHeight = contentHeight;
+
     // 动态计算画布尺寸：有效内容宽度/高度 + 左上标尺 (1个单位)
     const totalGridX = contentWidth + 1;
     const totalGridY = contentHeight + 1;
@@ -66,6 +69,13 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
 
             ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
             ctx.fillRect(drawX, drawY, scale, scale);
+
+            // 如果是边缘色块，绘制高亮边框
+            if (AppState.edgeSelectionMode && AppState.selectedEdgeBeadsIndices.includes(i)) {
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)'; // 黄色高亮
+                ctx.lineWidth = 2;
+                ctx.strokeRect(drawX + 1, drawY + 1, scale - 2, scale - 2);
+            }
         }
     }
 
