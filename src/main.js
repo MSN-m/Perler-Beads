@@ -23,7 +23,7 @@ import {
     toggleEdgeAdjustMode,
     toggleDeleteMode
 } from './ui.js';
-import { downloadImage, downloadSVG } from './exporter.js';
+import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { updateResultTransform } from './renderer.js';
 
 /**
@@ -190,10 +190,18 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadImgBtn.addEventListener('click', downloadImage);
     }
     
-    const downloadSVGBtn = document.getElementById('download-svg-btn');
-    if (downloadSVGBtn) {
-        downloadSVGBtn.addEventListener('click', downloadSVG);
+    const downloadMirroredImgBtn = document.getElementById('download-mirrored-image-btn');
+    if (downloadMirroredImgBtn) {
+        downloadMirroredImgBtn.addEventListener('click', downloadMirroredImage);
     }
+
+    const downloadRawImgBtn = document.getElementById('download-raw-image-btn');
+    console.log('Download Raw Image button element:', downloadRawImgBtn);
+    if (downloadRawImgBtn) {
+        downloadRawImgBtn.addEventListener('click', downloadRawImage);
+    }
+    
+
 
     // --- 结果画布缩放与平移逻辑 ---
     const resultContainer = document.getElementById('result-container');
