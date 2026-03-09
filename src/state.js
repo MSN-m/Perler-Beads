@@ -29,8 +29,10 @@ export const AppState = {
     receiverIndex: null,
     stagedPixelData: null,
     stagedActions: [],
-    preAdjustZoomState: null
-    ,
+    preAdjustZoomState: null,
+    edgeSelectionMode: false, // 是否处于边缘选择模式
+    selectedEdgeBeadsIndices: [], // 存储选中的边缘色块索引
+    deleteMode: false, // 是否处于删除色块模式
     batchReplace: {
         active: false,
         mode: null,

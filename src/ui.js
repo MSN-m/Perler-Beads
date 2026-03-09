@@ -547,12 +547,200 @@ export function resetZoom() {
     }, 400);
 }
 
+export function toggleDeleteMode() {
+    console.log('toggleDeleteMode called');
+    const resultCanvas = document.getElementById('result-canvas');
+    const undoBtn = document.getElementById('adjust-undo-btn');
+    const cancelBtn = document.getElementById('adjust-cancel-btn');
+    const applyBtn = document.getElementById('adjust-apply-btn');
+    const btn = document.getElementById('toggle-delete-btn');
+    const adjustBtn = document.getElementById('toggle-adjust-btn');
+    const edgeBtn = document.getElementById('toggle-edge-adjust-btn');
+    const entering = !AppState.deleteMode;
+
+    if (entering) {
+        AppState.editMode = 'delete';
+        AppState.deleteMode = true;
+        AppState.adjustPhase = 'waiting_receiver'; // 沿用 adjustPhase 逻辑，但实际只用于单点点击
+        AppState.receiverIndex = null;
+        AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
+        AppState.stagedActions = [];
+        AppState.selectedEdgeBeadsIndices = []; // 确保清空边缘选择
+        AppState.edgeSelectionMode = false; // 确保关闭边缘选择模式
+        AppState.preAdjustZoomState = { ...AppState.zoomState };
+
+        btn && btn.classList.add('bg-primary','text-white');
+        adjustBtn && adjustBtn.classList.remove('bg-primary','text-white');
+        edgeBtn && edgeBtn.classList.remove('bg-primary','text-white');
+
+        undoBtn && undoBtn.classList.remove('hidden');
+        cancelBtn && cancelBtn.classList.remove('hidden');
+        applyBtn && applyBtn.classList.remove('hidden');
+
+        if (resultCanvas) {
+            console.log('resultCanvas found:', resultCanvas);
+            resultCanvas.classList.remove('cursor-grab','cursor-grabbing');
+            console.log('Attempting to add cursor-crosshair class...');
+            resultCanvas.classList.add('cursor-crosshair');
+            resultCanvas.style.cursor = 'crosshair'; // 直接设置 style 属性，提高优先级
+            console.log('cursor-crosshair class added and style set.');
+        }
+        renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    } else {
+        AppState.editMode = 'none';
+        AppState.deleteMode = false;
+        AppState.adjustPhase = 'waiting_receiver';
+        AppState.receiverIndex = null;
+        AppState.stagedPixelData = null;
+        AppState.stagedActions = [];
+        AppState.selectedEdgeBeadsIndices = [];
+        AppState.edgeSelectionMode = false;
+
+        btn && btn.classList.remove('bg-primary','text-white');
+        undoBtn && undoBtn.classList.add('hidden');
+        cancelBtn && cancelBtn.classList.add('hidden');
+        applyBtn && applyBtn.classList.add('hidden');
+
+        if (resultCanvas) {
+            resultCanvas.classList.remove('cursor-crosshair');
+            resultCanvas.classList.add('cursor-grab');
+            renderResult(resultCanvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+            calculateStats();
+        }
+        if (AppState.preAdjustZoomState) {
+            AppState.zoomState = { ...AppState.preAdjustZoomState };
+            updateResultTransform(resultCanvas, AppState.zoomState, document.getElementById('zoom-reset-btn'));
+        }
+    }
+}
+
+function showDeleteConfirmModal(callback) {
+    const modal = document.getElementById('delete-confirm-modal');
+    modal.classList.remove('hidden');
+    const confirmBtn = document.getElementById('delete-confirm-yes');
+    const cancelBtn = document.getElementById('delete-confirm-no');
+
+    const confirmHandler = () => {
+        confirmBtn.removeEventListener('click', confirmHandler);
+        cancelBtn.removeEventListener('click', cancelHandler);
+        hideDeleteConfirmModal();
+        callback(true);
+    };
+
+    const cancelHandler = () => {
+        confirmBtn.removeEventListener('click', confirmHandler);
+        cancelBtn.removeEventListener('click', cancelHandler);
+        hideDeleteConfirmModal();
+        callback(false);
+    };
+
+    confirmBtn.addEventListener('click', confirmHandler);
+    cancelBtn.addEventListener('click', cancelHandler);
+}
+
+function hideDeleteConfirmModal() {
+    const modal = document.getElementById('delete-confirm-modal');
+    modal.classList.add('hidden');
+}
+
+export function findAndSelectEdgeBeads() {
+    AppState.selectedEdgeBeadsIndices = [];
+    if (!AppState.pixelData || AppState.pixelData.length === 0) {
+        console.warn("pixelData is empty, cannot find edges.");
+        return;
+    }
+
+    const gridWidth = AppState.gridWidth;
+    const gridHeight = AppState.gridHeight;
+    const pixelData = AppState.pixelData;
+
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const currentIndex = y * gridWidth + x;
+            const currentPixel = pixelData[currentIndex];
+
+            if (currentPixel && currentPixel.id !== 'NONE') {
+                let isEdge = false;
+
+                // Check 4 neighbors: top, bottom, left, right
+                const neighbors = [
+                    { nx: x, ny: y - 1 }, // Top
+                    { nx: x, ny: y + 1 }, // Bottom
+                    { nx: x - 1, ny: y }, // Left
+                    { nx: x + 1, ny: y }  // Right
+                ];
+
+                for (const neighbor of neighbors) {
+                    const { nx, ny } = neighbor;
+
+                    // Check if neighbor is out of bounds
+                    if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
+                        isEdge = true;
+                        break;
+                    }
+
+                    // Check if neighbor is 'NONE'
+                    const neighborIndex = ny * gridWidth + nx;
+                    const neighborPixel = pixelData[neighborIndex];
+                    if (!neighborPixel || neighborPixel.id === 'NONE') {
+                        isEdge = true;
+                        break;
+                    }
+                }
+
+                if (isEdge) {
+                    AppState.selectedEdgeBeadsIndices.push(currentIndex);
+                }
+            }
+        }
+    }
+    console.log(`Found ${AppState.selectedEdgeBeadsIndices.length} edge beads.`);
+    // After finding edges, we should re-render to highlight them
+    const resultCanvas = document.getElementById('result-canvas');
+    renderResult(resultCanvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+}
+
+export function toggleEdgeAdjustMode() {
+    const resultCanvas = document.getElementById('result-canvas');
+    const btn = document.getElementById('toggle-edge-adjust-btn');
+    const adjustBtn = document.getElementById('toggle-adjust-btn');
+    const deleteBtn = document.getElementById('toggle-delete-btn'); // 获取删除按钮
+    const entering = !AppState.edgeSelectionMode;
+
+    if (entering) {
+        // 如果不在普通调整模式，则进入普通调整模式
+        if (AppState.editMode !== 'adjust') {
+            toggleAdjustMode();
+        }
+        AppState.edgeSelectionMode = true;
+        AppState.deleteMode = false; // 确保关闭删除模式
+        btn && btn.classList.add('bg-primary','text-white');
+        adjustBtn && adjustBtn.classList.remove('bg-primary','text-white'); // 确保普通调整按钮未选中
+        deleteBtn && deleteBtn.classList.remove('bg-primary','text-white'); // 确保删除按钮未选中
+        findAndSelectEdgeBeads(); // 找到并选中边缘色块
+        // 渲染时会高亮边缘色块
+    } else {
+        AppState.edgeSelectionMode = false;
+        AppState.selectedEdgeBeadsIndices = []; // 清空选中
+        btn && btn.classList.remove('bg-primary','text-white');
+        // 如果没有其他调整模式激活，则退出普通调整模式
+        if (AppState.editMode === 'adjust') {
+            toggleAdjustMode(); // 这会清空 stagedPixelData 并重新渲染
+        } else {
+            // 如果已经不在调整模式，但只是关闭边缘选择，也需要重新渲染以移除高亮
+            renderResult(resultCanvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+        }
+    }
+}
+
 export function toggleAdjustMode() {
     const resultCanvas = document.getElementById('result-canvas');
     const undoBtn = document.getElementById('adjust-undo-btn');
     const cancelBtn = document.getElementById('adjust-cancel-btn');
     const applyBtn = document.getElementById('adjust-apply-btn');
     const btn = document.getElementById('toggle-adjust-btn');
+    const edgeBtn = document.getElementById('toggle-edge-adjust-btn'); // 获取边缘调整按钮
+    const deleteBtn = document.getElementById('toggle-delete-btn'); // 获取删除按钮
     const entering = AppState.editMode !== 'adjust';
     if (entering) {
         AppState.editMode = 'adjust';
@@ -560,8 +748,13 @@ export function toggleAdjustMode() {
         AppState.receiverIndex = null;
         AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
         AppState.stagedActions = [];
+        AppState.selectedEdgeBeadsIndices = []; // 确保进入普通调整模式时清空边缘选择
+        AppState.edgeSelectionMode = false; // 确保进入普通调整模式时关闭边缘选择模式
+        AppState.deleteMode = false; // 确保进入普通调整模式时关闭删除模式
         AppState.preAdjustZoomState = { ...AppState.zoomState };
         btn && btn.classList.add('bg-primary','text-white');
+        edgeBtn && edgeBtn.classList.remove('bg-primary','text-white'); // 确保边缘调整按钮未选中
+        deleteBtn && deleteBtn.classList.remove('bg-primary','text-white'); // 确保删除按钮未选中
         undoBtn && undoBtn.classList.remove('hidden');
         cancelBtn && cancelBtn.classList.remove('hidden');
         applyBtn && applyBtn.classList.remove('hidden');
@@ -577,7 +770,12 @@ export function toggleAdjustMode() {
         AppState.receiverIndex = null;
         AppState.stagedPixelData = null;
         AppState.stagedActions = [];
+        AppState.selectedEdgeBeadsIndices = []; // 退出调整模式时清空边缘选择
+        AppState.edgeSelectionMode = false; // 退出调整模式时关闭边缘选择模式
+        AppState.deleteMode = false; // 退出调整模式时关闭删除模式
         btn && btn.classList.remove('bg-primary','text-white');
+        edgeBtn && edgeBtn.classList.remove('bg-primary','text-white');
+        deleteBtn && deleteBtn.classList.remove('bg-primary','text-white');
         undoBtn && undoBtn.classList.add('hidden');
         cancelBtn && cancelBtn.classList.add('hidden');
         applyBtn && applyBtn.classList.add('hidden');
@@ -613,71 +811,126 @@ function drawReceiverOutline(canvas, gx, gy) {
 }
 
 export function handleResultCanvasClickForAdjust(e) {
-    if (AppState.editMode !== 'adjust') return;
+    console.log('handleResultCanvasClickForAdjust called');
+    console.log('AppState.editMode:', AppState.editMode);
+    if (AppState.editMode !== 'adjust' && AppState.editMode !== 'delete') {
+        console.log('Not in adjust or delete mode, returning.');
+        return;
+    }
     const canvas = document.getElementById('result-canvas');
     const rect = canvas.getBoundingClientRect();
     const localX = e.clientX - rect.left;
     const localY = e.clientY - rect.top;
-    const canvasX = localX / AppState.zoomState.scale;
-    const canvasY = localY / AppState.zoomState.scale;
-    const boardSize = Math.max(AppState.gridWidth, AppState.gridHeight) <= 52 ? 52 : 104;
+    const canvasX = localX / AppState.zoomState.scale; // 修正后的计算
+    const canvasY = localY / AppState.zoomState.scale; // 修正后的计算
+    console.log(`localX: ${localX}, localY: ${localY}`);
+    console.log(`canvasX: ${canvasX}, canvasY: ${canvasY}`);
+    console.log(`zoomState.x: ${AppState.zoomState.x}, zoomState.y: ${AppState.zoomState.y}, zoomState.scale: ${AppState.zoomState.scale}`);
+    // 使用 renderer 中计算的实际渲染尺寸和偏移
     const scale = 30;
-    const gridOffset = scale;
-    const offsetX = Math.floor((boardSize - AppState.gridWidth) / 2);
-    const offsetY = Math.floor((boardSize - AppState.gridHeight) / 2);
-    const xOnBoard = Math.floor((canvasX - gridOffset) / scale);
-    const yOnBoard = Math.floor((canvasY - gridOffset) / scale);
-    if (xOnBoard < 0 || yOnBoard < 0 || xOnBoard >= boardSize || yOnBoard >= boardSize) return;
-    const gx = xOnBoard - offsetX;
-    const gy = yOnBoard - offsetY;
-    if (gx < 0 || gy < 0 || gx >= AppState.gridWidth || gy >= AppState.gridHeight) return;
-    const idx = gy * AppState.gridWidth + gx;
-    if (AppState.batchReplace.active && AppState.batchReplace.mode === 'from_canvas') {
-        const donor = AppState.stagedPixelData[idx];
-        if (donor && donor.id !== 'NONE' && donor.id !== AppState.batchReplace.sourceColorId) {
-            performBatchReplace(AppState.batchReplace.sourceColorId, donor);
-        }
-        AppState.batchReplace.active = false;
-        AppState.batchReplace.mode = null;
-        AppState.batchReplace.sourceColorId = null;
+    const gridOffset = scale; // 标尺宽度
+    const minX = AppState.renderedMinX || 0;
+    const minY = AppState.renderedMinY || 0;
+    const contentWidth = AppState.renderedContentWidth || AppState.gridWidth;
+    const contentHeight = AppState.renderedContentHeight || AppState.gridHeight;
+
+    const xOnRenderedGrid = Math.floor((canvasX - gridOffset) / scale);
+    const yOnRenderedGrid = Math.floor((canvasY - gridOffset) / scale);
+
+    // 将渲染网格坐标转换回原始 gridWidth/gridHeight 坐标
+    const gx = minX + xOnRenderedGrid;
+    const gy = minY + yOnRenderedGrid;
+
+    console.log(`xOnRenderedGrid: ${xOnRenderedGrid}, yOnRenderedGrid: ${yOnRenderedGrid}`);
+    console.log(`gx: ${gx}, gy: ${gy}`);
+
+    if (xOnRenderedGrid < 0 || yOnRenderedGrid < 0 || xOnRenderedGrid >= contentWidth || yOnRenderedGrid >= contentHeight) {
+        console.log('Click outside rendered content bounds, returning.');
         return;
     }
-    if (AppState.adjustPhase === 'waiting_receiver') {
-        const src = AppState.stagedPixelData[idx];
-        if (!src || src.id === 'NONE') return;
-        AppState.receiverIndex = idx;
-        renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-        drawReceiverOutline(canvas, gx, gy);
-        AppState.adjustPhase = 'waiting_donor';
-    } else {
-        const donor = AppState.stagedPixelData[idx];
-        if (!donor || donor.id === 'NONE') {
-            AppState.adjustPhase = 'waiting_receiver';
-            AppState.receiverIndex = null;
-            renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    if (gx < 0 || gy < 0 || gx >= AppState.gridWidth || gy >= AppState.gridHeight) {
+        console.log('Calculated gx/gy outside original grid bounds, returning.');
+        return;
+    }
+    const idx = gy * AppState.gridWidth + gx;
+    console.log('Calculated idx:', idx);
+    console.log('AppState.adjustPhase:', AppState.adjustPhase);
+
+    // 新增：删除模式下的点击处理
+    if (AppState.deleteMode) {
+        const targetPixel = AppState.stagedPixelData[idx];
+        console.log('Delete mode: Clicked pixel:', targetPixel);
+
+        if (!targetPixel || targetPixel.id === 'NONE') {
+            console.log('Clicked pixel is already NONE or null, no action.');
             return;
         }
-        if (AppState.receiverIndex !== null) {
-            const prev = AppState.stagedPixelData[AppState.receiverIndex];
-            if (prev.id !== donor.id) {
-                AppState.stagedActions.push({ index: AppState.receiverIndex, prevColor: { ...prev }, nextColor: { id: donor.id, r: donor.r, g: donor.g, b: donor.b } });
-                AppState.stagedPixelData[AppState.receiverIndex] = { id: donor.id, r: donor.r, g: donor.g, b: donor.b };
+
+        showDeleteConfirmModal((confirmed) => {
+            if (confirmed) {
+                AppState.stagedActions.push({ index: idx, prevColor: { ...targetPixel }, nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 } });
+                AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }; // 设置为透明
+                console.log(`Deleted pixel at index ${idx} (was ${targetPixel.id}).`);
+                renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+                calculateStats();
+                const undoBtn = document.getElementById('adjust-undo-btn');
+                if (undoBtn) {
+                    if (AppState.stagedActions.length > 0) undoBtn.classList.remove('opacity-50','pointer-events-none');
+                    else undoBtn.classList.add('opacity-50','pointer-events-none');
+                }
+            } else {
+                console.log('Delete cancelled by user.');
             }
+        });
+        return;
+    }
+
+    // 新增：边缘调整模式下的点击处理
+    if (AppState.edgeSelectionMode) {
+        const donor = AppState.stagedPixelData[idx];
+        console.log('Edge adjust mode: Clicked donor pixel:', donor);
+        if (!donor || donor.id === 'NONE') {
+            console.log('Donor pixel is NONE or null, returning.');
+            return;
         }
+
+        const newColor = { id: donor.id, r: donor.r, g: donor.g, b: donor.b };
+        const indicesToChange = AppState.selectedEdgeBeadsIndices;
+        const prevColors = [];
+
+        if (indicesToChange.length > 0) {
+            // 记录批量操作的撤销信息
+            for (const edgeIdx of indicesToChange) {
+                const prev = AppState.stagedPixelData[edgeIdx];
+                if (prev.id !== newColor.id) {
+                    prevColors.push({ index: edgeIdx, prevColor: { ...prev } });
+                    AppState.stagedPixelData[edgeIdx] = { ...newColor };
+                }
+            }
+            if (prevColors.length > 0) {
+                AppState.stagedActions.push({ indices: prevColors.map(p => p.index), prevColors: prevColors.map(p => p.prevColor), nextColor: newColor });
+                console.log(`Batch replaced ${prevColors.length} edge pixels to ${newColor.id}`);
+            } else {
+                console.log('No edge pixels changed color.');
+            }
+        } else {
+            console.log('No edge beads selected for batch replacement.');
+        }
+
         renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
         calculateStats();
-        AppState.receiverIndex = null;
-        AppState.adjustPhase = 'waiting_receiver';
+        const undoBtn = document.getElementById('adjust-undo-btn');
+        if (undoBtn) {
+            if (AppState.stagedActions.length > 0) undoBtn.classList.remove('opacity-50','pointer-events-none');
+            else undoBtn.classList.add('opacity-50','pointer-events-none');
+        }
+        return;
     }
-    const undoBtn = document.getElementById('adjust-undo-btn');
-    if (undoBtn) {
-        if (AppState.stagedActions.length > 0) undoBtn.classList.remove('opacity-50','pointer-events-none');
-        else undoBtn.classList.add('opacity-50','pointer-events-none');
-    }
+
 }
 
 export function adjustUndo() {
-    if (AppState.editMode !== 'adjust' || !AppState.stagedActions.length) return;
+    if ((AppState.editMode !== 'adjust' && AppState.editMode !== 'delete') || !AppState.stagedActions.length) return;
     const action = AppState.stagedActions.pop();
     if (Array.isArray(action.indices)) {
         for (let i = 0; i < action.indices.length; i++) {
@@ -698,7 +951,7 @@ export function adjustUndo() {
 }
 
 export function adjustCancel() {
-    if (AppState.editMode !== 'adjust') return;
+    if (AppState.editMode !== 'adjust' && AppState.editMode !== 'delete') return;
     const canvas = document.getElementById('result-canvas');
     AppState.stagedPixelData = null;
     AppState.stagedActions = [];
@@ -722,7 +975,7 @@ export function adjustCancel() {
 }
 
 export function adjustApply() {
-    if (AppState.editMode !== 'adjust') return;
+    if (AppState.editMode !== 'adjust' && AppState.editMode !== 'delete') return;
     const canvas = document.getElementById('result-canvas');
     if (AppState.stagedPixelData) {
         AppState.pixelData = deepClonePixels(AppState.stagedPixelData);
