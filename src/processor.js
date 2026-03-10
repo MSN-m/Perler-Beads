@@ -1,8 +1,74 @@
-/**
+﻿/**
  * 拼豆图纸生成器 - 图像处理算法
  */
 import { findNearestColor } from './utils.js';
 import { PALETTES } from './constants.js';
+
+/**
+ * 判断两个颜色是否相同（或非常接近）
+ * @param {Object} color1 - 颜色对象 {id, r, g, b}
+ * @param {Object} color2 - 颜色对象 {id, r, g, b}
+ * @returns {boolean} - 是否相同
+ */
+function isSameColor(color1, color2) {
+    if (!color1 || !color2) return false;
+    // 优先判断 ID 相同
+    if (color1.id === color2.id) return true;
+    // 如果 ID 不同，判断 RGB 距离是否 < 30（允许轻微色差）
+    const dr = color1.r - color2.r;
+    const dg = color1.g - color2.g;
+    const db = color1.b - color2.b;
+    return Math.sqrt(dr * dr + dg * dg + db * db) < 30;
+}
+
+/**
+ * 判断当前格子是否应该启用抖动（基于局部颜色一致性）
+ * @param {number} x - 格子 X 坐标
+ * @param {number} y - 格子 Y 坐标
+ * @param {number} gridWidth - 网格宽度
+ * @param {number} gridHeight - 网格高度
+ * @param {Array} pixelData - 像素数据数组
+ * @returns {boolean} - 是否应该抖动
+ */
+function shouldEnableDithering(x, y, gridWidth, gridHeight, pixelData) {
+    // 8 个邻居的相对位置
+    const neighbors = [
+        [-1, -1], [0, -1], [1, -1],
+        [-1,  0],          [1,  0],
+        [-1,  1], [0,  1], [1,  1]
+    ];
+    
+    let sameColorCount = 0;
+    const currentIdx = y * gridWidth + x;
+    const currentColor = pixelData[currentIdx];
+    
+    // 跳过透明格子
+    if (!currentColor || currentColor.id === 'NONE') {
+        return false;
+    }
+    
+    // 检测周围邻居
+    for (let [dx, dy] of neighbors) {
+        const nx = x + dx;
+        const ny = y + dy;
+        
+        // 边界检查
+        if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
+            continue;
+        }
+        
+        const neighborIdx = ny * gridWidth + nx;
+        const neighborColor = pixelData[neighborIdx];
+        
+        if (isSameColor(currentColor, neighborColor)) {
+            sameColorCount++;
+        }
+    }
+    
+    // 如果 8 个邻居中有 6 个以上同色 → 纯色区域 → 不抖动
+    // 否则 → 渐变区域 → 抖动
+    return sameColorCount < 6;
+}
 
 /**
  * 中值切分法 (Median Cut) 颜色量化
@@ -10,6 +76,7 @@ import { PALETTES } from './constants.js';
  * @param {number} maxColors - 最大颜色数
  * @returns {Array} - 量化后的代表色数组
  */
+
 export function medianCut(pixels, maxColors) {
     let boxes = [pixels];
     while (boxes.length < maxColors) {
@@ -259,8 +326,9 @@ export function generatePatternData({
     }
 
     const pixelData = [];
-    let errorBuffer = isDitheringEnabled ? new Float32Array(gridWidth * gridHeight * 3) : null;
+    const avgColors = [];
 
+    // Phase 1: sample and match colors (no dithering)
     for (let y = 0; y < gridHeight; y++) {
         for (let x = 0; x < gridWidth; x++) {
             const startX = Math.floor((x / gridWidth) * sourceWidth);
@@ -268,59 +336,171 @@ export function generatePatternData({
             const endX = Math.floor(((x + 1) / gridWidth) * sourceWidth);
             const endY = Math.floor(((y + 1) / gridHeight) * sourceHeight);
 
-            let rSum = 0, gSum = 0, bSum = 0, count = 0, alphaSum = 0;
+            let rSum = 0, gSum = 0, bSum = 0, opaqueCount = 0, totalCount = 0;
             for (let sy = startY; sy < endY; sy++) {
                 for (let sx = startX; sx < endX; sx++) {
                     const idx = (sy * sourceWidth + sx) * 4;
-                    rSum += sourceData[idx];
-                    gSum += sourceData[idx + 1];
-                    bSum += sourceData[idx + 2];
-                    alphaSum += sourceData[idx + 3];
-                    count++;
+                    totalCount++;
+                    if (sourceData[idx + 3] > 128) {
+                        rSum += sourceData[idx];
+                        gSum += sourceData[idx + 1];
+                        bSum += sourceData[idx + 2];
+                        opaqueCount++;
+                    }
                 }
             }
 
-            let r = count > 0 ? rSum / count : 255;
-            let g = count > 0 ? gSum / count : 255;
-            let b = count > 0 ? bSum / count : 255;
-            const a = count > 0 ? alphaSum / count : 0;
+            // 只统计不透明像素的平均色，忽略透明背景
+            const r = opaqueCount > 0 ? rSum / opaqueCount : 255;
+            const g = opaqueCount > 0 ? gSum / opaqueCount : 255;
+            const b = opaqueCount > 0 ? bSum / opaqueCount : 255;
+            // 如果不透明像素 < 30%，视为透明格子
+            const a = (opaqueCount / Math.max(totalCount, 1)) > 0.3 ? 255 : 0;
+
+            avgColors.push({ r, g, b, a });
 
             if (a < 128) {
                 pixelData.push({ id: 'NONE', r: 255, g: 255, b: 255, a: 0 });
-                continue;
-            }
-
-            if (isDitheringEnabled) {
-                const errIdx = (y * gridWidth + x) * 3;
-                r = Math.max(0, Math.min(255, r + errorBuffer[errIdx]));
-                g = Math.max(0, Math.min(255, g + errorBuffer[errIdx + 1]));
-                b = Math.max(0, Math.min(255, b + errorBuffer[errIdx + 2]));
-            }
-
-            const matched = findNearestColor(r, g, b, finalPalette);
-            pixelData.push(matched);
-
-            if (isDitheringEnabled) {
-                const errR = r - matched.r;
-                const errG = g - matched.g;
-                const errB = b - matched.b;
-
-                const distributeError = (nx, ny, weight) => {
-                    if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
-                        const nIdx = (ny * gridWidth + nx) * 3;
-                        errorBuffer[nIdx] += errR * weight;
-                        errorBuffer[nIdx + 1] += errG * weight;
-                        errorBuffer[nIdx + 2] += errB * weight;
-                    }
-                };
-
-                distributeError(x + 1, y, 7 / 16);
-                distributeError(x - 1, y + 1, 3 / 16);
-                distributeError(x, y + 1, 5 / 16);
-                distributeError(x + 1, y + 1, 1 / 16);
+            } else {
+                const matched = findNearestColor(r, g, b, finalPalette);
+                pixelData.push(matched);
             }
         }
     }
 
+    // Phase 2: smart dithering (only for gradient areas)
+    if (isDitheringEnabled) {
+        const errorBuffer = new Float32Array(gridWidth * gridHeight * 3);
+        let ditheredCount = 0, skippedCount = 0;
+        // 快照 Phase 1 的结果，判断时始终用快照，不受本阶段修改影响
+        const pixelDataSnapshot = pixelData.slice();
+
+        for (let y = 0; y < gridHeight; y++) {
+            for (let x = 0; x < gridWidth; x++) {
+                const idx = y * gridWidth + x;
+                const avgColor = avgColors[idx];
+
+                if (avgColor.a < 128) continue;
+
+                const needsDithering = shouldEnableDithering(x, y, gridWidth, gridHeight, pixelDataSnapshot);
+
+                if (needsDithering) {
+                    ditheredCount++;
+                    const errIdx = idx * 3;
+                    let r = Math.max(0, Math.min(255, avgColor.r + errorBuffer[errIdx]));
+                    let g = Math.max(0, Math.min(255, avgColor.g + errorBuffer[errIdx + 1]));
+                    let b = Math.max(0, Math.min(255, avgColor.b + errorBuffer[errIdx + 2]));
+
+                    const matched = findNearestColor(r, g, b, finalPalette);
+                    pixelData[idx] = matched;
+
+                    const errR = r - matched.r;
+                    const errG = g - matched.g;
+                    const errB = b - matched.b;
+
+                    const distributeError = (nx, ny, weight) => {
+                        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                            const nIdx = (ny * gridWidth + nx) * 3;
+                            errorBuffer[nIdx] += errR * weight;
+                            errorBuffer[nIdx + 1] += errG * weight;
+                            errorBuffer[nIdx + 2] += errB * weight;
+                        }
+                    };
+
+                    distributeError(x + 1, y, 7 / 16);
+                    distributeError(x - 1, y + 1, 3 / 16);
+                    distributeError(x, y + 1, 5 / 16);
+                    distributeError(x + 1, y + 1, 1 / 16);
+                } else {
+                    skippedCount++;
+                }
+            }
+        }
+        console.log('[SmartDither] dithered:', ditheredCount, 'skipped:', skippedCount);
+    }
+
+    // Phase 3: 色块连通性后处理 - 消除孤立杂色格子
+    unifySmallRegions(pixelData, gridWidth, gridHeight, 2);
+
     return pixelData;
+}
+
+/**
+ * 色块连通性后处理：把面积小于 minSize 的孤立色块归并到周围主色
+ * @param {Array} pixelData - 像素数据（直接修改）
+ * @param {number} gridWidth
+ * @param {number} gridHeight
+ * @param {number} minSize - 小于此格数的色块会被归并
+ */
+function unifySmallRegions(pixelData, gridWidth, gridHeight, minSize) {
+    const visited = new Uint8Array(gridWidth * gridHeight);
+
+    for (let startY = 0; startY < gridHeight; startY++) {
+        for (let startX = 0; startX < gridWidth; startX++) {
+            const startIdx = startY * gridWidth + startX;
+            if (visited[startIdx]) continue;
+            const color = pixelData[startIdx];
+            if (!color || color.id === 'NONE') { visited[startIdx] = 1; continue; }
+
+            // BFS 找出同色连通区域
+            const region = [];
+            const queue = [startIdx];
+            visited[startIdx] = 1;
+
+            while (queue.length > 0) {
+                const idx = queue.shift();
+                region.push(idx);
+                const cx = idx % gridWidth;
+                const cy = Math.floor(idx / gridWidth);
+                const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+                for (const [dx, dy] of dirs) {
+                    const nx = cx + dx, ny = cy + dy;
+                    if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) continue;
+                    const nIdx = ny * gridWidth + nx;
+                    if (visited[nIdx]) continue;
+                    if (pixelData[nIdx] && pixelData[nIdx].id === color.id) {
+                        visited[nIdx] = 1;
+                        queue.push(nIdx);
+                    }
+                }
+            }
+
+            // 如果色块面积太小，归并到周围最多的颜色
+            if (region.length < minSize) {
+                const neighborCount = {};
+                for (const idx of region) {
+                    const cx = idx % gridWidth;
+                    const cy = Math.floor(idx / gridWidth);
+                    const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+                    for (const [dx, dy] of dirs) {
+                        const nx = cx + dx, ny = cy + dy;
+                        if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) continue;
+                        const nIdx = ny * gridWidth + nx;
+                        const nc = pixelData[nIdx];
+                        if (!nc || nc.id === color.id || nc.id === 'NONE') continue;
+                        neighborCount[nc.id] = (neighborCount[nc.id] || { color: nc, count: 0 });
+                        neighborCount[nc.id].count++;
+                    }
+                }
+                // 找出接触最多的邻居色
+                let bestColor = null, bestCount = 0;
+                for (const entry of Object.values(neighborCount)) {
+                    if (entry.count > bestCount) { bestCount = entry.count; bestColor = entry.color; }
+                }
+                if (bestColor) {
+                    // 只有当小色块与最多邻居色差异很小时才归并（避免消除有意义的细节）
+                    const dr = color.r - bestColor.r;
+                    const dg = color.g - bestColor.g;
+                    const db = color.b - bestColor.b;
+                    const colorDiff = Math.sqrt(dr*dr + dg*dg + db*db);
+                    // 色差 < 80 才归并：差异太大说明是有意义的细节（如黑色眼睛在粉色脸上）
+                    if (colorDiff < 80) {
+                        for (const idx of region) {
+                            pixelData[idx] = bestColor;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
