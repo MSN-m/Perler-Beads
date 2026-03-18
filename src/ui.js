@@ -1,5 +1,5 @@
 /**
- * 拼豆图纸生成�?- UI 交互逻辑
+ * ????????- UI ????
  */
 import { AppState } from './state.js';
 import { getFilteredMardPalette, removeBackground, cleanTinyFragments, generatePatternData } from './processor.js';
@@ -52,8 +52,8 @@ function performBatchReplace(sourceId, target) {
 }
 
 /**
- * 切换步骤
- * @param {number} step - 目标步骤 (1-4)
+ * ????
+ * @param {number} step - ???? (1-4)
  */
 export function goToStep(step) {
     document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
@@ -61,14 +61,14 @@ export function goToStep(step) {
     document.querySelector(`#step-${stepNames[step - 1]}`).classList.add('active');
     AppState.currentStep = step;
 
-    // 步骤特定的初始化
+    // ????????
     if (step === 2) initSettingsView();
     if (step === 3) initEditorView();
     if (step === 4) initExportView();
 }
 
 /**
- * 初始化设置界�?(Step 2)
+ * ????????(Step 2)
  */
 function initSettingsView() {
     if (!AppState.image) return;
@@ -78,7 +78,7 @@ function initSettingsView() {
     const container = document.getElementById('canvas-container');
     const img = AppState.image;
 
-    // 计算容器尺寸
+    // ??????
     const maxWidth = window.innerWidth * 0.9;
     const maxHeight = window.innerHeight * 0.65;
     const imgRatio = img.width / img.height;
@@ -99,7 +99,7 @@ function initSettingsView() {
     sourceCanvas.height = img.height;
     ctxSource.drawImage(img, 0, 0);
 
-    // 初始化状�?
+    // ??????
     AppState.originalImageData = ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
     AppState.history = [ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height)];
     updateUndoButton();
@@ -108,7 +108,7 @@ function initSettingsView() {
 }
 
 /**
- * 更新网格尺寸
+ * ??????
  */
 export function updateGridDimensions() {
     const slider = document.getElementById('grid-size-slider');
@@ -129,22 +129,22 @@ export function updateGridDimensions() {
 }
 
 /**
- * 更新背景板信�?UI
+ * ????????UI
  */
 function updateBoardSizeUI() {
     const boardSizeDisplay = document.getElementById('board-size-display');
     const maxDim = Math.max(AppState.gridWidth, AppState.gridHeight);
     if (maxDim <= 52) {
-        boardSizeDisplay.innerText = '52小板';
+        boardSizeDisplay.innerText = '52??';
         boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-blue-100 text-blue-600';
     } else {
-        boardSizeDisplay.innerText = '104大板';
+        boardSizeDisplay.innerText = '104??';
         boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-purple-100 text-purple-600';
     }
 }
 
 /**
- * 更新撤销按钮状�?
+ * ?????????
  */
 export function updateUndoButton() {
     const btn = document.getElementById('undo-bg-btn');
@@ -160,7 +160,7 @@ export function updateUndoButton() {
 }
 
 /**
- * 撤销背景移除
+ * ??????
  */
 export function undoBgRemoval() {
     if (AppState.history.length > 1) {
@@ -173,7 +173,7 @@ export function undoBgRemoval() {
 }
 
 /**
- * 触发背景移除模式
+ * ????????
  */
 export function toggleBgRemovalMode() {
     AppState.isBgRemoving = !AppState.isBgRemoving;
@@ -188,19 +188,19 @@ export function toggleBgRemovalMode() {
         cleanBtn.classList.remove('hidden');
         btn.classList.add('bg-primary', 'text-white');
         btn.classList.remove('bg-white');
-        btn.querySelector('span').innerText = '取消移除模式';
+        btn.querySelector('span').innerText = '??????';
     } else {
         tip.classList.replace('flex', 'hidden');
         tolerancePanel.classList.replace('flex', 'hidden');
         cleanBtn.classList.add('hidden');
         btn.classList.replace('bg-primary', 'bg-white');
         btn.classList.remove('text-white');
-        btn.querySelector('span').innerText = '点击图片移除背景';
+        btn.querySelector('span').innerText = '????????';
     }
 }
 
 /**
- * 处理 Canvas 点击（背景移除）
+ * ?? Canvas ????????
  */
 export function handleCanvasClick(e) {
     if (!AppState.isBgRemoving) return;
@@ -217,7 +217,7 @@ export function handleCanvasClick(e) {
         y = e.clientY - rect.top;
     }
 
-    // 转换为原始尺寸坐�?
+    // ??????????
     const scaleX = sourceCanvas.width / rect.width;
     const scaleY = sourceCanvas.height / rect.height;
     const startX = Math.floor(x * scaleX);
@@ -233,11 +233,11 @@ export function handleCanvasClick(e) {
     AppState.history.push(ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height));
     if (AppState.history.length > 10) AppState.history.shift();
     updateUndoButton();
-    toggleBgRemovalMode(); // 自动退�?
+    toggleBgRemovalMode(); // ?????
 }
 
 /**
- * 自动清除碎片
+ * ??????
  */
 export function handleCleanFragments() {
     const sourceCanvas = document.getElementById('source-canvas');
@@ -252,14 +252,14 @@ export function handleCleanFragments() {
 }
 
 /**
- * 生成图案并跳�?
+ * ????????
  */
 export function handleGeneratePattern() {
     const sourceCanvas = document.getElementById('source-canvas');
     const ctx = sourceCanvas.getContext('2d');
     const sourceImageData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
 
-    // 重置高亮状�?
+    // ???????
     AppState.highlightedColorId = null;
 
     AppState.pixelData = generatePatternData({
@@ -278,29 +278,29 @@ export function handleGeneratePattern() {
 }
 
 /**
- * 初始化编辑器界面 (Step 3)
+ * ???????? (Step 3)
  */
 function initEditorView() {
     const resultCanvas = document.getElementById('result-canvas');
     renderResult(resultCanvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
     calculateStats();
     
-    // 使用 requestAnimationFrame 确保容器尺寸已更新（解决 Flexbox 渲染延迟导致的缩放偏移）
+    // ?? requestAnimationFrame ???????????? Flexbox ????????????
     requestAnimationFrame(() => {
         const resultContainer = document.getElementById('result-container');
         const zoomState = getResetZoomState(resultContainer, resultCanvas);
-        AppState.zoomState = zoomState; // 同步到状�?
+        AppState.zoomState = zoomState; // ??????
         updateResultTransform(resultCanvas, zoomState, document.getElementById('zoom-reset-btn'));
     });
 }
 
 /**
- * 计算颜色统计
+ * ??????
  */
 export function calculateStats() {
     const stats = {};
     let total = 0;
-    // 在调�?删除模式下使用暂存数据，保证清单与画布显示一�?
+    // ????????????????????????????
     const dataToCount = (AppState.stagedPixelData && (AppState.editMode === 'adjust' || AppState.editMode === 'delete'))
         ? AppState.stagedPixelData
         : AppState.pixelData;
@@ -313,8 +313,8 @@ export function calculateStats() {
 
     const sorted = Object.values(stats).sort((a, b) => b.count - a.count);
     
-    document.getElementById('total-beads-count').innerText = `�?${total} 颗`;
-    document.getElementById('color-types-count').innerText = `${sorted.length} 种颜色`;
+    document.getElementById('total-beads-count').innerText = `??${total} ?`;
+    document.getElementById('color-types-count').innerText = `${sorted.length} ???`;
 
     const container = document.getElementById('color-stats');
     container.innerHTML = sorted.map(c => {
@@ -329,7 +329,7 @@ export function calculateStats() {
                     <span class="text-[11px] font-bold font-mono ${textColor}">${c.id}</span>
                     <span class="text-[10px] font-medium ${textColor}">(${c.count})</span>
                 </div>
-                <button id="color-menu-btn-${c.id}" aria-label="打开菜单" class="flex items-center justify-center w-7 h-7 rounded-md shrink-0 ring-1 ring-white/40 bg-black/20 hover:bg-black/30 ${iconColor}" style="min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; background: rgba(0,0,0,0.2); color:#fff;">
+                <button id="color-menu-btn-${c.id}" aria-label="????" class="flex items-center justify-center w-7 h-7 rounded-md shrink-0 ring-1 ring-white/40 bg-black/20 hover:bg-black/30 ${iconColor}" style="min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; background: rgba(0,0,0,0.2); color:#fff;">
                     <svg class="w-3.5 h-3.5 ${iconColor}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <circle cx="4" cy="10" r="2"></circle>
                         <circle cx="10" cy="10" r="2"></circle>
@@ -337,13 +337,13 @@ export function calculateStats() {
                     </svg>
                 </button>
                 <div id="color-menu-${c.id}" class="absolute right-0 top-full mt-1 bg-white text-gray-800 rounded-lg shadow-lg border border-gray-100 hidden z-50" style="z-index: 9999;">
-                    <button id="menu-from-canvas-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">从图纸替换颜�?/button>
-                    <button id="menu-nearby-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">更换相近颜色</button>
+                    <button id="menu-from-canvas-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">????????/button>
+                    <button id="menu-nearby-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">??????</button>
                     <div id="nearby-panel-${c.id}" class="hidden px-3 py-2 border-t border-gray-100">
                         <div class="flex space-x-2 mb-2" id="nearby-swatches-${c.id}"></div>
                         <div class="flex justify-end space-x-2">
-                            <button id="nearby-cancel-${c.id}" class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm">取消</button>
-                            <button id="nearby-confirm-${c.id}" class="px-3 py-1 rounded bg-primary text-white text-sm">确认</button>
+                            <button id="nearby-cancel-${c.id}" class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm">??</button>
+                            <button id="nearby-confirm-${c.id}" class="px-3 py-1 rounded bg-primary text-white text-sm">??</button>
                         </div>
                     </div>
                 </div>
@@ -351,7 +351,7 @@ export function calculateStats() {
         `;
     }).join('');
 
-    // 为每个颜色项绑定点击事件
+    // ????????????
     sorted.forEach(c => {
         const item = document.getElementById(`color-item-${c.id}`);
         const menuBtn = document.getElementById(`color-menu-btn-${c.id}`);
@@ -395,7 +395,7 @@ export function calculateStats() {
         if (nearbyBtn) {
             nearbyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // 确保进入调整模式（但不重建清单）
+                // ????????????????
                 if (AppState.editMode !== 'adjust') toggleAdjustMode();
                 const fullPalette = getCurrentPalette();
                 const palette = fullPalette.filter(x => x.id !== c.id);
@@ -416,7 +416,7 @@ export function calculateStats() {
                 AppState.batchReplace.nearCurrentId = null;
                 swatchesWrap.innerHTML = sortedP.map(col => `<button data-id="${col.id}" class="w-8 h-8 rounded border border-gray-200" style="background-color: rgb(${col.r},${col.g},${col.b})"></button>`).join('');
                 nearbyPanel.classList.remove('hidden');
-                // 保证菜单保持展开状�?
+                // ???????????
                 menu.classList.remove('hidden');
                 item.classList.add('z-50');
             });
@@ -484,7 +484,7 @@ export function calculateStats() {
 }
 
 /**
- * 切换颜色高亮
+ * ??????
  */
 export function toggleColorHighlight(colorId) {
     if (AppState.highlightedColorId === colorId) {
@@ -493,7 +493,7 @@ export function toggleColorHighlight(colorId) {
         AppState.highlightedColorId = colorId;
     }
     const resultCanvas = document.getElementById('result-canvas');
-    // 在调�?删除模式下渲染暂存数据，避免丢失未提交的修改
+    // ??????????????????????????
     const dataToRender = (AppState.stagedPixelData && (AppState.editMode === 'adjust' || AppState.editMode === 'delete'))
         ? AppState.stagedPixelData
         : AppState.pixelData;
@@ -502,24 +502,24 @@ export function toggleColorHighlight(colorId) {
 }
 
 /**
- * 初始化导出界�?(Step 4)
+ * ????????(Step 4)
  */
 function initExportView() {
     const resultCanvas = document.getElementById('result-canvas');
     const exportImg = document.getElementById('export-preview');
     exportImg.src = resultCanvas.toDataURL();
-    document.getElementById('export-meta').innerText = `${AppState.gridWidth}x${AppState.gridHeight} �?${AppState.brand.toUpperCase()}`;
+    document.getElementById('export-meta').innerText = `${AppState.gridWidth}x${AppState.gridHeight} ??${AppState.brand.toUpperCase()}`;
 }
 
 /**
- * 更新容差显示
+ * ??????
  */
 export function updateTolerance(val) {
     document.getElementById('tolerance-value').innerText = val;
 }
 
 /**
- * 切换颜色限制
+ * ??????
  */
 export function toggleColorLimit() {
     const isEnabled = document.getElementById('color-limit-toggle').checked;
@@ -532,14 +532,12 @@ export function toggleColorLimit() {
 }
 
 /**
- * 更新最大颜色显�?
+ * ?????????
  */
 export function updateMaxColorsDisplay() {
     const val = document.getElementById('max-colors-slider').value;
     document.getElementById('max-colors-display').innerText = val;
 }
-
-/**
 
 export function findAndSelectEdgeBeads() {
     AppState.selectedEdgeBeadsIndices = [];
@@ -602,30 +600,30 @@ export function toggleEdgeAdjustMode() {
     const resultCanvas = document.getElementById('result-canvas');
     const btn = document.getElementById('toggle-edge-adjust-btn');
     const adjustBtn = document.getElementById('toggle-adjust-btn');
-    const deleteBtn = document.getElementById('toggle-delete-btn'); // 获取删除按钮
+    const deleteBtn = document.getElementById('toggle-delete-btn'); // ??????
     const entering = !AppState.edgeSelectionMode;
 
     if (entering) {
-        // 如果不在普通调整模式，则进入普通调整模�?
+        // ?????????????????????
         if (AppState.editMode !== 'adjust') {
             toggleAdjustMode();
         }
         AppState.edgeSelectionMode = true;
-        AppState.deleteMode = false; // 确保关闭删除模式
+        AppState.deleteMode = false; // ????????
         btn && btn.classList.add('bg-primary','text-white');
-        adjustBtn && adjustBtn.classList.remove('bg-primary','text-white'); // 确保普通调整按钮未选中
-        deleteBtn && deleteBtn.classList.remove('bg-primary','text-white'); // 确保删除按钮未选中
-        findAndSelectEdgeBeads(); // 找到并选中边缘色块
-        // 渲染时会高亮边缘色块
+        adjustBtn && adjustBtn.classList.remove('bg-primary','text-white'); // ???????????
+        deleteBtn && deleteBtn.classList.remove('bg-primary','text-white'); // ?????????
+        findAndSelectEdgeBeads(); // ?????????
+        // ??????????
     } else {
         AppState.edgeSelectionMode = false;
-        AppState.selectedEdgeBeadsIndices = []; // 清空选中
+        AppState.selectedEdgeBeadsIndices = []; // ????
         btn && btn.classList.remove('bg-primary','text-white');
-        // 如果没有其他调整模式激活，则退出普通调整模�?
+        // ???????????????????????
         if (AppState.editMode === 'adjust') {
-            toggleAdjustMode(); // 这会清空 stagedPixelData 并重新渲�?
+            toggleAdjustMode(); // ???? stagedPixelData ??????
         } else {
-            // 如果已经不在调整模式，但只是关闭边缘选择，也需要重新渲染以移除高亮
+            // ?????????????????????????????????
             renderResult(resultCanvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
         }
     }
@@ -637,8 +635,8 @@ export function toggleAdjustMode() {
     const cancelBtn = document.getElementById('adjust-cancel-btn');
     const applyBtn = document.getElementById('adjust-apply-btn');
     const btn = document.getElementById('toggle-adjust-btn');
-    const edgeBtn = document.getElementById('toggle-edge-adjust-btn'); // 获取边缘调整按钮
-    const deleteBtn = document.getElementById('toggle-delete-btn'); // 获取删除按钮
+    const edgeBtn = document.getElementById('toggle-edge-adjust-btn'); // ????????
+    const deleteBtn = document.getElementById('toggle-delete-btn'); // ??????
     const entering = AppState.editMode !== 'adjust';
     if (entering) {
         AppState.editMode = 'adjust';
@@ -646,13 +644,13 @@ export function toggleAdjustMode() {
         AppState.receiverIndex = null;
         AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
         AppState.stagedActions = [];
-        AppState.selectedEdgeBeadsIndices = []; // 确保进入普通调整模式时清空边缘选择
-        AppState.edgeSelectionMode = false; // 确保进入普通调整模式时关闭边缘选择模式
-        AppState.deleteMode = false; // 确保进入普通调整模式时关闭删除模式
+        AppState.selectedEdgeBeadsIndices = []; // ?????????????????
+        AppState.edgeSelectionMode = false; // ???????????????????
+        AppState.deleteMode = false; // ?????????????????
         AppState.preAdjustZoomState = { ...AppState.zoomState };
         btn && btn.classList.add('bg-primary','text-white');
-        edgeBtn && edgeBtn.classList.remove('bg-primary','text-white'); // 确保边缘调整按钮未选中
-        deleteBtn && deleteBtn.classList.remove('bg-primary','text-white'); // 确保删除按钮未选中
+        edgeBtn && edgeBtn.classList.remove('bg-primary','text-white'); // ???????????
+        deleteBtn && deleteBtn.classList.remove('bg-primary','text-white'); // ?????????
         undoBtn && undoBtn.classList.remove('hidden');
         cancelBtn && cancelBtn.classList.remove('hidden');
         applyBtn && applyBtn.classList.remove('hidden');
@@ -661,16 +659,16 @@ export function toggleAdjustMode() {
             resultCanvas.classList.add('cursor-crosshair');
         }
         renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-        // 注意：此处不调用 calculateStats()，以免重建颜色清单导致正在打开的菜单被销�?
+        // ???????? calculateStats()??????????????????????
     } else {
         AppState.editMode = 'none';
         AppState.adjustPhase = 'waiting_receiver';
         AppState.receiverIndex = null;
         AppState.stagedPixelData = null;
         AppState.stagedActions = [];
-        AppState.selectedEdgeBeadsIndices = []; // 退出调整模式时清空边缘选择
-        AppState.edgeSelectionMode = false; // 退出调整模式时关闭边缘选择模式
-        AppState.deleteMode = false; // 退出调整模式时关闭删除模式
+        AppState.selectedEdgeBeadsIndices = []; // ?????????????
+        AppState.edgeSelectionMode = false; // ???????????????
+        AppState.deleteMode = false; // ?????????????
         btn && btn.classList.remove('bg-primary','text-white');
         edgeBtn && edgeBtn.classList.remove('bg-primary','text-white');
         deleteBtn && deleteBtn.classList.remove('bg-primary','text-white');
@@ -723,9 +721,9 @@ export function handleResultCanvasClickForAdjust(e) {
     console.log(`localX: ${localX}, localY: ${localY}`);
     console.log(`canvasX: ${canvasX}, canvasY: ${canvasY}`);
     console.log(`zoomState.x: ${AppState.zoomState.x}, zoomState.y: ${AppState.zoomState.y}, zoomState.scale: ${AppState.zoomState.scale}`);
-    // 使用 renderer 中计算的实际渲染尺寸和偏�?
+    // ?? renderer ??????????????
     const scale = 30;
-    const gridOffset = scale; // 标尺宽度
+    const gridOffset = scale; // ????
     const minX = AppState.renderedMinX || 0;
     const minY = AppState.renderedMinY || 0;
     const contentWidth = AppState.renderedContentWidth || AppState.gridWidth;
@@ -734,7 +732,7 @@ export function handleResultCanvasClickForAdjust(e) {
     const xOnRenderedGrid = Math.floor((canvasX - gridOffset) / scale);
     const yOnRenderedGrid = Math.floor((canvasY - gridOffset) / scale);
 
-    // 将渲染网格坐标转换回原始 gridWidth/gridHeight 坐标
+    // ???????????? gridWidth/gridHeight ??
     const gx = minX + xOnRenderedGrid;
     const gy = minY + yOnRenderedGrid;
 
@@ -753,8 +751,8 @@ export function handleResultCanvasClickForAdjust(e) {
     console.log('Calculated idx:', idx);
     console.log('AppState.adjustPhase:', AppState.adjustPhase);
 
-    // 新增：删除模式下的点击处�?
-    // ɾ��ģʽ��ί�и� features/delete.js
+    // ??????????????
+    // ??????????? features/delete.js
     if (AppState.deleteMode) {
         handleDeleteClick(idx, canvas);
         return;
@@ -772,7 +770,7 @@ export function handleResultCanvasClickForAdjust(e) {
         const prevColors = [];
 
         if (indicesToChange.length > 0) {
-            // 记录批量操作的撤销信息
+            // ???????????
             for (const edgeIdx of indicesToChange) {
                 const prev = AppState.stagedPixelData[edgeIdx];
                 if (prev.id !== newColor.id) {
@@ -800,7 +798,7 @@ export function handleResultCanvasClickForAdjust(e) {
         return;
     }
 
-    // �����滻����ͼֽ���ѡɫģ�?
+    // ????????????????????
     if (AppState.editMode === 'adjust' && AppState.batchReplace.active && AppState.batchReplace.mode === 'from_canvas') {
         const donor = AppState.stagedPixelData[idx];
         if (!donor || donor.id === 'NONE') {
@@ -816,14 +814,14 @@ export function handleResultCanvasClickForAdjust(e) {
         return;
     }
 
-    // ��ͨ����ģʽ�����׶ε����滻
+    // ?????????????????????
     if (AppState.editMode === 'adjust' && !AppState.batchReplace.active) {
         if (AppState.adjustPhase === 'waiting_receiver') {
             const pixel = AppState.stagedPixelData[idx];
             if (!pixel || pixel.id === 'NONE') return;
             AppState.receiverIndex = idx;
             AppState.adjustPhase = 'waiting_donor';
-            // �ó�ɫ���߿���ѡ�еĵ�������
+            // ?�????????????????????
             renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
             drawReceiverOutline(canvas, gx, gy);
             console.log('Receiver selected at idx: ' + idx + ' color: ' + pixel.id);
@@ -832,7 +830,7 @@ export function handleResultCanvasClickForAdjust(e) {
         if (AppState.adjustPhase === 'waiting_donor') {
             const donor = AppState.stagedPixelData[idx];
             if (!donor || donor.id === 'NONE') {
-                // �㵽͸����ȡ��ѡ�У����¿�ʼ
+                // ?????????????????�??
                 AppState.adjustPhase = 'waiting_receiver';
                 AppState.receiverIndex = null;
                 renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
