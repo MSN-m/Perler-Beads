@@ -5,16 +5,16 @@
 export const AppState = {
     currentStep: 1,
     image: null,
-    originalImageData: null, // 用于撤销
-    history: [], // 历史记录
-    canvasSize: 0, // 像素
-    gridWidth: 32, // 数量
-    gridHeight: 32, // 数量
+    originalImageData: null,
+    history: [],
+    canvasSize: 0,
+    gridWidth: 32,
+    gridHeight: 32,
     brand: 'mard',
     mardSet: 221,
-    pixelData: [], // 颜色对象数组
-    isBgRemoving: false, // 是否处于移除背景模式
-    highlightedColorId: null, // 当前高亮的颜色 ID
+    pixelData: [],
+    isBgRemoving: false,
+    highlightedColorId: null,
     zoomState: {
         scale: 1,
         x: 0,
@@ -27,12 +27,13 @@ export const AppState = {
     editMode: 'none',
     adjustPhase: 'waiting_receiver',
     receiverIndex: null,
+    receiverColorId: null,
     stagedPixelData: null,
     stagedActions: [],
     preAdjustZoomState: null,
-    edgeSelectionMode: false, // 是否处于边缘选择模式
-    selectedEdgeBeadsIndices: [], // 存储选中的边缘色块索引
-    deleteMode: false, // 是否处于删除色块模式
+    edgeSelectionMode: false,
+    selectedEdgeBeadsIndices: [],
+    deleteMode: false,
     batchReplace: {
         active: false,
         mode: null,

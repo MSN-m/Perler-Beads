@@ -1,5 +1,5 @@
 /**
- * 拼豆图纸生成器 - 主入口文件
+ * 拼豆图纸生成�?- 主入口文�?
  */
 import { AppState } from './state.js';
 import { 
@@ -62,7 +62,7 @@ const loadExample = (type) => {
     img.src = urls[type];
 };
 
-// 绑定事件监听器
+// 绑定事件监听�?
 document.addEventListener('DOMContentLoaded', () => {
     // --- 步骤 1: 首页/上传 ---
     const fileUpload = document.getElementById('file-upload');
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- 步骤 3: 编辑器/结果 ---
+    // --- 步骤 3: 编辑�?结果 ---
     const backToStep2 = document.getElementById('back-to-step-2');
     if (backToStep2) {
         backToStep2.addEventListener('click', () => goToStep(2));
@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 鼠标平移
         resultContainer.addEventListener('mousedown', (e) => {
-            if (AppState.editMode === 'eyedropper' || AppState.editMode === 'adjust') return;
+            if (AppState.editMode === 'eyedropper' || AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
             AppState.zoomState.isDragging = true;
             AppState.zoomState.lastX = e.clientX;
             AppState.zoomState.lastY = e.clientY;
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         window.addEventListener('mousemove', (e) => {
-            if (AppState.editMode === 'adjust') return;
+            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
             if (!AppState.zoomState || !AppState.zoomState.isDragging) return;
             const dx = e.clientX - AppState.zoomState.lastX;
             const dy = e.clientY - AppState.zoomState.lastY;
@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         window.addEventListener('mouseup', () => {
-            if (AppState.editMode === 'adjust') return;
+            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
             AppState.zoomState.isDragging = false;
             resultCanvas.classList.remove('cursor-grabbing');
             resultCanvas.classList.add('cursor-grab');
@@ -272,9 +272,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 触摸支持 (缩放和平移)
+        // 触摸支持 (缩放和平�?
         resultContainer.addEventListener('touchstart', (e) => {
-            if (AppState.editMode === 'adjust') return;
+            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
             if (e.touches.length === 1) {
                 AppState.zoomState.isDragging = true;
                 AppState.zoomState.lastX = e.touches[0].clientX;
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
 
         resultContainer.addEventListener('touchmove', (e) => {
-            if (AppState.editMode === 'adjust') return;
+            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
             if (!AppState.zoomState) return;
             e.preventDefault();
             if (e.touches.length === 1 && AppState.zoomState.isDragging) {
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.touches[0].clientY - e.touches[1].clientY
                 );
                 
-                // 防止除以 0 导致的 Infinity
+                // 防止除以 0 导致�?Infinity
                 if (AppState.zoomState.lastDist > 0) {
                     const factor = dist / AppState.zoomState.lastDist;
                     const newScale = Math.min(Math.max(AppState.zoomState.scale * factor, 0.5), 10);
@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
 
         resultContainer.addEventListener('touchend', () => {
-            if (AppState.editMode === 'adjust') return;
+            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
             if (AppState.zoomState) {
                 AppState.zoomState.isDragging = false;
             }
