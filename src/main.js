@@ -1,5 +1,5 @@
 /**
- * Æ´¶¹Í¼Ö½Éú³É??- Ö÷Èë¿ÚÎÄ??
+ * Æ´ï¿½ï¿½Í¼Ö½ï¿½ï¿½ï¿½ï¿½??- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½??
  */
 import { AppState } from './state.js';
 import { 
@@ -27,7 +27,7 @@ import { updateResultTransform } from './renderer.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
 
 /**
- * ´¦ÀíÍ¼Æ¬ÉÏ´«
+ * ï¿½ï¿½ï¿½ï¿½Í¼Æ¬ï¿½Ï´ï¿½
  */
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -45,7 +45,7 @@ const handleImageUpload = (event) => {
 };
 
 /**
- * ¼ÓÔØÊ¾ÀýÍ¼Æ¬
+ * ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½Í¼Æ¬
  */
 const loadExample = (type) => {
     const urls = {
@@ -62,15 +62,15 @@ const loadExample = (type) => {
     img.src = urls[type];
 };
 
-// °ó¶¨ÊÂ¼þ¼àÌý??
+// ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½??
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ²½Öè 1: Ê×Ò³/ÉÏ´« ---
+    // --- ï¿½ï¿½ï¿½ï¿½ 1: ï¿½ï¿½Ò³/ï¿½Ï´ï¿½ ---
     const fileUpload = document.getElementById('file-upload');
     if (fileUpload) {
         fileUpload.addEventListener('change', handleImageUpload);
     }
 
-    // Ê¾ÀýÍ¼Æ¬°´Å¥
+    // Ê¾ï¿½ï¿½Í¼Æ¬ï¿½ï¿½Å¥
     const exampleDog = document.getElementById('example-dog');
     if (exampleDog) {
         exampleDog.addEventListener('click', () => loadExample('dog'));
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         examplePixel.addEventListener('click', () => loadExample('pixel'));
     }
 
-    // --- ²½Öè 2: ÉèÖÃ ---
+    // --- ï¿½ï¿½ï¿½ï¿½ 2: ï¿½ï¿½ï¿½ï¿½ ---
     const backToStep1 = document.getElementById('back-to-step-1');
     if (backToStep1) {
         backToStep1.addEventListener('click', () => goToStep(1));
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- ²½Öè 3: ±à¼­??½á¹û ---
+    // --- ï¿½ï¿½ï¿½ï¿½ 3: ï¿½à¼­??ï¿½ï¿½ï¿½ ---
     const backToStep2 = document.getElementById('back-to-step-2');
     if (backToStep2) {
         backToStep2.addEventListener('click', () => goToStep(2));
@@ -174,18 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
         nextToStep4.addEventListener('click', () => goToStep(4));
     }
 
-    const zoomResetBtn = document.getElementById('zoom-reset-btn');
-    if (zoomResetBtn) {
-        zoomResetBtn.addEventListener('click', resetZoom);
-    }
-
-    // --- ²½Öè 4: µ¼³ö ---
-    const backToStep3 = document.getElementById('back-to-step-3');
-    if (backToStep3) {
-        backToStep3.addEventListener('click', () => goToStep(3));
-    }
-
-    const downloadImgBtn = document.getElementById('download-image-btn');
     if (downloadImgBtn) {
         downloadImgBtn.addEventListener('click', downloadImage);
     }
@@ -203,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
 
 
-    // --- Ëõ·ÅÆ½ÒÆ£¨features/zoom.js£©---
+    // --- ï¿½ï¿½ï¿½ï¿½Æ½ï¿½Æ£ï¿½features/zoom.jsï¿½ï¿½---
     const resultContainer=document.getElementById("result-container");
     const resultCanvas=document.getElementById("result-canvas");
     const zoomResetBtn=document.getElementById("zoom-reset-btn");
