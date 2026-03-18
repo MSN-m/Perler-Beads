@@ -6,7 +6,8 @@ import { getFilteredMardPalette, removeBackground, cleanTinyFragments, generateP
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
 import { toggleDeleteMode as _toggleDeleteMode, handleDeleteClick } from './features/delete.js';
-export { _toggleDeleteMode as toggleDeleteMode };
+import { resetZoom as _resetZoom } from './features/zoom.js';
+export { _toggleDeleteMode as toggleDeleteMode, _resetZoom as resetZoom };
 
 export function deepClonePixels(arr) {
     return arr ? arr.map(p => ({ id: p.id, r: p.r, g: p.g, b: p.b, a: p.a })) : null;
@@ -539,24 +540,6 @@ export function updateMaxColorsDisplay() {
 }
 
 /**
- * 重置结果画布缩放
- */
-export function resetZoom() {
-    const resultCanvas = document.getElementById('result-canvas');
-    const resultContainer = document.getElementById('result-container');
-    const zoomResetBtn = document.getElementById('zoom-reset-btn');
-    
-    const newState = getResetZoomState(resultContainer, resultCanvas);
-    AppState.zoomState = newState;
-    
-    resultCanvas.style.transition = 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-    updateResultTransform(resultCanvas, AppState.zoomState, zoomResetBtn);
-    
-    setTimeout(() => {
-        resultCanvas.style.transition = 'none';
-    }, 400);
-}
-
 
 export function findAndSelectEdgeBeads() {
     AppState.selectedEdgeBeadsIndices = [];

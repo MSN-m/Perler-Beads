@@ -1,5 +1,5 @@
-ï»¿/**
- * æ‹¼è±†å›¾çº¸ç”Ÿæˆï¿½?- ä¸»å…¥å£æ–‡ï¿½?
+/**
+ * Æ´¶¹Í¼Ö½Éú³É??- Ö÷Èë¿ÚÎÄ??
  */
 import { AppState } from './state.js';
 import { 
@@ -25,9 +25,10 @@ import {
 } from './ui.js';
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { updateResultTransform } from './renderer.js';
+import { initZoomEvents, resetZoom } from './features/zoom.js';
 
 /**
- * å¤„ç†å›¾ç‰‡ä¸Šä¼ 
+ * ´¦ÀíÍ¼Æ¬ÉÏ´«
  */
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -45,7 +46,7 @@ const handleImageUpload = (event) => {
 };
 
 /**
- * åŠ è½½ç¤ºä¾‹å›¾ç‰‡
+ * ¼ÓÔØÊ¾ÀýÍ¼Æ¬
  */
 const loadExample = (type) => {
     const urls = {
@@ -62,15 +63,15 @@ const loadExample = (type) => {
     img.src = urls[type];
 };
 
-// ç»‘å®šäº‹ä»¶ç›‘å¬ï¿½?
+// °ó¶¨ÊÂ¼þ¼àÌý??
 document.addEventListener('DOMContentLoaded', () => {
-    // --- æ­¥éª¤ 1: é¦–é¡µ/ä¸Šä¼  ---
+    // --- ²½Öè 1: Ê×Ò³/ÉÏ´« ---
     const fileUpload = document.getElementById('file-upload');
     if (fileUpload) {
         fileUpload.addEventListener('change', handleImageUpload);
     }
 
-    // ç¤ºä¾‹å›¾ç‰‡æŒ‰é’®
+    // Ê¾ÀýÍ¼Æ¬°´Å¥
     const exampleDog = document.getElementById('example-dog');
     if (exampleDog) {
         exampleDog.addEventListener('click', () => loadExample('dog'));
@@ -84,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         examplePixel.addEventListener('click', () => loadExample('pixel'));
     }
 
-    // --- æ­¥éª¤ 2: è®¾ç½® ---
+    // --- ²½Öè 2: ÉèÖÃ ---
     const backToStep1 = document.getElementById('back-to-step-1');
     if (backToStep1) {
         backToStep1.addEventListener('click', () => goToStep(1));
@@ -163,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- æ­¥éª¤ 3: ç¼–è¾‘ï¿½?ç»“æžœ ---
+    // --- ²½Öè 3: ±à¼­??½á¹û ---
     const backToStep2 = document.getElementById('back-to-step-2');
     if (backToStep2) {
         backToStep2.addEventListener('click', () => goToStep(2));
@@ -179,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         zoomResetBtn.addEventListener('click', resetZoom);
     }
 
-    // --- æ­¥éª¤ 4: å¯¼å‡º ---
+    // --- ²½Öè 4: µ¼³ö ---
     const backToStep3 = document.getElementById('back-to-step-3');
     if (backToStep3) {
         backToStep3.addEventListener('click', () => goToStep(3));
@@ -203,163 +204,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
 
 
-    // --- ç»“æžœç”»å¸ƒç¼©æ”¾ä¸Žå¹³ç§»é€»è¾‘ ---
-    const resultContainer = document.getElementById('result-container');
-    const resultCanvas = document.getElementById('result-canvas');
+    // --- Ëõ·ÅÆ½ÒÆ£¨features/zoom.js£©---
+    const resultContainer=document.getElementById("result-container");
+    const resultCanvas=document.getElementById("result-canvas");
+    const zoomResetBtn=document.getElementById("zoom-reset-btn");
+    if(zoomResetBtn){zoomResetBtn.addEventListener("click",resetZoom);}
+    initZoomEvents(resultContainer,resultCanvas,zoomResetBtn,(e)=>{
+        if(AppState.editMode==="adjust"||AppState.editMode==="delete")handleResultCanvasClickForAdjust(e);
+    });
 
-    if (resultContainer && resultCanvas) {
-        // æ»šè½®ç¼©æ”¾
-        resultContainer.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = -e.deltaY;
-            const factor = delta > 0 ? 1.1 : 0.9;
-            const newScale = Math.min(Math.max(AppState.zoomState.scale * factor, 0.5), 10);
-            
-            if (newScale !== AppState.zoomState.scale) {
-                const rect = resultCanvas.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-                
-                const canvasX = mouseX / AppState.zoomState.scale;
-                const canvasY = mouseY / AppState.zoomState.scale;
-
-                AppState.zoomState.scale = newScale;
-                AppState.zoomState.x = e.clientX - rect.left - canvasX * newScale + AppState.zoomState.x;
-                AppState.zoomState.y = e.clientY - rect.top - canvasY * newScale + AppState.zoomState.y;
-
-                updateResultTransform(resultCanvas, AppState.zoomState, zoomResetBtn);
-            }
-        }, { passive: false });
-
-        // é¼ æ ‡å¹³ç§»
-        resultContainer.addEventListener('mousedown', (e) => {
-            if (AppState.editMode === 'eyedropper' || AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
-            AppState.zoomState.isDragging = true;
-            AppState.zoomState.lastX = e.clientX;
-            AppState.zoomState.lastY = e.clientY;
-            resultCanvas.style.transition = 'none';
-            resultCanvas.classList.remove('cursor-grab');
-            resultCanvas.classList.add('cursor-grabbing');
-        });
-
-        resultCanvas.addEventListener('click', (e) => {
-            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') handleResultCanvasClickForAdjust(e);
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
-            if (!AppState.zoomState || !AppState.zoomState.isDragging) return;
-            const dx = e.clientX - AppState.zoomState.lastX;
-            const dy = e.clientY - AppState.zoomState.lastY;
-            AppState.zoomState.x += dx;
-            AppState.zoomState.y += dy;
-            AppState.zoomState.lastX = e.clientX;
-            AppState.zoomState.lastY = e.clientY;
-            updateResultTransform(resultCanvas, AppState.zoomState, zoomResetBtn);
-        });
-
-        window.addEventListener('mouseup', () => {
-            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
-            AppState.zoomState.isDragging = false;
-            resultCanvas.classList.remove('cursor-grabbing');
-            resultCanvas.classList.add('cursor-grab');
-        });
-
-        // çª—å£å¤§å°å˜åŒ–æ—¶é‡ç½®ç¼©æ”¾ä»¥é€‚é…
-        window.addEventListener('resize', () => {
-            if (AppState.currentStep === 3) {
-                resetZoom();
-            }
-        });
-
-        // è§¦æ‘¸æ”¯æŒ (ç¼©æ”¾å’Œå¹³ï¿½?
-        resultContainer.addEventListener('touchstart', (e) => {
-            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
-            if (e.touches.length === 1) {
-                AppState.zoomState.isDragging = true;
-                AppState.zoomState.lastX = e.touches[0].clientX;
-                AppState.zoomState.lastY = e.touches[0].clientY;
-            } else if (e.touches.length === 2) {
-                AppState.zoomState.lastDist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-            }
-            resultCanvas.style.transition = 'none';
-        }, { passive: false });
-
-        resultContainer.addEventListener('touchmove', (e) => {
-            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
-            if (!AppState.zoomState) return;
-            e.preventDefault();
-            if (e.touches.length === 1 && AppState.zoomState.isDragging) {
-                const dx = e.touches[0].clientX - AppState.zoomState.lastX;
-                const dy = e.touches[0].clientY - AppState.zoomState.lastY;
-                AppState.zoomState.x += dx;
-                AppState.zoomState.y += dy;
-                AppState.zoomState.lastX = e.touches[0].clientX;
-                AppState.zoomState.lastY = e.touches[0].clientY;
-                updateResultTransform(resultCanvas, AppState.zoomState, zoomResetBtn);
-            } else if (e.touches.length === 2) {
-                const dist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                
-                // é˜²æ­¢é™¤ä»¥ 0 å¯¼è‡´ï¿½?Infinity
-                if (AppState.zoomState.lastDist > 0) {
-                    const factor = dist / AppState.zoomState.lastDist;
-                    const newScale = Math.min(Math.max(AppState.zoomState.scale * factor, 0.5), 10);
-                    
-                    if (newScale !== AppState.zoomState.scale) {
-                        const actualFactor = newScale / AppState.zoomState.scale;
-                        
-                        // ä»¥ä¸¤ä¸ªæ‰‹æŒ‡çš„ä¸­ç‚¹ä½œä¸ºç¼©æ”¾ä¸­å¿ƒ
-                        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                        const rect = resultCanvas.getBoundingClientRect();
-                        
-                        AppState.zoomState.x -= (centerX - rect.left) * (actualFactor - 1);
-                        AppState.zoomState.y -= (centerY - rect.top) * (actualFactor - 1);
-                        AppState.zoomState.scale = newScale;
-                        updateResultTransform(resultCanvas, AppState.zoomState, zoomResetBtn);
-                    }
-                }
-                AppState.zoomState.lastDist = dist;
-            }
-        }, { passive: false });
-
-        resultContainer.addEventListener('touchend', () => {
-            if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
-            if (AppState.zoomState) {
-                AppState.zoomState.isDragging = false;
-            }
-        });
-    }
-
-    const adjustBtn = document.getElementById('toggle-adjust-btn');
-    if (adjustBtn) {
-        adjustBtn.addEventListener('click', toggleAdjustMode);
-    }
-    const edgeAdjustBtn = document.getElementById('toggle-edge-adjust-btn');
-    if (edgeAdjustBtn) {
-        edgeAdjustBtn.addEventListener('click', toggleEdgeAdjustMode);
-    }
-    const deleteBtn = document.getElementById('toggle-delete-btn');
-    console.log('Delete button element:', deleteBtn);
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', toggleDeleteMode);
-    }
-    const undoBtn = document.getElementById('adjust-undo-btn');
-    if (undoBtn) {
-        undoBtn.addEventListener('click', adjustUndo);
-    }
-    const cancelBtn = document.getElementById('adjust-cancel-btn');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', adjustCancel);
-    }
-    const applyBtn = document.getElementById('adjust-apply-btn');
-    if (applyBtn) {
-        applyBtn.addEventListener('click', adjustApply);
-    }
 });
