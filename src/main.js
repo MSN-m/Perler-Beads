@@ -14,7 +14,6 @@ import {
     updateTolerance,
     toggleColorLimit,
     updateMaxColorsDisplay,
-    resetZoom,
     toggleAdjustMode,
     handleResultCanvasClickForAdjust,
     adjustUndo,
