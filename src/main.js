@@ -174,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         nextToStep4.addEventListener('click', () => goToStep(4));
     }
 
+    const downloadImgBtn = document.getElementById('download-image-btn');
     if (downloadImgBtn) {
         downloadImgBtn.addEventListener('click', downloadImage);
     }
