@@ -1,9 +1,10 @@
 /* Custom Utilities */
 .step-section {
     display: none;
-    height: 100vh;
+    min-height: 100vh;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .step-section.active {

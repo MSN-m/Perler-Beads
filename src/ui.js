@@ -135,10 +135,10 @@ function updateBoardSizeUI() {
     const boardSizeDisplay = document.getElementById('board-size-display');
     const maxDim = Math.max(AppState.gridWidth, AppState.gridHeight);
     if (maxDim <= 52) {
-        boardSizeDisplay.innerText = '52??';
+        boardSizeDisplay.innerText = '52板';
         boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-blue-100 text-blue-600';
     } else {
-        boardSizeDisplay.innerText = '104??';
+        boardSizeDisplay.innerText = '104板';
         boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-purple-100 text-purple-600';
     }
 }
@@ -188,14 +188,14 @@ export function toggleBgRemovalMode() {
         cleanBtn.classList.remove('hidden');
         btn.classList.add('bg-primary', 'text-white');
         btn.classList.remove('bg-white');
-        btn.querySelector('span').innerText = '??????';
+        btn.querySelector('span').innerText = '退出移除';
     } else {
         tip.classList.replace('flex', 'hidden');
         tolerancePanel.classList.replace('flex', 'hidden');
         cleanBtn.classList.add('hidden');
         btn.classList.replace('bg-primary', 'bg-white');
         btn.classList.remove('text-white');
-        btn.querySelector('span').innerText = '????????';
+        btn.querySelector('span').innerText = '点击图片移除背景';
     }
 }
 
@@ -313,8 +313,8 @@ export function calculateStats() {
 
     const sorted = Object.values(stats).sort((a, b) => b.count - a.count);
     
-    document.getElementById('total-beads-count').innerText = `??${total} ?`;
-    document.getElementById('color-types-count').innerText = `${sorted.length} ???`;
+    document.getElementById('total-beads-count').innerText = `共${total} 颗`;
+    document.getElementById('color-types-count').innerText = `${sorted.length} 色`;
 
     const container = document.getElementById('color-stats');
     container.innerHTML = sorted.map(c => {
@@ -329,7 +329,7 @@ export function calculateStats() {
                     <span class="text-[11px] font-bold font-mono ${textColor}">${c.id}</span>
                     <span class="text-[10px] font-medium ${textColor}">(${c.count})</span>
                 </div>
-                <button id="color-menu-btn-${c.id}" aria-label="????" class="flex items-center justify-center w-7 h-7 rounded-md shrink-0 ring-1 ring-white/40 bg-black/20 hover:bg-black/30 ${iconColor}" style="min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; background: rgba(0,0,0,0.2); color:#fff;">
+                <button id="color-menu-btn-${c.id}" aria-label="颜色操作菜单" class="flex items-center justify-center w-7 h-7 rounded-md shrink-0 ring-1 ring-white/40 bg-black/20 hover:bg-black/30 ${iconColor}" style="min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; background: rgba(0,0,0,0.2); color:#fff;">
                     <svg class="w-3.5 h-3.5 ${iconColor}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <circle cx="4" cy="10" r="2"></circle>
                         <circle cx="10" cy="10" r="2"></circle>
@@ -337,13 +337,13 @@ export function calculateStats() {
                     </svg>
                 </button>
                 <div id="color-menu-${c.id}" class="absolute right-0 top-full mt-1 bg-white text-gray-800 rounded-lg shadow-lg border border-gray-100 hidden z-50" style="z-index: 9999;">
-                    <button id="menu-from-canvas-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">????????/button>
-                    <button id="menu-nearby-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">??????</button>
+                    <button id="menu-from-canvas-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">从图纸点击替换</button>
+                    <button id="menu-nearby-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">替换为相近色</button>
                     <div id="nearby-panel-${c.id}" class="hidden px-3 py-2 border-t border-gray-100">
                         <div class="flex space-x-2 mb-2" id="nearby-swatches-${c.id}"></div>
                         <div class="flex justify-end space-x-2">
-                            <button id="nearby-cancel-${c.id}" class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm">??</button>
-                            <button id="nearby-confirm-${c.id}" class="px-3 py-1 rounded bg-primary text-white text-sm">??</button>
+                            <button id="nearby-cancel-${c.id}" class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm">取消</button>
+                            <button id="nearby-confirm-${c.id}" class="px-3 py-1 rounded bg-primary text-white text-sm">确认</button>
                         </div>
                     </div>
                 </div>
@@ -508,7 +508,7 @@ function initExportView() {
     const resultCanvas = document.getElementById('result-canvas');
     const exportImg = document.getElementById('export-preview');
     exportImg.src = resultCanvas.toDataURL();
-    document.getElementById('export-meta').innerText = `${AppState.gridWidth}x${AppState.gridHeight} ??${AppState.brand.toUpperCase()}`;
+    document.getElementById('export-meta').innerText = `${AppState.gridWidth}x${AppState.gridHeight} • ${AppState.brand.toUpperCase()}`;
 }
 
 /**
@@ -821,7 +821,7 @@ export function handleResultCanvasClickForAdjust(e) {
             if (!pixel || pixel.id === 'NONE') return;
             AppState.receiverIndex = idx;
             AppState.adjustPhase = 'waiting_donor';
-            // ?�????????????????????
+            // ?�????????????????????
             renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
             drawReceiverOutline(canvas, gx, gy);
             console.log('Receiver selected at idx: ' + idx + ' color: ' + pixel.id);
@@ -830,7 +830,7 @@ export function handleResultCanvasClickForAdjust(e) {
         if (AppState.adjustPhase === 'waiting_donor') {
             const donor = AppState.stagedPixelData[idx];
             if (!donor || donor.id === 'NONE') {
-                // ?????????????????�??
+                // ?????????????????�??
                 AppState.adjustPhase = 'waiting_receiver';
                 AppState.receiverIndex = null;
                 renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);

@@ -174,6 +174,36 @@ document.addEventListener('DOMContentLoaded', () => {
         nextToStep4.addEventListener('click', () => goToStep(4));
     }
 
+    const toggleAdjustBtn = document.getElementById('toggle-adjust-btn');
+    if (toggleAdjustBtn) {
+        toggleAdjustBtn.addEventListener('click', toggleAdjustMode);
+    }
+
+    const toggleEdgeAdjustBtn = document.getElementById('toggle-edge-adjust-btn');
+    if (toggleEdgeAdjustBtn) {
+        toggleEdgeAdjustBtn.addEventListener('click', toggleEdgeAdjustMode);
+    }
+
+    const toggleDeleteBtn = document.getElementById('toggle-delete-btn');
+    if (toggleDeleteBtn) {
+        toggleDeleteBtn.addEventListener('click', toggleDeleteMode);
+    }
+
+    const adjustUndoBtn = document.getElementById('adjust-undo-btn');
+    if (adjustUndoBtn) {
+        adjustUndoBtn.addEventListener('click', adjustUndo);
+    }
+
+    const adjustCancelBtn = document.getElementById('adjust-cancel-btn');
+    if (adjustCancelBtn) {
+        adjustCancelBtn.addEventListener('click', adjustCancel);
+    }
+
+    const adjustApplyBtn = document.getElementById('adjust-apply-btn');
+    if (adjustApplyBtn) {
+        adjustApplyBtn.addEventListener('click', adjustApply);
+    }
+
     const downloadImgBtn = document.getElementById('download-image-btn');
     if (downloadImgBtn) {
         downloadImgBtn.addEventListener('click', downloadImage);
