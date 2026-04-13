@@ -1,5 +1,5 @@
 /**
- * ????????- UI ????
+ * 拼豆图纸生成器 - UI 与页面流程
  */
 import { AppState } from './state.js';
 import { getFilteredMardPalette, removeBackground, cleanTinyFragments, generatePatternData } from './processor.js';
@@ -72,8 +72,8 @@ export function performBatchReplace(sourceId, target) {
 }
 
 /**
- * ????
- * @param {number} step - ???? (1-4)
+ * 切换页面步骤
+ * @param {number} step - 步骤编号（1-4）
  */
 export function goToStep(step) {
     document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
@@ -81,14 +81,14 @@ export function goToStep(step) {
     document.querySelector(`#step-${stepNames[step - 1]}`).classList.add('active');
     AppState.currentStep = step;
 
-    // ????????
+    // 根据步骤初始化对应视图
     if (step === 2) initSettingsView();
     if (step === 3) initEditorView();
     if (step === 4) initExportView();
 }
 
 /**
- * ????????(Step 2)
+ * 初始化设置页（Step 2）
  */
 function initSettingsView() {
     if (!AppState.image) return;
@@ -98,7 +98,7 @@ function initSettingsView() {
     const container = document.getElementById('canvas-container');
     const img = AppState.image;
 
-    // ??????
+    // 计算预览区域尺寸
     const maxWidth = window.innerWidth * 0.9;
     const maxHeight = window.innerHeight * 0.65;
     const imgRatio = img.width / img.height;
@@ -119,7 +119,7 @@ function initSettingsView() {
     sourceCanvas.height = img.height;
     ctxSource.drawImage(img, 0, 0);
 
-    // ??????
+    // 保存初始图像数据
     AppState.originalImageData = ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
     AppState.history = [ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height)];
     updateUndoButton();
@@ -128,7 +128,7 @@ function initSettingsView() {
 }
 
 /**
- * ??????
+ * 更新网格尺寸
  */
 export function updateGridDimensions() {
     const slider = document.getElementById('grid-size-slider');
@@ -149,16 +149,16 @@ export function updateGridDimensions() {
 }
 
 /**
- * ????????UI
+ * 更新板子尺寸 UI
  */
 function updateBoardSizeUI() {
     const boardSizeDisplay = document.getElementById('board-size-display');
     const maxDim = Math.max(AppState.gridWidth, AppState.gridHeight);
     if (maxDim <= 52) {
-        boardSizeDisplay.innerText = '52鏉?;
+        boardSizeDisplay.innerText = '52板';
         boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-blue-100 text-blue-600';
     } else {
-        boardSizeDisplay.innerText = '104鏉?;
+        boardSizeDisplay.innerText = '104板';
         boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-purple-100 text-purple-600';
     }
 }
@@ -180,7 +180,7 @@ export function updateUndoButton() {
 }
 
 /**
- * ??????
+ * 撤销背景移除
  */
 export function undoBgRemoval() {
     if (AppState.history.length > 1) {
@@ -193,7 +193,7 @@ export function undoBgRemoval() {
 }
 
 /**
- * ????????
+ * 切换背景移除模式
  */
 export function toggleBgRemovalMode() {
     AppState.isBgRemoving = !AppState.isBgRemoving;
@@ -208,19 +208,19 @@ export function toggleBgRemovalMode() {
         cleanBtn.classList.remove('hidden');
         btn.classList.add('bg-primary', 'text-white');
         btn.classList.remove('bg-white');
-        btn.querySelector('span').innerText = '閫€鍑虹Щ闄?;
+        btn.querySelector('span').innerText = '退出移除';
     } else {
         tip.classList.replace('flex', 'hidden');
         tolerancePanel.classList.replace('flex', 'hidden');
         cleanBtn.classList.add('hidden');
         btn.classList.replace('bg-primary', 'bg-white');
         btn.classList.remove('text-white');
-        btn.querySelector('span').innerText = '鐐瑰嚮鍥剧墖绉婚櫎鑳屾櫙';
+        btn.querySelector('span').innerText = '点击图片移除背景';
     }
 }
 
 /**
- * ?? Canvas ????????
+ * 处理原图 Canvas 点击移除背景
  */
 export function handleCanvasClick(e) {
     if (!AppState.isBgRemoving) return;
@@ -237,7 +237,7 @@ export function handleCanvasClick(e) {
         y = e.clientY - rect.top;
     }
 
-    // ??????????
+    // 将显示坐标换算为画布像素坐标
     const scaleX = sourceCanvas.width / rect.width;
     const scaleY = sourceCanvas.height / rect.height;
     const startX = Math.floor(x * scaleX);
@@ -253,11 +253,11 @@ export function handleCanvasClick(e) {
     AppState.history.push(ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height));
     if (AppState.history.length > 10) AppState.history.shift();
     updateUndoButton();
-    toggleBgRemovalMode(); // ?????
+    toggleBgRemovalMode(); // 点击一次后自动退出
 }
 
 /**
- * ??????
+ * 清理细碎残片
  */
 export function handleCleanFragments() {
     const sourceCanvas = document.getElementById('source-canvas');
@@ -272,14 +272,14 @@ export function handleCleanFragments() {
 }
 
 /**
- * ????????
+ * 根据当前设置生成图纸数据
  */
 export function handleGeneratePattern() {
     const sourceCanvas = document.getElementById('source-canvas');
     const ctx = sourceCanvas.getContext('2d');
     const sourceImageData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
 
-    // ???????
+    // 清除高亮颜色状态
     AppState.highlightedColorId = null;
 
     AppState.pixelData = generatePatternData({
@@ -298,29 +298,29 @@ export function handleGeneratePattern() {
 }
 
 /**
- * ???????? (Step 3)
+ * 初始化编辑页（Step 3）
  */
 function initEditorView() {
     const resultCanvas = document.getElementById('result-canvas');
     renderResult(resultCanvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
     calculateStats();
     
-    // ?? requestAnimationFrame ???????????? Flexbox ????????????
+    // 使用 requestAnimationFrame 等待布局完成，再计算适配缩放
     requestAnimationFrame(() => {
         const resultContainer = document.getElementById('result-container');
         const zoomState = getResetZoomState(resultContainer, resultCanvas);
-        AppState.zoomState = zoomState; // ??????
+        AppState.zoomState = zoomState; // 保存初始缩放状态
         updateResultTransform(resultCanvas, zoomState, document.getElementById('zoom-reset-btn'));
     });
 }
 
 /**
- * ??????
+ * 统计颜色和总颗数
  */
 export function calculateStats() {
     const stats = {};
     let total = 0;
-    // ????????????????????????????
+    // 编辑模式下优先统计暂存数据，普通模式统计正式数据
     const dataToCount = (AppState.stagedPixelData && (AppState.editMode === 'adjust' || AppState.editMode === 'delete'))
         ? AppState.stagedPixelData
         : AppState.pixelData;
@@ -333,8 +333,8 @@ export function calculateStats() {
 
     const sorted = Object.values(stats).sort((a, b) => b.count - a.count);
     
-    document.getElementById('total-beads-count').innerText = `鍏?{total} 棰梎;
-    document.getElementById('color-types-count').innerText = `${sorted.length} 鑹瞏;
+    document.getElementById('total-beads-count').innerText = `共 ${total} 颗`;
+    document.getElementById('color-types-count').innerText = `${sorted.length} 色`;
 
     const container = document.getElementById('color-stats');
     container.innerHTML = sorted.map(c => {
@@ -349,7 +349,7 @@ export function calculateStats() {
                     <span class="text-[11px] font-bold font-mono ${textColor}">${c.id}</span>
                     <span class="text-[10px] font-medium ${textColor}">(${c.count})</span>
                 </div>
-                <button id="color-menu-btn-${c.id}" aria-label="棰滆壊鎿嶄綔鑿滃崟" class="flex items-center justify-center w-7 h-7 rounded-md shrink-0 ring-1 ring-white/40 bg-black/20 hover:bg-black/30 ${iconColor}" style="min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; background: rgba(0,0,0,0.2); color:#fff;">
+                <button id="color-menu-btn-${c.id}" aria-label="颜色操作菜单" class="flex items-center justify-center w-7 h-7 rounded-md shrink-0 ring-1 ring-white/40 bg-black/20 hover:bg-black/30 ${iconColor}" style="min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; background: rgba(0,0,0,0.2); color:#fff;">
                     <svg class="w-3.5 h-3.5 ${iconColor}" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <circle cx="4" cy="10" r="2"></circle>
                         <circle cx="10" cy="10" r="2"></circle>
@@ -357,13 +357,13 @@ export function calculateStats() {
                     </svg>
                 </button>
                 <div id="color-menu-${c.id}" class="absolute right-0 top-full mt-1 bg-white text-gray-800 rounded-lg shadow-lg border border-gray-100 hidden z-50" style="z-index: 9999;">
-                    <button id="menu-from-canvas-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">浠庡浘绾哥偣鍑绘浛鎹?/button>
-                    <button id="menu-nearby-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">鏇挎崲涓虹浉杩戣壊</button>
+                    <button id="menu-from-canvas-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">从图纸点击替换</button>
+                    <button id="menu-nearby-${c.id}" class="block text-left px-3 py-2 hover:bg-gray-50 w-40">替换为相近色</button>
                     <div id="nearby-panel-${c.id}" class="hidden px-3 py-2 border-t border-gray-100">
                         <div class="flex space-x-2 mb-2" id="nearby-swatches-${c.id}"></div>
                         <div class="flex justify-end space-x-2">
-                            <button id="nearby-cancel-${c.id}" class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm">鍙栨秷</button>
-                            <button id="nearby-confirm-${c.id}" class="px-3 py-1 rounded bg-primary text-white text-sm">纭</button>
+                            <button id="nearby-cancel-${c.id}" class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm">取消</button>
+                            <button id="nearby-confirm-${c.id}" class="px-3 py-1 rounded bg-primary text-white text-sm">确认</button>
                         </div>
                     </div>
                 </div>
@@ -371,7 +371,7 @@ export function calculateStats() {
         `;
     }).join('');
 
-    // ????????????
+    // 绑定颜色卡片与菜单事件
     sorted.forEach(c => {
         const item = document.getElementById(`color-item-${c.id}`);
         const menuBtn = document.getElementById(`color-menu-btn-${c.id}`);
@@ -406,7 +406,7 @@ export function calculateStats() {
                 e.stopPropagation();
                 menu.classList.add('hidden');
                 item.classList.remove('z-50');
-                if (AppState.editMode !== 'adjust') toggleAdjustMode();
+                if (AppState.editMode !== 'adjust') _toggleAdjustMode();
                 AppState.batchReplace.active = true;
                 AppState.batchReplace.mode = 'from_canvas';
                 AppState.batchReplace.sourceColorId = c.id;
@@ -415,8 +415,8 @@ export function calculateStats() {
         if (nearbyBtn) {
             nearbyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // ????????????????
-                if (AppState.editMode !== 'adjust') toggleAdjustMode();
+                // 切入调色模式后预览相近色替换
+                if (AppState.editMode !== 'adjust') _toggleAdjustMode();
                 const fullPalette = getCurrentPalette();
                 const palette = fullPalette.filter(x => x.id !== c.id);
                 const paletteBase = fullPalette.find(x => x.id === c.id);
@@ -436,7 +436,7 @@ export function calculateStats() {
                 AppState.batchReplace.nearCurrentId = null;
                 swatchesWrap.innerHTML = sortedP.map(col => `<button data-id="${col.id}" class="w-8 h-8 rounded border border-gray-200" style="background-color: rgb(${col.r},${col.g},${col.b})"></button>`).join('');
                 nearbyPanel.classList.remove('hidden');
-                // ???????????
+                // 保持菜单展开，方便确认或取消
                 menu.classList.remove('hidden');
                 item.classList.add('z-50');
             });
@@ -504,7 +504,7 @@ export function calculateStats() {
 }
 
 /**
- * ??????
+ * 切换颜色高亮
  */
 export function toggleColorHighlight(colorId) {
     if (AppState.highlightedColorId === colorId) {
@@ -513,7 +513,7 @@ export function toggleColorHighlight(colorId) {
         AppState.highlightedColorId = colorId;
     }
     const resultCanvas = document.getElementById('result-canvas');
-    // ??????????????????????????
+    // 编辑模式下高亮暂存数据，普通模式高亮正式数据
     const dataToRender = (AppState.stagedPixelData && (AppState.editMode === 'adjust' || AppState.editMode === 'delete'))
         ? AppState.stagedPixelData
         : AppState.pixelData;
@@ -522,24 +522,24 @@ export function toggleColorHighlight(colorId) {
 }
 
 /**
- * ????????(Step 4)
+ * 初始化导出页（Step 4）
  */
 function initExportView() {
     const resultCanvas = document.getElementById('result-canvas');
     const exportImg = document.getElementById('export-preview');
     exportImg.src = resultCanvas.toDataURL();
-    document.getElementById('export-meta').innerText = `${AppState.gridWidth}x${AppState.gridHeight} 鈥?${AppState.brand.toUpperCase()}`;
+    document.getElementById('export-meta').innerText = `${AppState.gridWidth}x${AppState.gridHeight} · ${AppState.brand.toUpperCase()}`;
 }
 
 /**
- * ??????
+ * 更新容差显示
  */
 export function updateTolerance(val) {
     document.getElementById('tolerance-value').innerText = val;
 }
 
 /**
- * ??????
+ * 切换颜色限制开关
  */
 export function toggleColorLimit() {
     const isEnabled = document.getElementById('color-limit-toggle').checked;
@@ -552,7 +552,7 @@ export function toggleColorLimit() {
 }
 
 /**
- * ?????????
+ * 更新最大颜色数显示
  */
 export function updateMaxColorsDisplay() {
     const val = document.getElementById('max-colors-slider').value;

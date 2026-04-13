@@ -1,16 +1,15 @@
 /**
- * ƴ��ͼֽ����??- �������??
+ * 拼豆图纸生成器 - 主入口与事件绑定
  */
 import { AppState } from './state.js';
-import { 
-    goToStep, 
-    updateGridDimensions, 
-    toggleBgRemovalMode, 
-    undoBgRemoval, 
+import {
+    goToStep,
+    updateGridDimensions,
+    toggleBgRemovalMode,
+    undoBgRemoval,
     handleCleanFragments,
     handleGeneratePattern,
     handleCanvasClick,
-    toggleColorHighlight,
     updateTolerance,
     toggleColorLimit,
     updateMaxColorsDisplay,
@@ -23,15 +22,15 @@ import {
     toggleDeleteMode
 } from './ui.js';
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
-import { updateResultTransform } from './renderer.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
 
 /**
- * ����ͼƬ�ϴ�
+ * 处理图片上传
  */
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = new Image();
@@ -45,7 +44,7 @@ const handleImageUpload = (event) => {
 };
 
 /**
- * ����ʾ��ͼƬ
+ * 加载示例图片
  */
 const loadExample = (type) => {
     const urls = {
@@ -53,8 +52,9 @@ const loadExample = (type) => {
         flower: './image/ScreenShot_2026-01-28_172329_266.png',
         pixel: './image/ScreenShot_2026-01-28_172400_944.png'
     };
+
     const img = new Image();
-    img.crossOrigin = "Anonymous";
+    img.crossOrigin = 'Anonymous';
     img.onload = () => {
         AppState.image = img;
         goToStep(2);
@@ -62,29 +62,31 @@ const loadExample = (type) => {
     img.src = urls[type];
 };
 
-// ���¼�����??
+// 页面加载完成后绑定事件
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ���� 1: ��ҳ/�ϴ� ---
+    // --- Step 1: 首页 / 上传 ---
     const fileUpload = document.getElementById('file-upload');
     if (fileUpload) {
         fileUpload.addEventListener('change', handleImageUpload);
     }
 
-    // ʾ��ͼƬ��ť
+    // 示例图片按钮
     const exampleDog = document.getElementById('example-dog');
     if (exampleDog) {
         exampleDog.addEventListener('click', () => loadExample('dog'));
     }
+
     const exampleFlower = document.getElementById('example-flower');
     if (exampleFlower) {
         exampleFlower.addEventListener('click', () => loadExample('flower'));
     }
+
     const examplePixel = document.getElementById('example-pixel');
     if (examplePixel) {
         examplePixel.addEventListener('click', () => loadExample('pixel'));
     }
 
-    // --- ���� 2: ���� ---
+    // --- Step 2: 设置 ---
     const backToStep1 = document.getElementById('back-to-step-1');
     if (backToStep1) {
         backToStep1.addEventListener('click', () => goToStep(1));
@@ -163,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- ���� 3: �༭??��� ---
+    // --- Step 3: 编辑 / 导出前 ---
     const backToStep2 = document.getElementById('back-to-step-2');
     if (backToStep2) {
         backToStep2.addEventListener('click', () => goToStep(2));
@@ -208,27 +210,29 @@ document.addEventListener('DOMContentLoaded', () => {
     if (downloadImgBtn) {
         downloadImgBtn.addEventListener('click', downloadImage);
     }
-    
+
     const downloadMirroredImgBtn = document.getElementById('download-mirrored-image-btn');
     if (downloadMirroredImgBtn) {
         downloadMirroredImgBtn.addEventListener('click', downloadMirroredImage);
     }
 
     const downloadRawImgBtn = document.getElementById('download-raw-image-btn');
-    console.log('Download Raw Image button element:', downloadRawImgBtn);
     if (downloadRawImgBtn) {
         downloadRawImgBtn.addEventListener('click', downloadRawImage);
     }
-    
 
+    // --- 缩放与平移（features/zoom.js） ---
+    const resultContainer = document.getElementById('result-container');
+    const resultCanvas = document.getElementById('result-canvas');
+    const zoomResetBtn = document.getElementById('zoom-reset-btn');
 
-    // --- ����ƽ�ƣ�features/zoom.js��---
-    const resultContainer=document.getElementById("result-container");
-    const resultCanvas=document.getElementById("result-canvas");
-    const zoomResetBtn=document.getElementById("zoom-reset-btn");
-    if(zoomResetBtn){zoomResetBtn.addEventListener("click",resetZoom);}
-    initZoomEvents(resultContainer,resultCanvas,zoomResetBtn,(e)=>{
-        if(AppState.editMode==="adjust"||AppState.editMode==="delete")handleResultCanvasClickForAdjust(e);
+    if (zoomResetBtn) {
+        zoomResetBtn.addEventListener('click', resetZoom);
+    }
+
+    initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, (e) => {
+        if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') {
+            handleResultCanvasClickForAdjust(e);
+        }
     });
-
 });
