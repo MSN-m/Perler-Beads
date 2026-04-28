@@ -2,8 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = 'd:/AIcode/Perler-Beads';
-const PORT = 8080;
+const ROOT = __dirname;
+const PORT = Number(process.env.PORT) || 8080;
 
 const MIME = {
   '.html': 'text/html',
@@ -18,8 +18,15 @@ const MIME = {
 };
 
 http.createServer((req, res) => {
-  const urlPath = req.url === '/' ? '/index.html' : req.url;
-  const filePath = path.join(ROOT, urlPath);
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+  const urlPath = url.pathname === '/' ? '/index.html' : decodeURIComponent(url.pathname);
+  const filePath = path.resolve(ROOT, `.${urlPath}`);
+
+  if (!filePath.startsWith(ROOT)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
   fs.readFile(filePath, (err, data) => {
     if (err) {
       res.writeHead(404);

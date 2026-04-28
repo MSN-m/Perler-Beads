@@ -7,6 +7,9 @@
 # AI工具
 .specstory/
 
+# Cursor 本地配置
+.cursor/mcp.local.json
+
 # Node（如果有前端）
 node_modules/
 dist/
