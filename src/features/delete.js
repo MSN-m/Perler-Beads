@@ -12,9 +12,7 @@ import { renderResult, updateResultTransform } from '../renderer.js';
 
 
 
-// 从 ui.js 导入共享工具函数
-
-import { calculateStats, deepClonePixels } from '../ui.js';
+import { calculateStats, deepClonePixels } from '../editor.js';
 
 
 
@@ -253,4 +251,3 @@ export function handleDeleteClick(idx, canvas) {
     });
 
 }
-

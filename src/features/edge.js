@@ -174,7 +174,11 @@ export function toggleEdgeAdjustMode() {
 
         if (AppState.editMode === 'adjust') {
 
-            toggleAdjustMode();
+            adjustBtn && adjustBtn.classList.add('bg-primary', 'text-white');
+
+            deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
+
+            renderResult(resultCanvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
 
         } else {
 
@@ -185,4 +189,3 @@ export function toggleEdgeAdjustMode() {
     }
 
 }
-

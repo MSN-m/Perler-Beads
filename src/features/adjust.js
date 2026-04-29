@@ -10,7 +10,7 @@ import { renderResult, updateResultTransform } from '../renderer.js';
 
 import { handleDeleteClick } from './delete.js';
 
-import { deepClonePixels, calculateStats, getCurrentPalette, performBatchReplace, updateAdjustUndoButton } from '../ui.js';
+import { deepClonePixels, calculateStats, getCurrentPalette, performBatchReplace, updateAdjustUndoButton, resetBatchReplaceState } from '../editor.js';
 
 
 
@@ -90,6 +90,8 @@ function exitAdjustLikeMode(applyChanges) {
 
     AppState.selectedEdgeBeadsIndices = [];
 
+    resetBatchReplaceState();
+
 
 
     renderResult(canvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
@@ -165,6 +167,8 @@ export function toggleAdjustMode() {
         AppState.edgeSelectionMode = false;
 
         AppState.deleteMode = false;
+
+        resetBatchReplaceState();
 
         AppState.preAdjustZoomState = { ...AppState.zoomState };
 
@@ -328,11 +332,7 @@ export function handleResultCanvasClickForAdjust(e) {
 
         performBatchReplace(AppState.batchReplace.sourceColorId, target);
 
-        AppState.batchReplace.active = false;
-
-        AppState.batchReplace.mode = null;
-
-        AppState.batchReplace.sourceColorId = null;
+        resetBatchReplaceState();
 
         return;
 
@@ -471,4 +471,3 @@ export function adjustApply() {
     exitAdjustLikeMode(true);
 
 }
-

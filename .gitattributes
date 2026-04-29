@@ -1,2 +1,7 @@
-# Auto detect text files and perform LF normalization
+# Auto detect text files.
 * text=auto
+
+# Project source files are edited with CRLF in the working tree.
+*.js text eol=crlf
+*.html text eol=crlf
+*.css text eol=crlf

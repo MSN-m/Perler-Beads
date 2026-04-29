@@ -122,7 +122,7 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     resultContainer.addEventListener('mousedown', (e) => {
 
-        if (AppState.editMode === 'eyedropper' || AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
+        if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
 
         AppState.zoomState.isDragging = true;
 
@@ -299,4 +299,3 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
     });
 
 }
-
