@@ -90,8 +90,6 @@ export function toggleDeleteMode() {
 
     const btn = document.getElementById('toggle-delete-btn');
 
-    const adjustBtn = document.getElementById('toggle-adjust-btn');
-
     const edgeBtn = document.getElementById('toggle-edge-adjust-btn');
 
     const entering = !AppState.deleteMode;
@@ -116,13 +114,13 @@ export function toggleDeleteMode() {
 
         AppState.edgeSelectionMode = false;
 
+        AppState.clearBaseMode = false;
+
         AppState.preAdjustZoomState = { ...AppState.zoomState };
 
 
 
         btn && btn.classList.add('bg-primary', 'text-white');
-
-        adjustBtn && adjustBtn.classList.remove('bg-primary', 'text-white');
 
         edgeBtn && edgeBtn.classList.remove('bg-primary', 'text-white');
 
@@ -163,6 +161,8 @@ export function toggleDeleteMode() {
         AppState.selectedEdgeBeadsIndices = [];
 
         AppState.edgeSelectionMode = false;
+
+        AppState.clearBaseMode = false;
 
 
 

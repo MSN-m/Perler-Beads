@@ -25,3 +25,13 @@
         scrollbar-width: none;
     }
 }
+
+.crop-handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 2px solid #ffffff;
+    background: #ff7f50;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
+}

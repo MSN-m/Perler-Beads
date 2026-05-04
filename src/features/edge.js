@@ -8,7 +8,7 @@ import { AppState } from '../state.js';
 
 import { renderResult } from '../renderer.js';
 
-import { toggleAdjustMode } from './adjust.js';
+import { enterEditSession } from './adjust.js';
 
 
 
@@ -136,8 +136,6 @@ export function toggleEdgeAdjustMode() {
 
     const btn = document.getElementById('toggle-edge-adjust-btn');
 
-    const adjustBtn = document.getElementById('toggle-adjust-btn');
-
     const deleteBtn = document.getElementById('toggle-delete-btn');
 
     const entering = !AppState.edgeSelectionMode;
@@ -148,7 +146,7 @@ export function toggleEdgeAdjustMode() {
 
         if (AppState.editMode !== 'adjust') {
 
-            toggleAdjustMode();
+            enterEditSession();
 
         }
 
@@ -156,9 +154,9 @@ export function toggleEdgeAdjustMode() {
 
         AppState.deleteMode = false;
 
-        btn && btn.classList.add('bg-primary', 'text-white');
+        AppState.clearBaseMode = false;
 
-        adjustBtn && adjustBtn.classList.remove('bg-primary', 'text-white');
+        btn && btn.classList.add('bg-primary', 'text-white');
 
         deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
 
@@ -173,8 +171,6 @@ export function toggleEdgeAdjustMode() {
         btn && btn.classList.remove('bg-primary', 'text-white');
 
         if (AppState.editMode === 'adjust') {
-
-            adjustBtn && adjustBtn.classList.add('bg-primary', 'text-white');
 
             deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
 

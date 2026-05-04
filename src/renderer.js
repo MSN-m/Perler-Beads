@@ -249,6 +249,7 @@ export function getResetZoomState(container, canvas) {
     
     return { 
         scale: fitScale, 
+        fitScale,
         x: (containerWidth - canvasWidth * fitScale) / 2, 
         y: (containerHeight - canvasHeight * fitScale) / 2, 
         isDragging: false, 

@@ -1,6 +1,6 @@
 /**
 
- * 颜色调整功能模块
+ * 编辑会话基础功能模块
 
  */
 
@@ -48,11 +48,83 @@ function drawReceiverOutline(canvas, gx, gy) {
 
 
 
+function clearConnectedRegion(startIndex, canvas) {
+
+    const startPixel = AppState.stagedPixelData[startIndex];
+
+    if (!startPixel || startPixel.id === 'NONE') return;
+
+    const targetId = startPixel.id;
+
+    const visited = new Set();
+
+    const queue = [startIndex];
+
+    const indices = [];
+
+    const prevColors = [];
+
+    while (queue.length) {
+
+        const idx = queue.shift();
+
+        if (visited.has(idx)) continue;
+
+        visited.add(idx);
+
+        const pixel = AppState.stagedPixelData[idx];
+
+        if (!pixel || pixel.id !== targetId) continue;
+
+        indices.push(idx);
+
+        prevColors.push({ ...pixel });
+
+        const x = idx % AppState.gridWidth;
+
+        const y = Math.floor(idx / AppState.gridWidth);
+
+        if (x > 0) queue.push(idx - 1);
+
+        if (x < AppState.gridWidth - 1) queue.push(idx + 1);
+
+        if (y > 0) queue.push(idx - AppState.gridWidth);
+
+        if (y < AppState.gridHeight - 1) queue.push(idx + AppState.gridWidth);
+
+    }
+
+    if (!indices.length) return;
+
+    for (const idx of indices) {
+
+        AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
+
+    }
+
+    AppState.stagedActions.push({
+
+        indices,
+
+        prevColors,
+
+        nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }
+
+    });
+
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+
+    calculateStats();
+
+    updateAdjustUndoButton();
+
+}
+
+
+
 function exitAdjustLikeMode(applyChanges) {
 
     const canvas = document.getElementById('result-canvas');
-
-    const btn = document.getElementById('toggle-adjust-btn');
 
     const undoBtn = document.getElementById('adjust-undo-btn');
 
@@ -88,6 +160,8 @@ function exitAdjustLikeMode(applyChanges) {
 
     AppState.edgeSelectionMode = false;
 
+    AppState.clearBaseMode = false;
+
     AppState.selectedEdgeBeadsIndices = [];
 
     resetBatchReplaceState();
@@ -99,8 +173,6 @@ function exitAdjustLikeMode(applyChanges) {
     calculateStats();
 
 
-
-    btn && btn.classList.remove('bg-primary', 'text-white');
 
     deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
 
@@ -130,7 +202,7 @@ function exitAdjustLikeMode(applyChanges) {
 
 
 
-export function toggleAdjustMode() {
+export function enterEditSession() {
 
     const resultCanvas = document.getElementById('result-canvas');
 
@@ -140,65 +212,77 @@ export function toggleAdjustMode() {
 
     const applyBtn = document.getElementById('adjust-apply-btn');
 
-    const btn = document.getElementById('toggle-adjust-btn');
-
     const edgeBtn = document.getElementById('toggle-edge-adjust-btn');
 
     const deleteBtn = document.getElementById('toggle-delete-btn');
 
-    const entering = AppState.editMode !== 'adjust';
+    if (AppState.editMode === 'adjust' && AppState.stagedPixelData) return;
+
+    AppState.editMode = 'adjust';
+
+    AppState.adjustPhase = 'waiting_receiver';
+
+    AppState.receiverIndex = null;
+
+    AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
+
+    AppState.stagedActions = [];
+
+    AppState.selectedEdgeBeadsIndices = [];
+
+    AppState.edgeSelectionMode = false;
+
+    AppState.clearBaseMode = false;
+
+    AppState.deleteMode = false;
+
+    resetBatchReplaceState();
+
+    AppState.preAdjustZoomState = { ...AppState.zoomState };
+
+    edgeBtn && edgeBtn.classList.remove('bg-primary', 'text-white');
+
+    deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
+
+    undoBtn && undoBtn.classList.remove('hidden');
+
+    cancelBtn && cancelBtn.classList.remove('hidden');
+
+    applyBtn && applyBtn.classList.remove('hidden');
+
+    resultCanvas.classList.remove('cursor-grab', 'cursor-grabbing');
+
+    resultCanvas.classList.add('cursor-crosshair');
+
+    renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+
+    updateAdjustUndoButton();
+
+}
 
 
 
-    if (entering) {
+export function toggleClearBaseMode() {
 
-        AppState.editMode = 'adjust';
+    if (AppState.editMode !== 'adjust') {
 
-        AppState.adjustPhase = 'waiting_receiver';
-
-        AppState.receiverIndex = null;
-
-        AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
-
-        AppState.stagedActions = [];
-
-        AppState.selectedEdgeBeadsIndices = [];
-
-        AppState.edgeSelectionMode = false;
-
-        AppState.deleteMode = false;
-
-        resetBatchReplaceState();
-
-        AppState.preAdjustZoomState = { ...AppState.zoomState };
-
-
-
-        btn && btn.classList.add('bg-primary', 'text-white');
-
-        edgeBtn && edgeBtn.classList.remove('bg-primary', 'text-white');
-
-        deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
-
-        undoBtn && undoBtn.classList.remove('hidden');
-
-        cancelBtn && cancelBtn.classList.remove('hidden');
-
-        applyBtn && applyBtn.classList.remove('hidden');
-
-        resultCanvas.classList.remove('cursor-grab', 'cursor-grabbing');
-
-        resultCanvas.classList.add('cursor-crosshair');
-
-        renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-
-        updateAdjustUndoButton();
-
-    } else {
-
-        exitAdjustLikeMode(false);
+        enterEditSession();
 
     }
+
+    AppState.clearBaseMode = true;
+
+    AppState.edgeSelectionMode = false;
+
+    AppState.deleteMode = false;
+
+    AppState.adjustPhase = 'waiting_receiver';
+
+    AppState.receiverIndex = null;
+
+    const resultCanvas = document.getElementById('result-canvas');
+
+    renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
 
 }
 
@@ -263,6 +347,14 @@ export function handleResultCanvasClickForAdjust(e) {
     }
 
 
+
+    if (AppState.clearBaseMode) {
+
+        clearConnectedRegion(idx, canvas);
+
+        return;
+
+    }
 
     if (AppState.edgeSelectionMode) {
 

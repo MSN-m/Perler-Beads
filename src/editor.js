@@ -7,7 +7,8 @@ import { renderResult } from './renderer.js';
 import { PALETTES } from './constants.js';
 
 let editorActions = {
-    toggleAdjustMode: null
+    enterColorReplaceMode: null,
+    updateWorkbenchUI: null
 };
 
 let colorMenuDocumentClickBound = false;
@@ -77,7 +78,7 @@ function toggleColorHighlight(colorId) {
         AppState.highlightedColorId = colorId;
     }
     const resultCanvas = document.getElementById('result-canvas');
-    const dataToRender = (AppState.stagedPixelData && (AppState.editMode === 'adjust' || AppState.editMode === 'delete'))
+        const dataToRender = AppState.stagedPixelData
         ? AppState.stagedPixelData
         : AppState.pixelData;
     renderResult(resultCanvas, dataToRender, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
@@ -103,7 +104,7 @@ function ensureColorMenuDocumentClick() {
 export function calculateStats() {
     const stats = {};
     let total = 0;
-    const dataToCount = (AppState.stagedPixelData && (AppState.editMode === 'adjust' || AppState.editMode === 'delete'))
+    const dataToCount = AppState.stagedPixelData
         ? AppState.stagedPixelData
         : AppState.pixelData;
     dataToCount.forEach(p => {
@@ -187,16 +188,17 @@ export function calculateStats() {
                 e.stopPropagation();
                 menu.classList.add('hidden');
                 item.classList.remove('z-50');
-                if (AppState.editMode !== 'adjust' && editorActions.toggleAdjustMode) editorActions.toggleAdjustMode();
+                if (editorActions.enterColorReplaceMode) editorActions.enterColorReplaceMode();
                 AppState.batchReplace.active = true;
                 AppState.batchReplace.mode = 'from_canvas';
                 AppState.batchReplace.sourceColorId = c.id;
+                if (editorActions.updateWorkbenchUI) editorActions.updateWorkbenchUI();
             });
         }
         if (nearbyBtn) {
             nearbyBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (AppState.editMode !== 'adjust' && editorActions.toggleAdjustMode) editorActions.toggleAdjustMode();
+                if (editorActions.enterColorReplaceMode) editorActions.enterColorReplaceMode();
                 const fullPalette = getCurrentPalette();
                 const palette = fullPalette.filter(x => x.id !== c.id);
                 const paletteBase = fullPalette.find(x => x.id === c.id);
@@ -218,6 +220,7 @@ export function calculateStats() {
                 nearbyPanel.classList.remove('hidden');
                 menu.classList.remove('hidden');
                 item.classList.add('z-50');
+                if (editorActions.updateWorkbenchUI) editorActions.updateWorkbenchUI();
             });
         }
         if (swatchesWrap) {
