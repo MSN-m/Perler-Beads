@@ -107,6 +107,7 @@
 
                 <div id="workbench-edit-toolbar"
                     class="hidden absolute left-1/2 bottom-6 -translate-x-1/2 z-30 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-white px-4 py-3 flex items-center gap-2">
+                    <button id="toggle-fill-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">取色填色</button>
                     <button id="toggle-clear-base-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">移除底色</button>
                     <button id="toggle-edge-adjust-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">边缘调整</button>
                     <button id="toggle-delete-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">删除色块</button>
@@ -116,7 +117,13 @@
 
                 <div id="workbench-active-toolbar"
                     class="hidden absolute left-1/2 bottom-6 -translate-x-1/2 z-30 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-white px-5 py-3 flex items-center gap-4">
-                    <span id="workbench-active-mode-label" class="text-sm font-bold px-2">编辑</span>
+                    <div class="flex items-center gap-2">
+                        <span id="workbench-active-mode-label" class="text-sm font-bold px-2">编辑</span>
+                        <div id="fill-source-toggle" class="hidden flex items-center bg-gray-100 rounded-full p-1">
+                            <button id="fill-source-canvas-btn" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white text-gray-800 shadow-sm">图纸</button>
+                            <button id="fill-source-original-btn" class="px-3 py-1.5 rounded-full text-xs font-bold text-gray-500">原图</button>
+                        </div>
+                    </div>
                     <button id="adjust-undo-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary hidden">撤回</button>
                     <button id="adjust-cancel-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-gray-100 hidden">取消</button>
                     <button id="adjust-apply-btn" class="text-sm font-bold px-3 py-2 rounded-lg bg-primary text-white hidden">确认</button>
@@ -217,6 +224,19 @@
                         生成图纸后显示颜色清单
                     </div>
                     <div id="color-stats" class="grid grid-cols-2 gap-2"></div>
+                </section>
+
+                <section class="bg-white p-5 rounded-2xl border border-white shadow-sm space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold">草稿箱</h3>
+                        <button id="save-draft-btn" class="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:opacity-90 active:scale-95 transition">
+                            保存当前草稿
+                        </button>
+                    </div>
+                    <div id="draft-box-empty" class="text-sm text-gray-500">
+                        暂无草稿
+                    </div>
+                    <div id="draft-box-list" class="hidden space-y-2 max-h-56 overflow-y-auto no-scrollbar"></div>
                 </section>
 
                 <button id="next-to-step-4" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">

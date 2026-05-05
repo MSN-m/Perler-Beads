@@ -116,6 +116,14 @@ export function toggleDeleteMode() {
 
         AppState.clearBaseMode = false;
 
+        AppState.fillMode = false;
+
+        AppState.fillColor = null;
+
+        AppState.fillColorId = null;
+
+        AppState.fillSourceIndex = null;
+
         AppState.preAdjustZoomState = { ...AppState.zoomState };
 
 
@@ -163,6 +171,14 @@ export function toggleDeleteMode() {
         AppState.edgeSelectionMode = false;
 
         AppState.clearBaseMode = false;
+
+        AppState.fillMode = false;
+
+        AppState.fillColor = null;
+
+        AppState.fillColorId = null;
+
+        AppState.fillSourceIndex = null;
 
 
 

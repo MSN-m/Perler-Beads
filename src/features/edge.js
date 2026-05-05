@@ -156,6 +156,14 @@ export function toggleEdgeAdjustMode() {
 
         AppState.clearBaseMode = false;
 
+        AppState.fillMode = false;
+
+        AppState.fillColor = null;
+
+        AppState.fillColorId = null;
+
+        AppState.fillSourceIndex = null;
+
         btn && btn.classList.add('bg-primary', 'text-white');
 
         deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');

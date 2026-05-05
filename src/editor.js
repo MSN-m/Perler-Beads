@@ -37,7 +37,7 @@ export function resetBatchReplaceState() {
     AppState.batchReplace.nearCurrentId = null;
 }
 
-function redmeanDistance(r1, g1, b1, r2, g2, b2) {
+export function redmeanDistance(r1, g1, b1, r2, g2, b2) {
     const rMean = (r1 + r2) / 2;
     const dr = r1 - r2;
     const dg = g1 - g2;

@@ -20,11 +20,20 @@ import {
     startWorkbenchCropInteraction,
     moveWorkbenchCropInteraction,
     endWorkbenchCropInteraction,
+    toggleFillMode,
+    setFillSourceMode,
+    handleOriginalFillPick,
     toggleClearBaseMode,
     handleResultCanvasClickForAdjust,
+    startFillSelection,
+    moveFillSelection,
+    endFillSelection,
     adjustUndo,
     adjustCancel,
     adjustApply,
+    saveWorkbenchDraft,
+    restoreWorkbenchDraft,
+    deleteWorkbenchDraft,
     resetPatternToGenerated,
     collapseWorkbenchEditToolbar,
     expandWorkbenchEditToolbar,
@@ -52,6 +61,10 @@ const resetProjectForNewImage = () => {
     AppState.deleteMode = false;
     AppState.edgeSelectionMode = false;
     AppState.clearBaseMode = false;
+    AppState.fillMode = false;
+    AppState.fillColor = null;
+    AppState.fillColorId = null;
+    AppState.fillSourceIndex = null;
     AppState.workbenchToolbarCollapsed = false;
     AppState.cropRect = null;
     AppState.cropInteraction = null;
@@ -223,6 +236,18 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             zoomWorkbenchComparePreview(e.deltaY);
         }, { passive: false });
+        compareSourceFrame.addEventListener('click', (e) => {
+            if (handleOriginalFillPick(e)) {
+                e.preventDefault();
+                updateWorkbenchUI();
+            }
+        });
+        compareSourceFrame.addEventListener('touchstart', (e) => {
+            if (handleOriginalFillPick(e)) {
+                e.preventDefault();
+                updateWorkbenchUI();
+            }
+        }, { passive: false });
     }
 
     const compareSourceResetBtn = document.getElementById('compare-source-reset-btn');
@@ -255,6 +280,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const backToStep3 = document.getElementById('back-to-step-3');
     if (backToStep3) {
         backToStep3.addEventListener('click', () => goToStep(3));
+    }
+
+    const toggleFillBtn = document.getElementById('toggle-fill-btn');
+    if (toggleFillBtn) {
+        toggleFillBtn.addEventListener('click', () => {
+            toggleFillMode();
+            updateWorkbenchUI();
+        });
+    }
+
+    const fillSourceCanvasBtn = document.getElementById('fill-source-canvas-btn');
+    if (fillSourceCanvasBtn) {
+        fillSourceCanvasBtn.addEventListener('click', () => {
+            setFillSourceMode('canvas');
+            updateWorkbenchUI();
+        });
+    }
+
+    const fillSourceOriginalBtn = document.getElementById('fill-source-original-btn');
+    if (fillSourceOriginalBtn) {
+        fillSourceOriginalBtn.addEventListener('click', () => {
+            setFillSourceMode('original');
+            if (!AppState.comparePreviewVisible) {
+                toggleWorkbenchComparePreview();
+            } else {
+                updateWorkbenchUI();
+            }
+        });
     }
 
     const toggleClearBaseBtn = document.getElementById('toggle-clear-base-btn');
@@ -307,6 +360,33 @@ document.addEventListener('DOMContentLoaded', () => {
         resetPatternBtn.addEventListener('click', resetPatternToGenerated);
     }
 
+    const saveDraftBtn = document.getElementById('save-draft-btn');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', async () => {
+            await saveWorkbenchDraft();
+            updateWorkbenchUI();
+        });
+    }
+
+    const draftBoxList = document.getElementById('draft-box-list');
+    if (draftBoxList) {
+        draftBoxList.addEventListener('click', async (event) => {
+            const button = event.target.closest('button[data-draft-action]');
+            if (!button) return;
+            const action = button.getAttribute('data-draft-action');
+            const draftId = button.getAttribute('data-draft-id');
+            if (!draftId) return;
+            if (action === 'restore') {
+                restoreWorkbenchDraft(draftId);
+                return;
+            }
+            if (action === 'delete') {
+                await deleteWorkbenchDraft(draftId);
+                updateWorkbenchUI();
+            }
+        });
+    }
+
     const collapseEditToolbarBtn = document.getElementById('collapse-edit-toolbar-btn');
     if (collapseEditToolbarBtn) {
         collapseEditToolbarBtn.addEventListener('click', collapseWorkbenchEditToolbar);
@@ -346,6 +426,35 @@ document.addEventListener('DOMContentLoaded', () => {
             handleResultCanvasClickForAdjust(e);
         }
     });
+
+    if (resultCanvas) {
+        resultCanvas.addEventListener('mousedown', (e) => {
+            if (startFillSelection(e)) {
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (moveFillSelection(e)) {
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('mouseup', () => {
+            endFillSelection();
+        });
+        resultCanvas.addEventListener('touchstart', (e) => {
+            if (startFillSelection(e)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        window.addEventListener('touchmove', (e) => {
+            if (moveFillSelection(e)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', () => {
+            endFillSelection();
+        });
+    }
 
     updateWorkbenchUI();
 });

@@ -210,6 +210,27 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         const textPos = gridOffset + i * scale + scale / 2;
         ctx.fillText(globalY.toString(), scale / 2, textPos);
     }
+
+    if (AppState.fillMode && AppState.fillSelection) {
+        const startX = Math.min(AppState.fillSelection.startX, AppState.fillSelection.endX);
+        const endX = Math.max(AppState.fillSelection.startX, AppState.fillSelection.endX);
+        const startY = Math.min(AppState.fillSelection.startY, AppState.fillSelection.endY);
+        const endY = Math.max(AppState.fillSelection.startY, AppState.fillSelection.endY);
+        const drawX = gridOffset + (startX - minX) * scale;
+        const drawY = gridOffset + (startY - minY) * scale;
+        const drawW = (endX - startX + 1) * scale;
+        const drawH = (endY - startY + 1) * scale;
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 127, 80, 0.14)';
+        ctx.fillRect(drawX, drawY, drawW, drawH);
+        ctx.strokeStyle = 'rgba(255, 127, 80, 0.95)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 5]);
+        ctx.strokeRect(drawX + 1, drawY + 1, drawW - 2, drawH - 2);
+        ctx.setLineDash([]);
+        ctx.restore();
+    }
 }
 
 /**

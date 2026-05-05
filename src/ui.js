@@ -11,8 +11,14 @@ import { resetZoom as _resetZoom } from './features/zoom.js';
 import { toggleEdgeAdjustMode as _toggleEdgeAdjustMode } from './features/edge.js';
 import {
     enterEditSession as _enterEditSession,
+    toggleFillMode as _toggleFillMode,
     toggleClearBaseMode as _toggleClearBaseMode,
     handleResultCanvasClickForAdjust as _handleResultCanvasClickForAdjust,
+    setFillSourceMode as _setFillSourceMode,
+    handleOriginalFillPick as _handleOriginalFillPick,
+    startFillSelection as _startFillSelection,
+    moveFillSelection as _moveFillSelection,
+    endFillSelection as _endFillSelection,
     adjustUndo as _adjustUndo,
     adjustCancel as _adjustCancel,
     adjustApply as _adjustApply
@@ -26,8 +32,14 @@ export {
     _toggleDeleteMode as toggleDeleteMode,
     _resetZoom as resetZoom,
     _toggleEdgeAdjustMode as toggleEdgeAdjustMode,
+    _toggleFillMode as toggleFillMode,
     _toggleClearBaseMode as toggleClearBaseMode,
     _handleResultCanvasClickForAdjust as handleResultCanvasClickForAdjust,
+    _setFillSourceMode as setFillSourceMode,
+    _handleOriginalFillPick as handleOriginalFillPick,
+    _startFillSelection as startFillSelection,
+    _moveFillSelection as moveFillSelection,
+    _endFillSelection as endFillSelection,
     _adjustUndo as adjustUndo,
     _adjustCancel as adjustCancel,
     _adjustApply as adjustApply
@@ -49,8 +61,241 @@ function setText(id, text) {
     el.textContent = text;
 }
 
+const WORKBENCH_DRAFTS_DB = 'perler_beads_workbench_drafts_db';
+const WORKBENCH_DRAFTS_STORE = 'drafts';
+
 function hasWorkbenchPattern() {
     return Array.isArray(AppState.pixelData) && AppState.pixelData.length > 0;
+}
+
+function getDraftTimestampLabel(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch {
+        return '刚刚';
+    }
+}
+
+function buildDraftSummary(draft) {
+    return `${draft.gridWidth}x${draft.gridHeight} · ${draft.brand.toUpperCase()} · ${draft.colorCount || 0} 色`;
+}
+
+function getCurrentDraftSourcePixels() {
+    return AppState.stagedPixelData ? deepClonePixels(AppState.stagedPixelData) : deepClonePixels(AppState.pixelData);
+}
+
+function getCurrentSourceCanvasSnapshot() {
+    const sourceCanvas = document.getElementById('source-canvas');
+    if (!sourceCanvas || !sourceCanvas.width || !sourceCanvas.height) return null;
+    try {
+        return sourceCanvas.toDataURL('image/png');
+    } catch {
+        return null;
+    }
+}
+
+function openDraftsDb() {
+    return new Promise((resolve, reject) => {
+        const request = window.indexedDB.open(WORKBENCH_DRAFTS_DB, 1);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(WORKBENCH_DRAFTS_STORE)) {
+                db.createObjectStore(WORKBENCH_DRAFTS_STORE, { keyPath: 'id' });
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function loadWorkbenchDrafts() {
+    try {
+        const db = await openDraftsDb();
+        const drafts = await new Promise((resolve, reject) => {
+            const tx = db.transaction(WORKBENCH_DRAFTS_STORE, 'readonly');
+            const store = tx.objectStore(WORKBENCH_DRAFTS_STORE);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = () => reject(request.error);
+        });
+        db.close();
+        AppState.drafts = Array.isArray(drafts)
+            ? drafts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+            : [];
+    } catch (error) {
+        console.warn('Failed to load drafts.', error);
+        AppState.drafts = [];
+    }
+}
+
+async function upsertWorkbenchDraft(draft) {
+    const db = await openDraftsDb();
+    await new Promise((resolve, reject) => {
+        const tx = db.transaction(WORKBENCH_DRAFTS_STORE, 'readwrite');
+        const store = tx.objectStore(WORKBENCH_DRAFTS_STORE);
+        const request = store.put(draft);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+    db.close();
+}
+
+async function removeWorkbenchDraftFromDb(draftId) {
+    const db = await openDraftsDb();
+    await new Promise((resolve, reject) => {
+        const tx = db.transaction(WORKBENCH_DRAFTS_STORE, 'readwrite');
+        const store = tx.objectStore(WORKBENCH_DRAFTS_STORE);
+        const request = store.delete(draftId);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+    db.close();
+}
+
+function renderDraftBox() {
+    if (!isWorkbenchLayout()) return;
+    const empty = document.getElementById('draft-box-empty');
+    const list = document.getElementById('draft-box-list');
+    const saveBtn = document.getElementById('save-draft-btn');
+    if (!empty || !list || !saveBtn) return;
+
+    const hasImage = Boolean(AppState.image);
+    const hasPattern = hasWorkbenchPattern();
+    saveBtn.disabled = !hasImage || !hasPattern;
+    saveBtn.classList.toggle('opacity-40', !hasImage || !hasPattern);
+    saveBtn.classList.toggle('cursor-not-allowed', !hasImage || !hasPattern);
+
+    const drafts = Array.isArray(AppState.drafts) ? AppState.drafts : [];
+    empty.classList.toggle('hidden', drafts.length > 0);
+    list.classList.toggle('hidden', drafts.length === 0);
+
+    if (!drafts.length) {
+        list.innerHTML = '';
+        return;
+    }
+
+    list.innerHTML = drafts.map((draft) => `
+        <div class="rounded-2xl border border-gray-100 bg-gray-50 px-3 py-3">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="text-sm font-bold text-gray-800 truncate">${draft.name}</div>
+                    <div class="text-xs text-gray-500 mt-1">${buildDraftSummary(draft)}</div>
+                    <div class="text-[11px] text-gray-400 mt-1">${getDraftTimestampLabel(draft.updatedAt)}</div>
+                </div>
+                <div class="shrink-0 flex items-center gap-2">
+                    <button data-draft-action="restore" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary">恢复</button>
+                    <button data-draft-action="delete" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-500 hover:border-red-300 hover:text-red-500">删除</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function getNextDraftName() {
+    const names = (AppState.drafts || []).map((draft) => draft.name || '');
+    let maxIndex = 0;
+    for (const name of names) {
+        const match = /^草稿\s*(\d+)$/.exec(name.trim());
+        if (match) {
+            maxIndex = Math.max(maxIndex, Number(match[1]));
+        }
+    }
+    return `草稿 ${maxIndex + 1}`;
+}
+
+export async function saveWorkbenchDraft() {
+    if (!AppState.image || !hasWorkbenchPattern()) return;
+    const pixels = getCurrentDraftSourcePixels();
+    const colorIds = new Set(pixels.filter((item) => item && item.id !== 'NONE').map((item) => item.id));
+    const draft = {
+        id: `draft_${Date.now()}`,
+        name: getNextDraftName(),
+        updatedAt: new Date().toISOString(),
+        gridWidth: AppState.gridWidth,
+        gridHeight: AppState.gridHeight,
+        brand: AppState.brand,
+        mardSet: AppState.mardSet,
+        colorCount: colorIds.size,
+        cropRect: AppState.cropRect ? { ...AppState.cropRect } : null,
+        sourceImageDataUrl: getCurrentSourceCanvasSnapshot(),
+        pixelData: pixels
+    };
+    await upsertWorkbenchDraft(draft);
+    AppState.drafts = [draft, ...(AppState.drafts || [])].slice(0, 12);
+    renderDraftBox();
+}
+
+export function restoreWorkbenchDraft(draftId) {
+    const draft = (AppState.drafts || []).find((item) => item.id === draftId);
+    if (!draft) return;
+
+    AppState.gridWidth = draft.gridWidth;
+    AppState.gridHeight = draft.gridHeight;
+    AppState.brand = draft.brand;
+    AppState.mardSet = draft.mardSet;
+    AppState.pixelData = deepClonePixels(draft.pixelData);
+    AppState.generatedPixelData = deepClonePixels(draft.pixelData);
+    AppState.stagedPixelData = null;
+    AppState.stagedActions = [];
+    AppState.cropRect = draft.cropRect ? { ...draft.cropRect } : AppState.cropRect;
+    AppState.highlightedColorId = null;
+    AppState.editMode = 'none';
+    AppState.adjustPhase = 'waiting_receiver';
+    AppState.receiverIndex = null;
+    AppState.deleteMode = false;
+    AppState.edgeSelectionMode = false;
+    AppState.clearBaseMode = false;
+    AppState.fillMode = false;
+    AppState.fillColor = null;
+    AppState.fillColorId = null;
+    AppState.fillSourceIndex = null;
+    AppState.selectedEdgeBeadsIndices = [];
+    AppState.comparePreviewVisible = false;
+    AppState.workbenchToolbarCollapsed = false;
+    resetBatchReplaceState();
+
+    const gridSizeSlider = document.getElementById('grid-size-slider');
+    if (gridSizeSlider) {
+        gridSizeSlider.value = String(Math.max(AppState.gridWidth, AppState.gridHeight));
+    }
+    const brandSelect = document.getElementById('brand-select');
+    if (brandSelect) brandSelect.value = AppState.brand;
+    const mardSetSelect = document.getElementById('mard-set-select');
+    if (mardSetSelect) mardSetSelect.value = String(AppState.mardSet);
+
+    const finishRestore = () => {
+        const sourceCanvas = document.getElementById('source-canvas');
+        const sourceCtx = sourceCanvas?.getContext('2d');
+        if (sourceCanvas && sourceCtx && draft.sourceImageDataUrl) {
+            const restoredImage = new Image();
+            restoredImage.onload = () => {
+                AppState.image = restoredImage;
+                sourceCanvas.width = restoredImage.width;
+                sourceCanvas.height = restoredImage.height;
+                sourceCtx.clearRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+                sourceCtx.drawImage(restoredImage, 0, 0);
+                AppState.originalImageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+                AppState.history = [sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height)];
+                goToStep(3);
+            };
+            restoredImage.src = draft.sourceImageDataUrl;
+            return;
+        }
+        goToStep(3);
+    };
+
+    finishRestore();
+}
+
+export async function deleteWorkbenchDraft(draftId) {
+    await removeWorkbenchDraftFromDb(draftId);
+    AppState.drafts = (AppState.drafts || []).filter((item) => item.id !== draftId);
+    renderDraftBox();
 }
 
 function clamp(value, min, max) {
@@ -348,8 +593,8 @@ export function updateWorkbenchUI() {
     const hasPattern = hasWorkbenchPattern();
     const toolbarCollapsed = Boolean(AppState.workbenchToolbarCollapsed);
     const compareVisible = hasPattern && AppState.comparePreviewVisible;
-    setHidden('workbench-upload-empty', hasImage);
-    setHidden('workbench-change-image', !hasImage);
+    setHidden('workbench-upload-empty', hasImage || hasPattern);
+    setHidden('workbench-change-image', !hasImage && !hasPattern);
     setHidden('workbench-preview-empty', !hasImage || hasPattern);
     setHidden('workbench-source-preview', !hasImage || hasPattern);
     setHidden('result-canvas', !hasPattern);
@@ -375,14 +620,36 @@ export function updateWorkbenchUI() {
         exportBtn.classList.toggle('opacity-40', !hasPattern);
         exportBtn.classList.toggle('cursor-not-allowed', !hasPattern);
     }
-    const modeLabel = AppState.clearBaseMode
-        ? '移除底色'
-        : AppState.deleteMode
+    const modeLabel = AppState.fillMode
+        ? (AppState.fillColorId ? (AppState.fillSourceMode === 'original' ? '原图取色' : '填色中') : '取色填色')
+        : AppState.clearBaseMode
+            ? '移除底色'
+            : AppState.deleteMode
             ? '删除色块'
             : AppState.edgeSelectionMode
                 ? '边缘调整'
                 : '编辑';
     setText('workbench-active-mode-label', modeLabel);
+    setHidden('fill-source-toggle', !AppState.fillMode);
+    const canvasBtn = document.getElementById('fill-source-canvas-btn');
+    const originalBtn = document.getElementById('fill-source-original-btn');
+    if (canvasBtn && originalBtn) {
+        canvasBtn.classList.toggle('bg-white', AppState.fillSourceMode === 'canvas');
+        canvasBtn.classList.toggle('text-gray-800', AppState.fillSourceMode === 'canvas');
+        canvasBtn.classList.toggle('text-gray-500', AppState.fillSourceMode !== 'canvas');
+        originalBtn.classList.toggle('bg-white', AppState.fillSourceMode === 'original');
+        originalBtn.classList.toggle('text-gray-800', AppState.fillSourceMode === 'original');
+        originalBtn.classList.toggle('text-gray-500', AppState.fillSourceMode !== 'original');
+    }
+    const compareSourceFrame = document.getElementById('compare-source-frame');
+    const compareSourcePreview = document.getElementById('compare-source-preview');
+    const shouldUseOriginalPickerCursor = AppState.fillMode && AppState.fillSourceMode === 'original' && compareVisible;
+    if (compareSourceFrame) {
+        compareSourceFrame.classList.toggle('cursor-crosshair', shouldUseOriginalPickerCursor);
+    }
+    if (compareSourcePreview) {
+        compareSourcePreview.classList.toggle('cursor-crosshair', shouldUseOriginalPickerCursor);
+    }
     const compareBtn = document.getElementById('toggle-compare-preview-btn');
     if (compareBtn) {
         compareBtn.textContent = compareVisible ? '收起原图' : '原图对照';
@@ -398,6 +665,7 @@ export function updateWorkbenchUI() {
     if (hasImage && compareVisible) {
         updateWorkbenchComparePreview(false);
     }
+    renderDraftBox();
 }
 
 /**
@@ -669,6 +937,10 @@ export function resetPatternToGenerated() {
     AppState.deleteMode = false;
     AppState.edgeSelectionMode = false;
     AppState.clearBaseMode = false;
+    AppState.fillMode = false;
+    AppState.fillColor = null;
+    AppState.fillColorId = null;
+    AppState.fillSourceIndex = null;
     AppState.workbenchToolbarCollapsed = false;
     AppState.comparePreviewVisible = false;
     AppState.selectedEdgeBeadsIndices = [];
@@ -731,3 +1003,9 @@ export function updateMaxColorsDisplay() {
     const val = document.getElementById('max-colors-slider').value;
     document.getElementById('max-colors-display').innerText = val;
 }
+
+loadWorkbenchDrafts().then(() => {
+    if (document.readyState !== 'loading') {
+        renderDraftBox();
+    }
+});
