@@ -13,11 +13,31 @@ import {
     updateTolerance,
     toggleColorLimit,
     updateMaxColorsDisplay,
-    toggleAdjustMode,
+    resetWorkbenchCropRect,
+    resetWorkbenchComparePreview,
+    toggleWorkbenchComparePreview,
+    zoomWorkbenchComparePreview,
+    startWorkbenchCropInteraction,
+    moveWorkbenchCropInteraction,
+    endWorkbenchCropInteraction,
+    toggleFillMode,
+    setFillSourceMode,
+    handleOriginalFillPick,
+    toggleClearBaseMode,
     handleResultCanvasClickForAdjust,
+    startFillSelection,
+    moveFillSelection,
+    endFillSelection,
     adjustUndo,
     adjustCancel,
     adjustApply,
+    saveWorkbenchDraft,
+    restoreWorkbenchDraft,
+    deleteWorkbenchDraft,
+    resetPatternToGenerated,
+    collapseWorkbenchEditToolbar,
+    expandWorkbenchEditToolbar,
+    updateWorkbenchUI,
     toggleEdgeAdjustMode,
     toggleDeleteMode
 } from './ui.js';
@@ -27,6 +47,31 @@ import { initZoomEvents, resetZoom } from './features/zoom.js';
 /**
  * 处理图片上传
  */
+const resetProjectForNewImage = () => {
+    AppState.pixelData = [];
+    AppState.generatedPixelData = null;
+    AppState.originalImageData = null;
+    AppState.history = [];
+    AppState.stagedPixelData = null;
+    AppState.stagedActions = [];
+    AppState.highlightedColorId = null;
+    AppState.editMode = 'none';
+    AppState.adjustPhase = 'waiting_receiver';
+    AppState.receiverIndex = null;
+    AppState.deleteMode = false;
+    AppState.edgeSelectionMode = false;
+    AppState.clearBaseMode = false;
+    AppState.fillMode = false;
+    AppState.fillColor = null;
+    AppState.fillColorId = null;
+    AppState.fillSourceIndex = null;
+    AppState.workbenchToolbarCollapsed = false;
+    AppState.cropRect = null;
+    AppState.cropInteraction = null;
+    AppState.comparePreviewVisible = false;
+    AppState.selectedEdgeBeadsIndices = [];
+};
+
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -36,6 +81,7 @@ const handleImageUpload = (event) => {
         const img = new Image();
         img.onload = () => {
             AppState.image = img;
+            resetProjectForNewImage();
             goToStep(2);
         };
         img.src = e.target.result;
@@ -57,6 +103,7 @@ const loadExample = (type) => {
     img.crossOrigin = 'Anonymous';
     img.onload = () => {
         AppState.image = img;
+        resetProjectForNewImage();
         goToStep(2);
     };
     img.src = urls[type];
@@ -67,7 +114,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Step 1: 首页 / 上传 ---
     const fileUpload = document.getElementById('file-upload');
     if (fileUpload) {
+        fileUpload.addEventListener('click', () => {
+            fileUpload.value = '';
+        });
         fileUpload.addEventListener('change', handleImageUpload);
+        document.querySelectorAll('label[for="file-upload"]').forEach(label => {
+            label.addEventListener('click', () => {
+                fileUpload.value = '';
+            });
+        });
     }
 
     // 示例图片按钮
@@ -151,7 +206,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
-        generateBtn.addEventListener('click', handleGeneratePattern);
+        generateBtn.addEventListener('click', () => {
+            handleGeneratePattern();
+            updateWorkbenchUI();
+        });
     }
 
     const sourceCanvas = document.getElementById('source-canvas');
@@ -165,6 +223,49 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    const cropOverlay = document.getElementById('workbench-crop-overlay');
+    if (cropOverlay) {
+        cropOverlay.addEventListener('mousedown', startWorkbenchCropInteraction);
+        cropOverlay.addEventListener('touchstart', startWorkbenchCropInteraction, { passive: false });
+    }
+
+    const compareSourceFrame = document.getElementById('compare-source-frame');
+    if (compareSourceFrame) {
+        compareSourceFrame.addEventListener('wheel', (e) => {
+            if (AppState.currentStep !== 3) return;
+            e.preventDefault();
+            zoomWorkbenchComparePreview(e.deltaY);
+        }, { passive: false });
+        compareSourceFrame.addEventListener('click', (e) => {
+            if (handleOriginalFillPick(e)) {
+                e.preventDefault();
+                updateWorkbenchUI();
+            }
+        });
+        compareSourceFrame.addEventListener('touchstart', (e) => {
+            if (handleOriginalFillPick(e)) {
+                e.preventDefault();
+                updateWorkbenchUI();
+            }
+        }, { passive: false });
+    }
+
+    const compareSourceResetBtn = document.getElementById('compare-source-reset-btn');
+    if (compareSourceResetBtn) {
+        compareSourceResetBtn.addEventListener('click', resetWorkbenchComparePreview);
+    }
+
+    const toggleComparePreviewBtn = document.getElementById('toggle-compare-preview-btn');
+    if (toggleComparePreviewBtn) {
+        toggleComparePreviewBtn.addEventListener('click', toggleWorkbenchComparePreview);
+    }
+
+    window.addEventListener('mousemove', moveWorkbenchCropInteraction);
+    window.addEventListener('touchmove', moveWorkbenchCropInteraction, { passive: false });
+    window.addEventListener('mouseup', endWorkbenchCropInteraction);
+    window.addEventListener('touchend', endWorkbenchCropInteraction);
+    window.addEventListener('touchcancel', endWorkbenchCropInteraction);
+
     // --- Step 3: 编辑 / 导出前 ---
     const backToStep2 = document.getElementById('back-to-step-2');
     if (backToStep2) {
@@ -176,19 +277,61 @@ document.addEventListener('DOMContentLoaded', () => {
         nextToStep4.addEventListener('click', () => goToStep(4));
     }
 
-    const toggleAdjustBtn = document.getElementById('toggle-adjust-btn');
-    if (toggleAdjustBtn) {
-        toggleAdjustBtn.addEventListener('click', toggleAdjustMode);
+    const backToStep3 = document.getElementById('back-to-step-3');
+    if (backToStep3) {
+        backToStep3.addEventListener('click', () => goToStep(3));
+    }
+
+    const toggleFillBtn = document.getElementById('toggle-fill-btn');
+    if (toggleFillBtn) {
+        toggleFillBtn.addEventListener('click', () => {
+            toggleFillMode();
+            updateWorkbenchUI();
+        });
+    }
+
+    const fillSourceCanvasBtn = document.getElementById('fill-source-canvas-btn');
+    if (fillSourceCanvasBtn) {
+        fillSourceCanvasBtn.addEventListener('click', () => {
+            setFillSourceMode('canvas');
+            updateWorkbenchUI();
+        });
+    }
+
+    const fillSourceOriginalBtn = document.getElementById('fill-source-original-btn');
+    if (fillSourceOriginalBtn) {
+        fillSourceOriginalBtn.addEventListener('click', () => {
+            setFillSourceMode('original');
+            if (!AppState.comparePreviewVisible) {
+                toggleWorkbenchComparePreview();
+            } else {
+                updateWorkbenchUI();
+            }
+        });
+    }
+
+    const toggleClearBaseBtn = document.getElementById('toggle-clear-base-btn');
+    if (toggleClearBaseBtn) {
+        toggleClearBaseBtn.addEventListener('click', () => {
+            toggleClearBaseMode();
+            updateWorkbenchUI();
+        });
     }
 
     const toggleEdgeAdjustBtn = document.getElementById('toggle-edge-adjust-btn');
     if (toggleEdgeAdjustBtn) {
-        toggleEdgeAdjustBtn.addEventListener('click', toggleEdgeAdjustMode);
+        toggleEdgeAdjustBtn.addEventListener('click', () => {
+            toggleEdgeAdjustMode();
+            updateWorkbenchUI();
+        });
     }
 
     const toggleDeleteBtn = document.getElementById('toggle-delete-btn');
     if (toggleDeleteBtn) {
-        toggleDeleteBtn.addEventListener('click', toggleDeleteMode);
+        toggleDeleteBtn.addEventListener('click', () => {
+            toggleDeleteMode();
+            updateWorkbenchUI();
+        });
     }
 
     const adjustUndoBtn = document.getElementById('adjust-undo-btn');
@@ -198,12 +341,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const adjustCancelBtn = document.getElementById('adjust-cancel-btn');
     if (adjustCancelBtn) {
-        adjustCancelBtn.addEventListener('click', adjustCancel);
+        adjustCancelBtn.addEventListener('click', () => {
+            adjustCancel();
+            updateWorkbenchUI();
+        });
     }
 
     const adjustApplyBtn = document.getElementById('adjust-apply-btn');
     if (adjustApplyBtn) {
-        adjustApplyBtn.addEventListener('click', adjustApply);
+        adjustApplyBtn.addEventListener('click', () => {
+            adjustApply();
+            updateWorkbenchUI();
+        });
+    }
+
+    const resetPatternBtn = document.getElementById('reset-pattern-btn');
+    if (resetPatternBtn) {
+        resetPatternBtn.addEventListener('click', resetPatternToGenerated);
+    }
+
+    const saveDraftBtn = document.getElementById('save-draft-btn');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', async () => {
+            await saveWorkbenchDraft();
+            updateWorkbenchUI();
+        });
+    }
+
+    const draftBoxList = document.getElementById('draft-box-list');
+    if (draftBoxList) {
+        draftBoxList.addEventListener('click', async (event) => {
+            const button = event.target.closest('button[data-draft-action]');
+            if (!button) return;
+            const action = button.getAttribute('data-draft-action');
+            const draftId = button.getAttribute('data-draft-id');
+            if (!draftId) return;
+            if (action === 'restore') {
+                restoreWorkbenchDraft(draftId);
+                return;
+            }
+            if (action === 'delete') {
+                await deleteWorkbenchDraft(draftId);
+                updateWorkbenchUI();
+            }
+        });
+    }
+
+    const collapseEditToolbarBtn = document.getElementById('collapse-edit-toolbar-btn');
+    if (collapseEditToolbarBtn) {
+        collapseEditToolbarBtn.addEventListener('click', collapseWorkbenchEditToolbar);
+    }
+
+    const expandEditToolbarBtn = document.getElementById('expand-edit-toolbar-btn');
+    if (expandEditToolbarBtn) {
+        expandEditToolbarBtn.addEventListener('click', expandWorkbenchEditToolbar);
     }
 
     const downloadImgBtn = document.getElementById('download-image-btn');
@@ -235,4 +426,35 @@ document.addEventListener('DOMContentLoaded', () => {
             handleResultCanvasClickForAdjust(e);
         }
     });
+
+    if (resultCanvas) {
+        resultCanvas.addEventListener('mousedown', (e) => {
+            if (startFillSelection(e)) {
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (moveFillSelection(e)) {
+                e.preventDefault();
+            }
+        });
+        window.addEventListener('mouseup', () => {
+            endFillSelection();
+        });
+        resultCanvas.addEventListener('touchstart', (e) => {
+            if (startFillSelection(e)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        window.addEventListener('touchmove', (e) => {
+            if (moveFillSelection(e)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', () => {
+            endFillSelection();
+        });
+    }
+
+    updateWorkbenchUI();
 });

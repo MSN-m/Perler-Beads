@@ -12,6 +12,16 @@ import { updateResultTransform, getResetZoomState } from '../renderer.js';
 
 
 
+function getMinZoomScale() {
+
+    const fitScale = AppState.zoomState && AppState.zoomState.fitScale ? AppState.zoomState.fitScale : 1;
+
+    return Math.max(fitScale * 0.3, 0.02);
+
+}
+
+
+
 /**
 
  * 重置缩放以适配容器
@@ -80,7 +90,7 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
         const factor = delta > 0 ? 1.1 : 0.9;
 
-        const newScale = Math.min(Math.max(AppState.zoomState.scale * factor, 0.5), 10);
+        const newScale = Math.min(Math.max(AppState.zoomState.scale * factor, getMinZoomScale()), 10);
 
 
 
@@ -258,7 +268,7 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
                 const factor = dist / AppState.zoomState.lastDist;
 
-                const newScale = Math.min(Math.max(AppState.zoomState.scale * factor, 0.5), 10);
+                const newScale = Math.min(Math.max(AppState.zoomState.scale * factor, getMinZoomScale()), 10);
 
                 if (newScale !== AppState.zoomState.scale) {
 

@@ -1,6 +1,6 @@
 /**
 
- * 颜色调整功能模块
+ * 编辑会话基础功能模块
 
  */
 
@@ -10,7 +10,7 @@ import { renderResult, updateResultTransform } from '../renderer.js';
 
 import { handleDeleteClick } from './delete.js';
 
-import { deepClonePixels, calculateStats, getCurrentPalette, performBatchReplace, updateAdjustUndoButton, resetBatchReplaceState } from '../editor.js';
+import { deepClonePixels, calculateStats, getCurrentPalette, performBatchReplace, updateAdjustUndoButton, resetBatchReplaceState, redmeanDistance } from '../editor.js';
 
 
 
@@ -46,13 +46,230 @@ function drawReceiverOutline(canvas, gx, gy) {
 
 }
 
+function getGridHitFromEvent(e) {
+
+    const canvas = document.getElementById('result-canvas');
+
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+
+    const point = e.touches && e.touches[0]
+        ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+        : e.changedTouches && e.changedTouches[0]
+            ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }
+            : { x: e.clientX, y: e.clientY };
+
+    const localX = point.x - rect.left;
+
+    const localY = point.y - rect.top;
+
+    const canvasX = localX / AppState.zoomState.scale;
+
+    const canvasY = localY / AppState.zoomState.scale;
+
+    const scale = 30;
+
+    const gridOffset = scale;
+
+    const minX = AppState.renderedMinX || 0;
+
+    const minY = AppState.renderedMinY || 0;
+
+    const contentWidth = AppState.renderedContentWidth || AppState.gridWidth;
+
+    const contentHeight = AppState.renderedContentHeight || AppState.gridHeight;
+
+    const xOnRenderedGrid = Math.floor((canvasX - gridOffset) / scale);
+
+    const yOnRenderedGrid = Math.floor((canvasY - gridOffset) / scale);
+
+    const gx = minX + xOnRenderedGrid;
+
+    const gy = minY + yOnRenderedGrid;
+
+    if (xOnRenderedGrid < 0 || yOnRenderedGrid < 0 || xOnRenderedGrid >= contentWidth || yOnRenderedGrid >= contentHeight) return null;
+
+    if (gx < 0 || gy < 0 || gx >= AppState.gridWidth || gy >= AppState.gridHeight) return null;
+
+    return { gx, gy, idx: gy * AppState.gridWidth + gx };
+
+}
+
+function applyFillSelection(canvas) {
+
+    const selection = AppState.fillSelection;
+
+    if (!selection || !AppState.fillColor) return;
+
+    const minX = Math.min(selection.startX, selection.endX);
+
+    const maxX = Math.max(selection.startX, selection.endX);
+
+    const minY = Math.min(selection.startY, selection.endY);
+
+    const maxY = Math.max(selection.startY, selection.endY);
+
+    const indices = [];
+
+    const prevColors = [];
+
+    for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
+            const idx = y * AppState.gridWidth + x;
+            const pixel = AppState.stagedPixelData[idx];
+            if (!pixel || pixel.id === 'NONE' || pixel.id === AppState.fillColorId) continue;
+            indices.push(idx);
+            prevColors.push({ ...pixel });
+            AppState.stagedPixelData[idx] = { ...AppState.fillColor };
+        }
+    }
+
+    if (indices.length > 0) {
+        AppState.stagedActions.push({
+            indices,
+            prevColors,
+            nextColor: { ...AppState.fillColor }
+        });
+    }
+
+    AppState.fillSelection = null;
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    if (AppState.fillSourceIndex !== null) {
+        const fillX = AppState.fillSourceIndex % AppState.gridWidth;
+        const fillY = Math.floor(AppState.fillSourceIndex / AppState.gridWidth);
+        drawReceiverOutline(canvas, fillX, fillY);
+    }
+    calculateStats();
+    updateAdjustUndoButton();
+}
+
+function getNearestPaletteColor(color) {
+    const palette = getCurrentPalette();
+    if (!palette.length) return color;
+    return palette
+        .map((p) => ({ p, d: redmeanDistance(color.r, color.g, color.b, p.r, p.g, p.b) }))
+        .sort((a, b) => a.d - b.d)[0].p;
+}
+
+function sampleFromOriginalImage(event) {
+    const previewCanvas = document.getElementById('compare-source-preview');
+    const frame = document.getElementById('compare-source-frame');
+    const sourceCanvas = document.getElementById('source-canvas');
+    if (!previewCanvas || !frame || !sourceCanvas || !AppState.comparePreviewVisible) return null;
+
+    const rect = previewCanvas.getBoundingClientRect();
+    const point = event.touches && event.touches[0]
+        ? { x: event.touches[0].clientX, y: event.touches[0].clientY }
+        : event.changedTouches && event.changedTouches[0]
+            ? { x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY }
+            : { x: event.clientX, y: event.clientY };
+    if (point.x < rect.left || point.x > rect.right || point.y < rect.top || point.y > rect.bottom) return null;
+
+    const localX = point.x - rect.left;
+    const localY = point.y - rect.top;
+    const imgX = Math.floor((localX / rect.width) * previewCanvas.width);
+    const imgY = Math.floor((localY / rect.height) * previewCanvas.height);
+    const crop = AppState.cropRect || { x: 0, y: 0, width: sourceCanvas.width, height: sourceCanvas.height };
+    const sourceX = crop.x + Math.max(0, Math.min(crop.width - 1, imgX));
+    const sourceY = crop.y + Math.max(0, Math.min(crop.height - 1, imgY));
+    const sourceCtx = sourceCanvas.getContext('2d');
+    const data = sourceCtx.getImageData(sourceX, sourceY, 1, 1).data;
+    return {
+        r: data[0],
+        g: data[1],
+        b: data[2]
+    };
+}
+
+function setFillColorFromSample(sampled) {
+    const matched = getNearestPaletteColor(sampled);
+    AppState.fillSourceSample = sampled;
+    AppState.fillColorId = matched.id;
+    AppState.fillColor = { id: matched.id, r: matched.r, g: matched.g, b: matched.b };
+    AppState.fillSourceIndex = null;
+    AppState.fillSelection = null;
+}
+
+
+
+function clearConnectedRegion(startIndex, canvas) {
+
+    const startPixel = AppState.stagedPixelData[startIndex];
+
+    if (!startPixel || startPixel.id === 'NONE') return;
+
+    const targetId = startPixel.id;
+
+    const visited = new Set();
+
+    const queue = [startIndex];
+
+    const indices = [];
+
+    const prevColors = [];
+
+    while (queue.length) {
+
+        const idx = queue.shift();
+
+        if (visited.has(idx)) continue;
+
+        visited.add(idx);
+
+        const pixel = AppState.stagedPixelData[idx];
+
+        if (!pixel || pixel.id !== targetId) continue;
+
+        indices.push(idx);
+
+        prevColors.push({ ...pixel });
+
+        const x = idx % AppState.gridWidth;
+
+        const y = Math.floor(idx / AppState.gridWidth);
+
+        if (x > 0) queue.push(idx - 1);
+
+        if (x < AppState.gridWidth - 1) queue.push(idx + 1);
+
+        if (y > 0) queue.push(idx - AppState.gridWidth);
+
+        if (y < AppState.gridHeight - 1) queue.push(idx + AppState.gridWidth);
+
+    }
+
+    if (!indices.length) return;
+
+    for (const idx of indices) {
+
+        AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
+
+    }
+
+    AppState.stagedActions.push({
+
+        indices,
+
+        prevColors,
+
+        nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }
+
+    });
+
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+
+    calculateStats();
+
+    updateAdjustUndoButton();
+
+}
+
 
 
 function exitAdjustLikeMode(applyChanges) {
 
     const canvas = document.getElementById('result-canvas');
-
-    const btn = document.getElementById('toggle-adjust-btn');
 
     const undoBtn = document.getElementById('adjust-undo-btn');
 
@@ -88,6 +305,20 @@ function exitAdjustLikeMode(applyChanges) {
 
     AppState.edgeSelectionMode = false;
 
+    AppState.clearBaseMode = false;
+
+    AppState.fillMode = false;
+
+    AppState.fillSourceMode = 'canvas';
+
+    AppState.fillColor = null;
+
+    AppState.fillColorId = null;
+
+    AppState.fillSourceIndex = null;
+
+    AppState.fillSelection = null;
+
     AppState.selectedEdgeBeadsIndices = [];
 
     resetBatchReplaceState();
@@ -99,8 +330,6 @@ function exitAdjustLikeMode(applyChanges) {
     calculateStats();
 
 
-
-    btn && btn.classList.remove('bg-primary', 'text-white');
 
     deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
 
@@ -130,7 +359,7 @@ function exitAdjustLikeMode(applyChanges) {
 
 
 
-export function toggleAdjustMode() {
+export function enterEditSession() {
 
     const resultCanvas = document.getElementById('result-canvas');
 
@@ -140,66 +369,165 @@ export function toggleAdjustMode() {
 
     const applyBtn = document.getElementById('adjust-apply-btn');
 
-    const btn = document.getElementById('toggle-adjust-btn');
-
     const edgeBtn = document.getElementById('toggle-edge-adjust-btn');
 
     const deleteBtn = document.getElementById('toggle-delete-btn');
 
-    const entering = AppState.editMode !== 'adjust';
+    if (AppState.editMode === 'adjust' && AppState.stagedPixelData) return;
+
+    AppState.editMode = 'adjust';
+
+    AppState.adjustPhase = 'waiting_receiver';
+
+    AppState.receiverIndex = null;
+
+    AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
+
+    AppState.stagedActions = [];
+
+    AppState.selectedEdgeBeadsIndices = [];
+
+    AppState.edgeSelectionMode = false;
+
+    AppState.clearBaseMode = false;
+
+    AppState.deleteMode = false;
+
+    AppState.fillMode = false;
+
+    AppState.fillSourceMode = 'canvas';
+
+    AppState.fillColor = null;
+
+    AppState.fillColorId = null;
+
+    AppState.fillSourceIndex = null;
+
+    AppState.fillSelection = null;
+
+    resetBatchReplaceState();
+
+    AppState.preAdjustZoomState = { ...AppState.zoomState };
+
+    edgeBtn && edgeBtn.classList.remove('bg-primary', 'text-white');
+
+    deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
+
+    undoBtn && undoBtn.classList.remove('hidden');
+
+    cancelBtn && cancelBtn.classList.remove('hidden');
+
+    applyBtn && applyBtn.classList.remove('hidden');
+
+    resultCanvas.classList.remove('cursor-grab', 'cursor-grabbing');
+
+    resultCanvas.classList.add('cursor-crosshair');
+
+    renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+
+    updateAdjustUndoButton();
+
+}
 
 
 
-    if (entering) {
+export function toggleClearBaseMode() {
 
-        AppState.editMode = 'adjust';
+    if (AppState.editMode !== 'adjust') {
 
-        AppState.adjustPhase = 'waiting_receiver';
-
-        AppState.receiverIndex = null;
-
-        AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
-
-        AppState.stagedActions = [];
-
-        AppState.selectedEdgeBeadsIndices = [];
-
-        AppState.edgeSelectionMode = false;
-
-        AppState.deleteMode = false;
-
-        resetBatchReplaceState();
-
-        AppState.preAdjustZoomState = { ...AppState.zoomState };
-
-
-
-        btn && btn.classList.add('bg-primary', 'text-white');
-
-        edgeBtn && edgeBtn.classList.remove('bg-primary', 'text-white');
-
-        deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
-
-        undoBtn && undoBtn.classList.remove('hidden');
-
-        cancelBtn && cancelBtn.classList.remove('hidden');
-
-        applyBtn && applyBtn.classList.remove('hidden');
-
-        resultCanvas.classList.remove('cursor-grab', 'cursor-grabbing');
-
-        resultCanvas.classList.add('cursor-crosshair');
-
-        renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-
-        updateAdjustUndoButton();
-
-    } else {
-
-        exitAdjustLikeMode(false);
+        enterEditSession();
 
     }
 
+    AppState.clearBaseMode = true;
+
+    AppState.edgeSelectionMode = false;
+
+    AppState.deleteMode = false;
+
+    AppState.fillMode = false;
+
+    AppState.fillSourceMode = 'canvas';
+
+    AppState.fillColor = null;
+
+    AppState.fillColorId = null;
+
+    AppState.fillSourceIndex = null;
+
+    AppState.fillSelection = null;
+
+    AppState.adjustPhase = 'waiting_receiver';
+
+    AppState.receiverIndex = null;
+
+    const resultCanvas = document.getElementById('result-canvas');
+
+    renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+
+}
+
+
+
+export function toggleFillMode() {
+
+    if (AppState.editMode !== 'adjust') {
+
+        enterEditSession();
+
+    }
+
+    AppState.fillMode = !AppState.fillMode;
+
+    AppState.clearBaseMode = false;
+
+    AppState.edgeSelectionMode = false;
+
+    AppState.deleteMode = false;
+
+    AppState.adjustPhase = 'waiting_receiver';
+
+    AppState.receiverIndex = null;
+
+    AppState.fillColor = null;
+
+    AppState.fillColorId = null;
+
+    AppState.fillSourceIndex = null;
+
+    AppState.fillSelection = null;
+
+    const resultCanvas = document.getElementById('result-canvas');
+
+    renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+
+}
+
+export function setFillSourceMode(mode) {
+    if (mode !== 'canvas' && mode !== 'original') return;
+    AppState.fillSourceMode = mode;
+    AppState.fillColor = null;
+    AppState.fillColorId = null;
+    AppState.fillSourceIndex = null;
+    AppState.fillSelection = null;
+    const canvas = document.getElementById('result-canvas');
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    if (AppState.fillSourceIndex !== null) {
+        const fillX = AppState.fillSourceIndex % AppState.gridWidth;
+        const fillY = Math.floor(AppState.fillSourceIndex / AppState.gridWidth);
+        drawReceiverOutline(canvas, fillX, fillY);
+    }
+}
+
+export function handleOriginalFillPick(event) {
+    if (!AppState.fillMode || AppState.fillSourceMode !== 'original') return false;
+    const sampled = sampleFromOriginalImage(event);
+    if (!sampled) return false;
+    setFillColorFromSample(sampled);
+    const canvas = document.getElementById('result-canvas');
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    calculateStats();
+    return true;
 }
 
 
@@ -262,7 +590,88 @@ export function handleResultCanvasClickForAdjust(e) {
 
     }
 
+    if (AppState.fillMode) {
 
+        if (AppState.fillSourceMode === 'original') {
+            const sampled = sampleFromOriginalImage(e);
+            if (sampled) {
+                const matched = getNearestPaletteColor(sampled);
+                AppState.fillSourceSample = sampled;
+                AppState.fillColorId = matched.id;
+                AppState.fillColor = { id: matched.id, r: matched.r, g: matched.g, b: matched.b };
+                AppState.fillSourceIndex = null;
+                AppState.fillSelection = null;
+                renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+                calculateStats();
+                return;
+            }
+        }
+
+        const pixel = AppState.stagedPixelData[idx];
+
+        if (!pixel || pixel.id === 'NONE') return;
+
+        if (!AppState.fillColor || !AppState.fillColorId) {
+
+            AppState.fillColorId = pixel.id;
+
+            AppState.fillColor = { id: pixel.id, r: pixel.r, g: pixel.g, b: pixel.b };
+
+            AppState.fillSourceIndex = idx;
+
+            renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+
+            drawReceiverOutline(canvas, gx, gy);
+
+            calculateStats();
+
+            return;
+
+        }
+
+        if (pixel.id === AppState.fillColorId) return;
+
+        AppState.stagedActions.push({
+
+            index: idx,
+
+            prevColor: { ...pixel },
+
+            nextColor: { ...AppState.fillColor }
+
+        });
+
+        AppState.stagedPixelData[idx] = { ...AppState.fillColor };
+
+        renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+
+        if (AppState.fillSourceIndex !== null) {
+
+            const fillX = AppState.fillSourceIndex % AppState.gridWidth;
+
+            const fillY = Math.floor(AppState.fillSourceIndex / AppState.gridWidth);
+
+            drawReceiverOutline(canvas, fillX, fillY);
+
+        }
+
+        calculateStats();
+
+        updateAdjustUndoButton();
+
+        return;
+
+    }
+
+
+
+    if (AppState.clearBaseMode) {
+
+        clearConnectedRegion(idx, canvas);
+
+        return;
+
+    }
 
     if (AppState.edgeSelectionMode) {
 
@@ -414,6 +823,66 @@ export function handleResultCanvasClickForAdjust(e) {
 
     }
 
+}
+
+export function startFillSelection(e) {
+
+    if (!AppState.fillMode || !AppState.fillColor) return false;
+
+    const hit = getGridHitFromEvent(e);
+
+    if (!hit) return false;
+
+    AppState.fillSelection = {
+        startX: hit.gx,
+        startY: hit.gy,
+        endX: hit.gx,
+        endY: hit.gy
+    };
+
+    const canvas = document.getElementById('result-canvas');
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    if (AppState.fillSourceIndex !== null) {
+        const fillX = AppState.fillSourceIndex % AppState.gridWidth;
+        const fillY = Math.floor(AppState.fillSourceIndex / AppState.gridWidth);
+        drawReceiverOutline(canvas, fillX, fillY);
+    }
+
+    return true;
+}
+
+export function moveFillSelection(e) {
+
+    if (!AppState.fillMode || !AppState.fillColor || !AppState.fillSelection) return false;
+
+    const hit = getGridHitFromEvent(e);
+
+    if (!hit) return false;
+
+    AppState.fillSelection.endX = hit.gx;
+
+    AppState.fillSelection.endY = hit.gy;
+
+    const canvas = document.getElementById('result-canvas');
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    if (AppState.fillSourceIndex !== null) {
+        const fillX = AppState.fillSourceIndex % AppState.gridWidth;
+        const fillY = Math.floor(AppState.fillSourceIndex / AppState.gridWidth);
+        drawReceiverOutline(canvas, fillX, fillY);
+    }
+
+    return true;
+}
+
+export function endFillSelection() {
+
+    if (!AppState.fillMode || !AppState.fillColor || !AppState.fillSelection) return false;
+
+    const canvas = document.getElementById('result-canvas');
+
+    applyFillSelection(canvas);
+
+    return true;
 }
 
 
