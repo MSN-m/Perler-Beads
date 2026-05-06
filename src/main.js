@@ -34,6 +34,8 @@ import {
     saveWorkbenchDraft,
     restoreWorkbenchDraft,
     deleteWorkbenchDraft,
+    renameWorkbenchDraft,
+    toggleDraftDrawer,
     resetPatternToGenerated,
     collapseWorkbenchEditToolbar,
     expandWorkbenchEditToolbar,
@@ -364,8 +366,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveDraftBtn) {
         saveDraftBtn.addEventListener('click', async () => {
             await saveWorkbenchDraft();
+            AppState.draftDrawerOpen = true;
             updateWorkbenchUI();
         });
+    }
+
+    const toggleDraftDrawerBtn = document.getElementById('toggle-draft-drawer-btn');
+    if (toggleDraftDrawerBtn) {
+        toggleDraftDrawerBtn.addEventListener('click', toggleDraftDrawer);
     }
 
     const draftBoxList = document.getElementById('draft-box-list');
@@ -384,6 +392,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 await deleteWorkbenchDraft(draftId);
                 updateWorkbenchUI();
             }
+        });
+        draftBoxList.addEventListener('focusin', (event) => {
+            const input = event.target.closest('input[data-draft-action="rename"]');
+            if (!input) return;
+            input.dataset.originalName = input.value;
+        });
+        draftBoxList.addEventListener('keydown', async (event) => {
+            const input = event.target.closest('input[data-draft-action="rename"]');
+            if (!input) return;
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                await renameWorkbenchDraft(input.getAttribute('data-draft-id'), input.value);
+                updateWorkbenchUI();
+            }
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                input.value = input.dataset.originalName || input.value;
+                input.blur();
+            }
+        });
+        draftBoxList.addEventListener('focusout', async (event) => {
+            const input = event.target.closest('input[data-draft-action="rename"]');
+            if (!input) return;
+            await renameWorkbenchDraft(input.getAttribute('data-draft-id'), input.value);
+            updateWorkbenchUI();
         });
     }
 

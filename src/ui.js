@@ -99,6 +99,43 @@ function getCurrentSourceCanvasSnapshot() {
     }
 }
 
+function createDraftThumbnail(pixelData, gridWidth, gridHeight) {
+    if (!pixelData || !gridWidth || !gridHeight) return null;
+    const maxSize = 96;
+    const cellSize = Math.max(1, Math.floor(maxSize / Math.max(gridWidth, gridHeight)));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, gridWidth * cellSize);
+    canvas.height = Math.max(1, gridHeight * cellSize);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = false;
+
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const pixel = pixelData[y * gridWidth + x];
+            if (!pixel || pixel.id === 'NONE') continue;
+            ctx.fillStyle = `rgb(${pixel.r},${pixel.g},${pixel.b})`;
+            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+    }
+
+    try {
+        return canvas.toDataURL('image/png');
+    } catch {
+        return null;
+    }
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function openDraftsDb() {
     return new Promise((resolve, reject) => {
         const request = window.indexedDB.open(WORKBENCH_DRAFTS_DB, 1);
@@ -162,7 +199,9 @@ function renderDraftBox() {
     const empty = document.getElementById('draft-box-empty');
     const list = document.getElementById('draft-box-list');
     const saveBtn = document.getElementById('save-draft-btn');
-    if (!empty || !list || !saveBtn) return;
+    const drawer = document.getElementById('draft-drawer');
+    const toggleBtn = document.getElementById('toggle-draft-drawer-btn');
+    if (!empty || !list || !saveBtn || !drawer || !toggleBtn) return;
 
     const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
@@ -171,6 +210,10 @@ function renderDraftBox() {
     saveBtn.classList.toggle('cursor-not-allowed', !hasImage || !hasPattern);
 
     const drafts = Array.isArray(AppState.drafts) ? AppState.drafts : [];
+    saveBtn.textContent = `保存为草稿（${drafts.length}）`;
+    drawer.classList.toggle('hidden', !AppState.draftDrawerOpen);
+    toggleBtn.textContent = AppState.draftDrawerOpen ? '↓' : '↑';
+    toggleBtn.setAttribute('aria-label', AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表');
     empty.classList.toggle('hidden', drafts.length > 0);
     list.classList.toggle('hidden', drafts.length === 0);
 
@@ -179,21 +222,30 @@ function renderDraftBox() {
         return;
     }
 
-    list.innerHTML = drafts.map((draft) => `
-        <div class="rounded-2xl border border-gray-100 bg-gray-50 px-3 py-3">
-            <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                    <div class="text-sm font-bold text-gray-800 truncate">${draft.name}</div>
+    list.innerHTML = drafts.map((draft) => {
+        const thumbnail = draft.thumbnailDataUrl
+            ? `<img src="${draft.thumbnailDataUrl}" alt="${escapeHtml(draft.name)}" class="w-full h-full object-contain image-pixelated">`
+            : '<span class="text-[10px] text-gray-400">无预览</span>';
+        return `
+        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-3">
+            <div class="flex items-start gap-3">
+                <div class="w-16 h-16 shrink-0 rounded-xl bg-white border border-gray-200 overflow-hidden flex items-center justify-center">
+                    ${thumbnail}
+                </div>
+                <div class="min-w-0 flex-1">
+                    <input data-draft-action="rename" data-draft-id="${draft.id}" value="${escapeHtml(draft.name)}"
+                        class="w-full bg-transparent text-sm font-bold text-gray-800 truncate border border-transparent rounded-lg px-1 py-0.5 focus:bg-white focus:border-primary focus:outline-none">
                     <div class="text-xs text-gray-500 mt-1">${buildDraftSummary(draft)}</div>
                     <div class="text-[11px] text-gray-400 mt-1">${getDraftTimestampLabel(draft.updatedAt)}</div>
-                </div>
-                <div class="shrink-0 flex items-center gap-2">
-                    <button data-draft-action="restore" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary">恢复</button>
-                    <button data-draft-action="delete" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-500 hover:border-red-300 hover:text-red-500">删除</button>
+                    <div class="flex items-center gap-2 mt-2">
+                        <button data-draft-action="restore" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary">恢复</button>
+                        <button data-draft-action="delete" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-500 hover:border-red-300 hover:text-red-500">删除</button>
+                    </div>
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function getNextDraftName() {
@@ -223,6 +275,7 @@ export async function saveWorkbenchDraft() {
         colorCount: colorIds.size,
         cropRect: AppState.cropRect ? { ...AppState.cropRect } : null,
         sourceImageDataUrl: getCurrentSourceCanvasSnapshot(),
+        thumbnailDataUrl: createDraftThumbnail(pixels, AppState.gridWidth, AppState.gridHeight),
         pixelData: pixels
     };
     await upsertWorkbenchDraft(draft);
@@ -295,6 +348,26 @@ export function restoreWorkbenchDraft(draftId) {
 export async function deleteWorkbenchDraft(draftId) {
     await removeWorkbenchDraftFromDb(draftId);
     AppState.drafts = (AppState.drafts || []).filter((item) => item.id !== draftId);
+    renderDraftBox();
+}
+
+export async function renameWorkbenchDraft(draftId, nextName) {
+    const draft = (AppState.drafts || []).find((item) => item.id === draftId);
+    if (!draft) return;
+    const trimmedName = nextName.trim();
+    if (!trimmedName || trimmedName === draft.name) {
+        renderDraftBox();
+        return;
+    }
+    draft.name = trimmedName;
+    draft.updatedAt = new Date().toISOString();
+    await upsertWorkbenchDraft(draft);
+    AppState.drafts = [...(AppState.drafts || [])].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    renderDraftBox();
+}
+
+export function toggleDraftDrawer() {
+    AppState.draftDrawerOpen = !AppState.draftDrawerOpen;
     renderDraftBox();
 }
 

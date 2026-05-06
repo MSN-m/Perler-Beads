@@ -226,22 +226,25 @@
                     <div id="color-stats" class="grid grid-cols-2 gap-2"></div>
                 </section>
 
-                <section class="bg-white p-5 rounded-2xl border border-white shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-sm font-bold">草稿箱</h3>
-                        <button id="save-draft-btn" class="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:opacity-90 active:scale-95 transition">
-                            保存当前草稿
+                <div class="relative grid grid-cols-[minmax(0,1fr)_116px] gap-3">
+                    <div id="draft-drawer" class="hidden absolute left-0 right-[128px] bottom-full mb-3 z-40 bg-white rounded-2xl border border-gray-100 shadow-2xl p-3">
+                        <div id="draft-box-empty" class="text-sm text-gray-500 px-2 py-3">
+                            暂无草稿
+                        </div>
+                        <div id="draft-box-list" class="hidden space-y-2 max-h-80 overflow-y-auto no-scrollbar"></div>
+                    </div>
+                    <div class="grid grid-cols-[minmax(0,1fr)_48px] rounded-2xl overflow-hidden shadow-sm">
+                        <button id="save-draft-btn" class="py-4 bg-white text-gray-900 text-sm font-bold border border-gray-200 border-r-0 active:scale-[0.99] transition">
+                            保存为草稿（0）
+                        </button>
+                        <button id="toggle-draft-drawer-btn" class="py-4 bg-white text-gray-900 border border-gray-200 text-sm font-bold hover:text-primary active:scale-95 transition" aria-label="展开草稿列表">
+                            ↑
                         </button>
                     </div>
-                    <div id="draft-box-empty" class="text-sm text-gray-500">
-                        暂无草稿
-                    </div>
-                    <div id="draft-box-list" class="hidden space-y-2 max-h-56 overflow-y-auto no-scrollbar"></div>
-                </section>
-
-                <button id="next-to-step-4" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">
-                    导出
-                </button>
+                    <button id="next-to-step-4" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">
+                        导出
+                    </button>
+                </div>
             </aside>
         </div>
     </section>

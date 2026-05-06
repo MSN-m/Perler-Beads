@@ -46,6 +46,7 @@ export const AppState = {
     comparePreviewScale: 1,
     comparePreviewVisible: false,
     drafts: [],
+    draftDrawerOpen: false,
     selectedEdgeBeadsIndices: [],
     deleteMode: false,
     batchReplace: {
