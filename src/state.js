@@ -40,6 +40,7 @@ export const AppState = {
     fillSourceIndex: null,
     fillSourceSample: null,
     fillSelection: null,
+    workbenchSettingsCollapsed: false,
     workbenchToolbarCollapsed: false,
     cropRect: null,
     cropInteraction: null,

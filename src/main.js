@@ -39,6 +39,7 @@ import {
     resetPatternToGenerated,
     collapseWorkbenchEditToolbar,
     expandWorkbenchEditToolbar,
+    toggleWorkbenchSettingsPanel,
     updateWorkbenchUI,
     toggleEdgeAdjustMode,
     toggleDeleteMode
@@ -67,6 +68,7 @@ const resetProjectForNewImage = () => {
     AppState.fillColor = null;
     AppState.fillColorId = null;
     AppState.fillSourceIndex = null;
+    AppState.workbenchSettingsCollapsed = false;
     AppState.workbenchToolbarCollapsed = false;
     AppState.cropRect = null;
     AppState.cropInteraction = null;
@@ -186,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 mardSetContainer.classList.add('hidden');
             }
+            updateWorkbenchUI();
         });
     }
 
@@ -193,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mardSetSelect) {
         mardSetSelect.addEventListener('change', (e) => {
             AppState.mardSet = e.target.value;
+            updateWorkbenchUI();
         });
     }
 
@@ -212,6 +216,11 @@ document.addEventListener('DOMContentLoaded', () => {
             handleGeneratePattern();
             updateWorkbenchUI();
         });
+    }
+
+    const toggleWorkbenchSettingsBtn = document.getElementById('toggle-workbench-settings-btn');
+    if (toggleWorkbenchSettingsBtn) {
+        toggleWorkbenchSettingsBtn.addEventListener('click', toggleWorkbenchSettingsPanel);
     }
 
     const sourceCanvas = document.getElementById('source-canvas');

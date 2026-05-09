@@ -61,6 +61,23 @@ function setText(id, text) {
     el.textContent = text;
 }
 
+function getWorkbenchSettingsSummary() {
+    const brandLabels = {
+        mard: 'MARD',
+        perler: 'Perler',
+        hama: 'Hama',
+        artkal: 'Artkal'
+    };
+    const brand = brandLabels[AppState.brand] || AppState.brand.toUpperCase();
+    const setText = AppState.brand === 'mard' ? ` ${AppState.mardSet}色` : '';
+    const colorLimitToggle = document.getElementById('color-limit-toggle');
+    const maxColorsSlider = document.getElementById('max-colors-slider');
+    const colorLimitText = colorLimitToggle && colorLimitToggle.checked
+        ? `最多${maxColorsSlider ? maxColorsSlider.value : 24}色`
+        : '不限颜色';
+    return `${AppState.gridWidth}x${AppState.gridHeight} · ${brand}${setText} · ${colorLimitText}`;
+}
+
 const WORKBENCH_DRAFTS_DB = 'perler_beads_workbench_drafts_db';
 const WORKBENCH_DRAFTS_STORE = 'drafts';
 
@@ -309,6 +326,7 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.fillSourceIndex = null;
     AppState.selectedEdgeBeadsIndices = [];
     AppState.comparePreviewVisible = false;
+    AppState.workbenchSettingsCollapsed = true;
     AppState.workbenchToolbarCollapsed = false;
     resetBatchReplaceState();
 
@@ -664,6 +682,12 @@ export function toggleWorkbenchComparePreview() {
     updateWorkbenchUI();
 }
 
+export function toggleWorkbenchSettingsPanel() {
+    if (!isWorkbenchLayout() || !hasWorkbenchPattern()) return;
+    AppState.workbenchSettingsCollapsed = !AppState.workbenchSettingsCollapsed;
+    updateWorkbenchUI();
+}
+
 export function zoomWorkbenchComparePreview(deltaY) {
     if (!isWorkbenchLayout() || !AppState.image || !hasWorkbenchPattern() || !AppState.comparePreviewVisible) return;
     const nextScale = clamp((AppState.comparePreviewScale || 1) * (deltaY < 0 ? 1.1 : 0.9), 0.1, 8);
@@ -676,6 +700,7 @@ export function updateWorkbenchUI() {
     const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
     const toolbarCollapsed = Boolean(AppState.workbenchToolbarCollapsed);
+    const settingsCollapsed = hasPattern && Boolean(AppState.workbenchSettingsCollapsed);
     const compareVisible = hasPattern && AppState.comparePreviewVisible;
     setHidden('workbench-upload-empty', hasImage || hasPattern);
     setHidden('workbench-change-image', !hasImage && !hasPattern);
@@ -691,7 +716,10 @@ export function updateWorkbenchUI() {
     setHidden('workbench-active-toolbar', AppState.editMode === 'none');
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
+    setHidden('workbench-settings-content', settingsCollapsed);
     setText('generate-pattern-label', hasPattern ? '更新图纸' : '生成图纸');
+    setText('workbench-settings-summary', getWorkbenchSettingsSummary());
+    setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
         generateBtn.disabled = !hasImage;
@@ -985,6 +1013,7 @@ export function handleGeneratePattern() {
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchToolbarCollapsed = false;
     AppState.comparePreviewVisible = false;
 
@@ -1078,6 +1107,7 @@ export function toggleColorLimit() {
     } else {
         controls.classList.add('opacity-40', 'pointer-events-none');
     }
+    updateWorkbenchUI();
 }
 
 /**
@@ -1086,6 +1116,7 @@ export function toggleColorLimit() {
 export function updateMaxColorsDisplay() {
     const val = document.getElementById('max-colors-slider').value;
     document.getElementById('max-colors-display').innerText = val;
+    updateWorkbenchUI();
 }
 
 loadWorkbenchDrafts().then(() => {

@@ -136,7 +136,17 @@
             </main>
 
             <aside class="min-h-0 flex flex-col gap-4">
-                <section class="bg-white p-5 space-y-5 rounded-2xl border border-white shadow-sm">
+                <section id="workbench-settings-panel" class="bg-white p-5 rounded-2xl border border-white shadow-sm">
+                    <button id="toggle-workbench-settings-btn" type="button"
+                        class="w-full flex items-center justify-between gap-3 text-left">
+                        <span>
+                            <span class="block text-sm font-bold text-gray-900">生成设置</span>
+                            <span id="workbench-settings-summary" class="block mt-1 text-xs text-gray-500">32x32 · MARD 221色 · 最多24色</span>
+                        </span>
+                        <span id="workbench-settings-toggle-label" class="shrink-0 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">收起</span>
+                    </button>
+
+                    <div id="workbench-settings-content" class="mt-5 space-y-5">
                     <label id="workbench-change-image" for="file-upload"
                         class="hidden block w-full text-center py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold cursor-pointer">
                         更换图片
@@ -210,6 +220,7 @@
                         class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition flex justify-center items-center shadow-sm">
                         <span id="generate-pattern-label">生成图纸</span>
                     </button>
+                    </div>
                 </section>
 
                 <section class="flex-1 min-h-0 bg-white p-5 rounded-2xl border border-white shadow-sm overflow-y-auto no-scrollbar">
