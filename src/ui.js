@@ -406,6 +406,17 @@ function ensureCropRect() {
     return AppState.cropRect;
 }
 
+function getActiveSourceRatio() {
+    if (!AppState.image) return 1;
+    if (isWorkbenchLayout()) {
+        const rect = ensureCropRect();
+        if (rect && rect.width > 0 && rect.height > 0) {
+            return rect.width / rect.height;
+        }
+    }
+    return AppState.image.width / AppState.image.height;
+}
+
 function updateCropSummary() {
     if (!isWorkbenchLayout()) return;
     const summary = document.getElementById('crop-summary');
@@ -512,7 +523,7 @@ function stopCropInteraction() {
 export function resetWorkbenchCropRect() {
     if (!AppState.image) return;
     AppState.cropRect = getDefaultCropRect();
-    renderWorkbenchCropOverlay();
+    updateGridDimensions();
 }
 
 export function startWorkbenchCropInteraction(event) {
@@ -558,7 +569,7 @@ export function endWorkbenchCropInteraction() {
     if (!AppState.cropInteraction) return;
     AppState.cropRect = ensureCropRect();
     stopCropInteraction();
-    renderWorkbenchCropOverlay();
+    updateGridDimensions();
 }
 
 function getSourceImageDataForGeneration() {
@@ -813,7 +824,7 @@ export function updateGridDimensions() {
     const slider = document.getElementById('grid-size-slider');
     const sizeDisplay = document.getElementById('grid-size-display');
     const val = parseInt(slider.value);
-    const ratio = AppState.image ? AppState.image.width / AppState.image.height : 1;
+    const ratio = getActiveSourceRatio();
     
     if (ratio >= 1) {
         AppState.gridWidth = val;
