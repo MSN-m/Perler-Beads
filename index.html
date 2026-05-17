@@ -194,6 +194,15 @@
 
             <!-- 颜色限制逻辑 (新功能) -->
             <div class="p-4 bg-gray-50 rounded-2xl space-y-4 border border-gray-100">
+                <div>
+                    <label class="text-sm font-bold text-gray-700 mb-2 block">转换精度</label>
+                    <select id="precision-mode-select"
+                        class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
+                        <option value="standard" selected>标准模式（可回退）</option>
+                        <option value="high">高精度模式（保留细节）</option>
+                    </select>
+                </div>
+
                 <div class="flex justify-between items-center">
                     <div class="flex items-center space-x-2">
                         <label class="text-sm font-bold text-gray-700">限制颜色数量</label>

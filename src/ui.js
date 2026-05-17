@@ -1010,6 +1010,7 @@ export function handleGeneratePattern() {
         isColorLimitEnabled: document.getElementById('color-limit-toggle').checked,
         maxColors: parseInt(document.getElementById('max-colors-slider').value),
         isDitheringEnabled: document.getElementById('dithering-toggle').checked,
+        precisionMode: document.getElementById('precision-mode-select')?.value || 'standard',
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);

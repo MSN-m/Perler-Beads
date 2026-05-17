@@ -288,6 +288,7 @@ export function generatePatternData({
     isColorLimitEnabled,
     maxColors,
     isDitheringEnabled,
+    precisionMode = 'standard',
     palettes
 }) {
     const { data: sourceData, width: sourceWidth, height: sourceHeight } = sourceImageData;
@@ -328,6 +329,93 @@ export function generatePatternData({
     const pixelData = [];
     const avgColors = [];
 
+    const useHighPrecisionSampling = precisionMode === 'high';
+
+    function sampleCellColor(startX, startY, endX, endY) {
+        let rSum = 0, gSum = 0, bSum = 0, opaqueCount = 0, totalCount = 0;
+        let weightedR = 0, weightedG = 0, weightedB = 0, weightSum = 0;
+        const colorBuckets = new Map();
+        const centerX = (startX + endX - 1) / 2;
+        const centerY = (startY + endY - 1) / 2;
+        const maxDistance = Math.max(1, Math.hypot(endX - startX, endY - startY) / 2);
+
+        for (let sy = startY; sy < endY; sy++) {
+            for (let sx = startX; sx < endX; sx++) {
+                const idx = (sy * sourceWidth + sx) * 4;
+                totalCount++;
+                if (sourceData[idx + 3] > 128) {
+                    const r = sourceData[idx];
+                    const g = sourceData[idx + 1];
+                    const b = sourceData[idx + 2];
+                    rSum += r;
+                    gSum += g;
+                    bSum += b;
+                    opaqueCount++;
+
+                    if (useHighPrecisionSampling) {
+                        const distance = Math.hypot(sx - centerX, sy - centerY);
+                        const weight = 1 + Math.max(0, 1 - distance / maxDistance);
+                        weightedR += r * weight;
+                        weightedG += g * weight;
+                        weightedB += b * weight;
+                        weightSum += weight;
+
+                        const bucketKey = `${Math.round(r / 24)}-${Math.round(g / 24)}-${Math.round(b / 24)}`;
+                        const bucket = colorBuckets.get(bucketKey) || { r: 0, g: 0, b: 0, count: 0 };
+                        bucket.r += r;
+                        bucket.g += g;
+                        bucket.b += b;
+                        bucket.count++;
+                        colorBuckets.set(bucketKey, bucket);
+                    }
+                }
+            }
+        }
+
+        const opaqueRatio = opaqueCount / Math.max(totalCount, 1);
+        const alphaThreshold = useHighPrecisionSampling ? 0.22 : 0.3;
+        if (opaqueRatio <= alphaThreshold) {
+            return { r: 255, g: 255, b: 255, a: 0 };
+        }
+
+        if (!useHighPrecisionSampling || weightSum === 0) {
+            return {
+                r: opaqueCount > 0 ? rSum / opaqueCount : 255,
+                g: opaqueCount > 0 ? gSum / opaqueCount : 255,
+                b: opaqueCount > 0 ? bSum / opaqueCount : 255,
+                a: 255
+            };
+        }
+
+        const weightedAvg = {
+            r: weightedR / weightSum,
+            g: weightedG / weightSum,
+            b: weightedB / weightSum
+        };
+        let dominantBucket = null;
+        for (const bucket of colorBuckets.values()) {
+            if (!dominantBucket || bucket.count > dominantBucket.count) {
+                dominantBucket = bucket;
+            }
+        }
+
+        if (dominantBucket && dominantBucket.count / opaqueCount >= 0.42) {
+            const dominantAvg = {
+                r: dominantBucket.r / dominantBucket.count,
+                g: dominantBucket.g / dominantBucket.count,
+                b: dominantBucket.b / dominantBucket.count
+            };
+            return {
+                r: dominantAvg.r * 0.65 + weightedAvg.r * 0.35,
+                g: dominantAvg.g * 0.65 + weightedAvg.g * 0.35,
+                b: dominantAvg.b * 0.65 + weightedAvg.b * 0.35,
+                a: 255
+            };
+        }
+
+        return { ...weightedAvg, a: 255 };
+    }
+
     // Phase 1: sample and match colors (no dithering)
     for (let y = 0; y < gridHeight; y++) {
         for (let x = 0; x < gridWidth; x++) {
@@ -336,26 +424,7 @@ export function generatePatternData({
             const endX = Math.floor(((x + 1) / gridWidth) * sourceWidth);
             const endY = Math.floor(((y + 1) / gridHeight) * sourceHeight);
 
-            let rSum = 0, gSum = 0, bSum = 0, opaqueCount = 0, totalCount = 0;
-            for (let sy = startY; sy < endY; sy++) {
-                for (let sx = startX; sx < endX; sx++) {
-                    const idx = (sy * sourceWidth + sx) * 4;
-                    totalCount++;
-                    if (sourceData[idx + 3] > 128) {
-                        rSum += sourceData[idx];
-                        gSum += sourceData[idx + 1];
-                        bSum += sourceData[idx + 2];
-                        opaqueCount++;
-                    }
-                }
-            }
-
-            // 只统计不透明像素的平均色，忽略透明背景
-            const r = opaqueCount > 0 ? rSum / opaqueCount : 255;
-            const g = opaqueCount > 0 ? gSum / opaqueCount : 255;
-            const b = opaqueCount > 0 ? bSum / opaqueCount : 255;
-            // 如果不透明像素 < 30%，视为透明格子
-            const a = (opaqueCount / Math.max(totalCount, 1)) > 0.3 ? 255 : 0;
+            const { r, g, b, a } = sampleCellColor(startX, startY, endX, endY);
 
             avgColors.push({ r, g, b, a });
 
