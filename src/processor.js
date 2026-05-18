@@ -565,8 +565,12 @@ export function generatePatternData({
         console.log('[SmartDither] dithered:', ditheredCount, 'skipped:', skippedCount);
     }
 
-    // Phase 3: 色块连通性后处理 - 消除孤立杂色格子
-    unifySmallRegions(pixelData, gridWidth, gridHeight, 2);
+    // Phase 3: 色块连通性后处理 - 忠实模式只清理非常接近的孤立噪点
+    if (useHighPrecisionSampling) {
+        unifySmallRegions(pixelData, gridWidth, gridHeight, 2, 45, 2);
+    } else {
+        unifySmallRegions(pixelData, gridWidth, gridHeight, 2);
+    }
 
     return pixelData;
 }
@@ -577,8 +581,10 @@ export function generatePatternData({
  * @param {number} gridWidth
  * @param {number} gridHeight
  * @param {number} minSize - 小于此格数的色块会被归并
+ * @param {number} maxColorDiff - 允许归并的最大 RGB 色差
+ * @param {number} minNeighborContacts - 至少接触多少个同类邻居才归并
  */
-function unifySmallRegions(pixelData, gridWidth, gridHeight, minSize) {
+function unifySmallRegions(pixelData, gridWidth, gridHeight, minSize, maxColorDiff = 80, minNeighborContacts = 1) {
     const visited = new Uint8Array(gridWidth * gridHeight);
 
     for (let startY = 0; startY < gridHeight; startY++) {
@@ -633,14 +639,14 @@ function unifySmallRegions(pixelData, gridWidth, gridHeight, minSize) {
                 for (const entry of Object.values(neighborCount)) {
                     if (entry.count > bestCount) { bestCount = entry.count; bestColor = entry.color; }
                 }
-                if (bestColor) {
+                if (bestColor && bestCount >= minNeighborContacts) {
                     // 只有当小色块与最多邻居色差异很小时才归并（避免消除有意义的细节）
                     const dr = color.r - bestColor.r;
                     const dg = color.g - bestColor.g;
                     const db = color.b - bestColor.b;
                     const colorDiff = Math.sqrt(dr*dr + dg*dg + db*db);
-                    // 色差 < 80 才归并：差异太大说明是有意义的细节（如黑色眼睛在粉色脸上）
-                    if (colorDiff < 80) {
+                    // 色差足够接近才归并：差异太大说明可能是有意义的细节（如黑色眼睛在粉色脸上）
+                    if (colorDiff < maxColorDiff) {
                         for (const idx of region) {
                             pixelData[idx] = bestColor;
                         }

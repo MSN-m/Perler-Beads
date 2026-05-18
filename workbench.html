@@ -197,8 +197,8 @@
                             <label class="text-sm font-bold text-gray-800 mb-2 block">转换精度</label>
                             <select id="precision-mode-select"
                                 class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
-                                <option value="standard" selected>标准模式（可回退）</option>
-                                <option value="high">高精度模式（保留细节）</option>
+                                <option value="high" selected>忠实还原（推荐）</option>
+                                <option value="standard">标准模式（回退）</option>
                             </select>
                         </div>
 
@@ -206,8 +206,8 @@
                             <label class="text-sm font-bold text-gray-800 mb-2 block">颜色匹配</label>
                             <select id="color-match-mode-select"
                                 class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
-                                <option value="redmean" selected>标准匹配（可回退）</option>
-                                <option value="deltae">感知优化 DeltaE</option>
+                                <option value="deltae" selected>感知优化 DeltaE（推荐）</option>
+                                <option value="redmean">标准匹配（回退）</option>
                             </select>
                         </div>
 
@@ -222,9 +222,9 @@
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-500">最大颜色种类</span>
                         <span id="max-colors-display"
-                                    class="text-xs font-mono font-bold text-primary bg-white px-2 py-0.5 rounded border border-primary/20">24</span>
+                                    class="text-xs font-mono font-bold text-primary bg-white px-2 py-0.5 rounded border border-primary/20">36</span>
                             </div>
-                            <input type="range" id="max-colors-slider" min="2" max="64" value="24" step="1"
+                            <input type="range" id="max-colors-slider" min="2" max="64" value="36" step="1"
                                 class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
                             <label class="flex items-start gap-2 text-xs text-gray-500">
                                 <input type="checkbox" id="dithering-toggle" checked
