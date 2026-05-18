@@ -35,6 +35,8 @@ import {
     adjustCancel,
     adjustApply,
     saveWorkbenchDraft,
+    exportWorkbenchDrafts,
+    importWorkbenchDraftFile,
     restoreWorkbenchDraft,
     deleteWorkbenchDraft,
     renameWorkbenchDraft,
@@ -415,6 +417,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleDraftDrawerBtn = document.getElementById('toggle-draft-drawer-btn');
     if (toggleDraftDrawerBtn) {
         toggleDraftDrawerBtn.addEventListener('click', toggleDraftDrawer);
+    }
+
+    const exportDraftsBtn = document.getElementById('export-drafts-btn');
+    if (exportDraftsBtn) {
+        exportDraftsBtn.addEventListener('click', exportWorkbenchDrafts);
+    }
+
+    const importDraftsFile = document.getElementById('import-drafts-file');
+    if (importDraftsFile) {
+        importDraftsFile.addEventListener('change', async (event) => {
+            await importWorkbenchDraftFile(event.target.files[0]);
+            event.target.value = '';
+        });
     }
 
     const draftBoxList = document.getElementById('draft-box-list');

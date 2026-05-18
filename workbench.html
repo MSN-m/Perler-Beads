@@ -257,6 +257,15 @@
 
                 <div class="relative grid grid-cols-[minmax(0,1fr)_116px] gap-3">
                     <div id="draft-drawer" class="hidden absolute left-0 right-[128px] bottom-full mb-3 z-40 bg-white rounded-2xl border border-gray-100 shadow-2xl p-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <button id="export-drafts-btn" class="flex-1 px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 active:scale-95 transition">
+                                导出全部
+                            </button>
+                            <label for="import-drafts-file" class="flex-1 px-3 py-2 rounded-xl bg-white border border-gray-200 text-center text-xs font-bold text-gray-700 hover:border-primary hover:text-primary active:scale-95 transition cursor-pointer">
+                                导入草稿
+                            </label>
+                            <input id="import-drafts-file" type="file" accept="application/json,.json" class="hidden">
+                        </div>
                         <div id="draft-box-empty" class="text-sm text-gray-500 px-2 py-3">
                             暂无草稿
                         </div>

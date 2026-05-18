@@ -159,6 +159,63 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function makeDraftFileName(name, suffix = 'draft') {
+    const safeName = String(name || suffix)
+        .trim()
+        .replace(/[\\/:*?"<>|]+/g, '-')
+        .replace(/\s+/g, '-')
+        .slice(0, 48) || suffix;
+    return `${safeName}-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
+function downloadJsonFile(payload, fileName) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+function isValidDraftPayload(draft) {
+    return Boolean(
+        draft &&
+        Number.isFinite(Number(draft.gridWidth)) &&
+        Number.isFinite(Number(draft.gridHeight)) &&
+        Array.isArray(draft.pixelData) &&
+        draft.pixelData.length === Number(draft.gridWidth) * Number(draft.gridHeight)
+    );
+}
+
+function normalizeImportedDraft(draft, index = 0) {
+    if (!isValidDraftPayload(draft)) return null;
+    const gridWidth = Number(draft.gridWidth);
+    const gridHeight = Number(draft.gridHeight);
+    const pixelData = draft.pixelData.map((pixel) => ({
+        id: pixel?.id || 'NONE',
+        r: Number(pixel?.r) || 0,
+        g: Number(pixel?.g) || 0,
+        b: Number(pixel?.b) || 0,
+        a: pixel?.a
+    }));
+    const colorIds = new Set(pixelData.filter((item) => item && item.id !== 'NONE').map((item) => item.id));
+    const importedAt = Date.now();
+    return {
+        id: `draft_import_${importedAt}_${index}`,
+        name: `${draft.name || '导入草稿'}（导入）`,
+        updatedAt: new Date(importedAt + index).toISOString(),
+        gridWidth,
+        gridHeight,
+        brand: draft.brand || 'mard',
+        mardSet: draft.mardSet || 221,
+        colorCount: draft.colorCount || colorIds.size,
+        cropRect: draft.cropRect ? { ...draft.cropRect } : null,
+        sourceImageDataUrl: draft.sourceImageDataUrl || null,
+        thumbnailDataUrl: draft.thumbnailDataUrl || createDraftThumbnail(pixelData, gridWidth, gridHeight),
+        pixelData
+    };
+}
+
 function openDraftsDb() {
     return new Promise((resolve, reject) => {
         const request = window.indexedDB.open(WORKBENCH_DRAFTS_DB, 1);
@@ -304,6 +361,54 @@ export async function saveWorkbenchDraft() {
     await upsertWorkbenchDraft(draft);
     AppState.drafts = [draft, ...(AppState.drafts || [])].slice(0, 12);
     renderDraftBox();
+}
+
+export function exportWorkbenchDrafts() {
+    const drafts = Array.isArray(AppState.drafts) ? AppState.drafts : [];
+    if (!drafts.length) return;
+    downloadJsonFile({
+        type: 'perler-beads-workbench-drafts',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        drafts
+    }, makeDraftFileName('perler-beads-drafts', 'drafts'));
+}
+
+export async function importWorkbenchDraftFile(file) {
+    if (!file) return;
+    let payload;
+    try {
+        payload = JSON.parse(await file.text());
+    } catch (error) {
+        window.alert('导入失败：草稿文件不是有效的 JSON。');
+        return;
+    }
+
+    const rawDrafts = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.drafts)
+            ? payload.drafts
+            : payload?.pixelData
+                ? [payload]
+                : [];
+    const importedDrafts = rawDrafts
+        .map((draft, index) => normalizeImportedDraft(draft, index))
+        .filter(Boolean);
+
+    if (!importedDrafts.length) {
+        window.alert('导入失败：没有找到可用的草稿数据。');
+        return;
+    }
+
+    for (const draft of importedDrafts) {
+        await upsertWorkbenchDraft(draft);
+    }
+    AppState.drafts = [...importedDrafts, ...(AppState.drafts || [])]
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    AppState.draftDrawerOpen = true;
+    renderDraftBox();
+    updateWorkbenchUI();
+    window.alert(`已导入 ${importedDrafts.length} 个草稿。`);
 }
 
 export function restoreWorkbenchDraft(draftId) {
