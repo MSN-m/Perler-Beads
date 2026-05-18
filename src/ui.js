@@ -16,6 +16,9 @@ import {
     handleResultCanvasClickForAdjust as _handleResultCanvasClickForAdjust,
     setFillSourceMode as _setFillSourceMode,
     handleOriginalFillPick as _handleOriginalFillPick,
+    startWorkbenchCompareDrag as _startWorkbenchCompareDrag,
+    moveWorkbenchCompareDrag as _moveWorkbenchCompareDrag,
+    endWorkbenchCompareDrag as _endWorkbenchCompareDrag,
     startFillSelection as _startFillSelection,
     moveFillSelection as _moveFillSelection,
     endFillSelection as _endFillSelection,
@@ -37,6 +40,9 @@ export {
     _handleResultCanvasClickForAdjust as handleResultCanvasClickForAdjust,
     _setFillSourceMode as setFillSourceMode,
     _handleOriginalFillPick as handleOriginalFillPick,
+    _startWorkbenchCompareDrag as startWorkbenchCompareDrag,
+    _moveWorkbenchCompareDrag as moveWorkbenchCompareDrag,
+    _endWorkbenchCompareDrag as endWorkbenchCompareDrag,
     _startFillSelection as startFillSelection,
     _moveFillSelection as moveFillSelection,
     _endFillSelection as endFillSelection,
@@ -325,6 +331,13 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.fillColorId = null;
     AppState.fillSourceIndex = null;
     AppState.selectedEdgeBeadsIndices = [];
+    AppState.comparePreviewScale = 1;
+    AppState.comparePreviewOffsetX = 0;
+    AppState.comparePreviewOffsetY = 0;
+    AppState.comparePreviewDragging = false;
+    AppState.comparePreviewDidDrag = false;
+    AppState.comparePreviewLastX = 0;
+    AppState.comparePreviewLastY = 0;
     AppState.comparePreviewVisible = false;
     AppState.workbenchSettingsCollapsed = true;
     AppState.workbenchToolbarCollapsed = false;
@@ -651,6 +664,10 @@ function updateWorkbenchComparePreview(resetScale = false) {
 
     if (resetScale || !AppState.comparePreviewScale) {
         AppState.comparePreviewScale = Math.max(fitScale, 0.1);
+        AppState.comparePreviewOffsetX = 0;
+        AppState.comparePreviewOffsetY = 0;
+        AppState.comparePreviewDragging = false;
+        AppState.comparePreviewDidDrag = false;
     }
 
     const displayWidth = Math.max(1, Math.round(crop.width * AppState.comparePreviewScale));
@@ -660,8 +677,8 @@ function updateWorkbenchComparePreview(resetScale = false) {
     previewCanvas.height = crop.height;
     previewCanvas.style.width = `${displayWidth}px`;
     previewCanvas.style.height = `${displayHeight}px`;
-    previewCanvas.style.left = `${Math.round((frameWidth - displayWidth) / 2)}px`;
-    previewCanvas.style.top = `${Math.round((frameHeight - displayHeight) / 2)}px`;
+    previewCanvas.style.left = `${Math.round((frameWidth - displayWidth) / 2 + AppState.comparePreviewOffsetX)}px`;
+    previewCanvas.style.top = `${Math.round((frameHeight - displayHeight) / 2 + AppState.comparePreviewOffsetY)}px`;
 
     const ctx = previewCanvas.getContext('2d');
     ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
@@ -1011,11 +1028,19 @@ export function handleGeneratePattern() {
         maxColors: parseInt(document.getElementById('max-colors-slider').value),
         isDitheringEnabled: document.getElementById('dithering-toggle').checked,
         precisionMode: document.getElementById('precision-mode-select')?.value || 'standard',
+        colorMatchMode: document.getElementById('color-match-mode-select')?.value || 'redmean',
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchToolbarCollapsed = false;
+    AppState.comparePreviewScale = 1;
+    AppState.comparePreviewOffsetX = 0;
+    AppState.comparePreviewOffsetY = 0;
+    AppState.comparePreviewDragging = false;
+    AppState.comparePreviewDidDrag = false;
+    AppState.comparePreviewLastX = 0;
+    AppState.comparePreviewLastY = 0;
     AppState.comparePreviewVisible = false;
 
     goToStep(3);

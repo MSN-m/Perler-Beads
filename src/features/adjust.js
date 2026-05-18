@@ -153,6 +153,11 @@ function getNearestPaletteColor(color) {
 }
 
 function sampleFromOriginalImage(event) {
+    if (AppState.comparePreviewDidDrag) {
+        AppState.comparePreviewDidDrag = false;
+        return null;
+    }
+
     const previewCanvas = document.getElementById('compare-source-preview');
     const frame = document.getElementById('compare-source-frame');
     const sourceCanvas = document.getElementById('source-canvas');
@@ -528,6 +533,60 @@ export function handleOriginalFillPick(event) {
     renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
     calculateStats();
     return true;
+}
+
+export function startWorkbenchCompareDrag(event) {
+    if (!AppState.comparePreviewVisible) return false;
+    const point = event.touches && event.touches[0]
+        ? { x: event.touches[0].clientX, y: event.touches[0].clientY }
+        : { x: event.clientX, y: event.clientY };
+    if (typeof point.x !== 'number' || typeof point.y !== 'number') return false;
+
+    AppState.comparePreviewDragging = true;
+    AppState.comparePreviewDidDrag = false;
+    AppState.comparePreviewLastX = point.x;
+    AppState.comparePreviewLastY = point.y;
+
+    const previewCanvas = document.getElementById('compare-source-preview');
+    if (previewCanvas) previewCanvas.classList.add('cursor-grabbing');
+    return true;
+}
+
+export function moveWorkbenchCompareDrag(event) {
+    if (!AppState.comparePreviewDragging) return false;
+    const point = event.touches && event.touches[0]
+        ? { x: event.touches[0].clientX, y: event.touches[0].clientY }
+        : { x: event.clientX, y: event.clientY };
+    if (typeof point.x !== 'number' || typeof point.y !== 'number') return false;
+
+    const dx = point.x - AppState.comparePreviewLastX;
+    const dy = point.y - AppState.comparePreviewLastY;
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+        AppState.comparePreviewDidDrag = true;
+    }
+
+    AppState.comparePreviewOffsetX += dx;
+    AppState.comparePreviewOffsetY += dy;
+    AppState.comparePreviewLastX = point.x;
+    AppState.comparePreviewLastY = point.y;
+
+    const previewCanvas = document.getElementById('compare-source-preview');
+    if (previewCanvas) {
+        const currentLeft = parseFloat(previewCanvas.style.left || '0');
+        const currentTop = parseFloat(previewCanvas.style.top || '0');
+        previewCanvas.style.left = `${Math.round(currentLeft + dx)}px`;
+        previewCanvas.style.top = `${Math.round(currentTop + dy)}px`;
+    }
+    return true;
+}
+
+export function endWorkbenchCompareDrag() {
+    if (!AppState.comparePreviewDragging) return false;
+    const wasTap = !AppState.comparePreviewDidDrag;
+    AppState.comparePreviewDragging = false;
+    const previewCanvas = document.getElementById('compare-source-preview');
+    if (previewCanvas) previewCanvas.classList.remove('cursor-grabbing');
+    return wasTap;
 }
 
 

@@ -1,8 +1,71 @@
-﻿/**
+/**
  * 拼豆图纸生成器 - 图像处理算法
  */
 import { findNearestColor } from './utils.js';
 import { PALETTES } from './constants.js';
+
+function srgbToLinear(value) {
+    const normalized = value / 255;
+    return normalized <= 0.04045
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4);
+}
+
+function rgbToLab(r, g, b) {
+    const linearR = srgbToLinear(r);
+    const linearG = srgbToLinear(g);
+    const linearB = srgbToLinear(b);
+
+    const x = linearR * 0.4124564 + linearG * 0.3575761 + linearB * 0.1804375;
+    const y = linearR * 0.2126729 + linearG * 0.7151522 + linearB * 0.0721750;
+    const z = linearR * 0.0193339 + linearG * 0.1191920 + linearB * 0.9503041;
+
+    const normalize = (value) => {
+        const epsilon = 216 / 24389;
+        const kappa = 24389 / 27;
+        return value > epsilon ? Math.cbrt(value) : (kappa * value + 16) / 116;
+    };
+
+    const fx = normalize(x / 0.95047);
+    const fy = normalize(y / 1.00000);
+    const fz = normalize(z / 1.08883);
+
+    return {
+        l: 116 * fy - 16,
+        a: 500 * (fx - fy),
+        b: 200 * (fy - fz)
+    };
+}
+
+function deltaE76(lab1, lab2) {
+    const dl = lab1.l - lab2.l;
+    const da = lab1.a - lab2.a;
+    const db = lab1.b - lab2.b;
+    return dl * dl + da * da + db * db;
+}
+
+function buildLabPalette(palette) {
+    return palette.map(color => ({
+        color,
+        lab: rgbToLab(color.r, color.g, color.b)
+    }));
+}
+
+function findNearestColorDeltaE(r, g, b, labPalette) {
+    const lab = rgbToLab(r, g, b);
+    let minDist = Infinity;
+    let nearest = labPalette[0]?.color;
+
+    for (const item of labPalette) {
+        const dist = deltaE76(lab, item.lab);
+        if (dist < minDist) {
+            minDist = dist;
+            nearest = item.color;
+        }
+    }
+
+    return nearest;
+}
 
 /**
  * 判断两个颜色是否相同（或非常接近）
@@ -289,6 +352,7 @@ export function generatePatternData({
     maxColors,
     isDitheringEnabled,
     precisionMode = 'standard',
+    colorMatchMode = 'redmean',
     palettes
 }) {
     const { data: sourceData, width: sourceWidth, height: sourceHeight } = sourceImageData;
@@ -298,6 +362,12 @@ export function generatePatternData({
     if (brand === 'mard') {
         palette = getFilteredMardPalette(mardSet);
     }
+
+    const useDeltaE = colorMatchMode === 'deltae';
+    const matchNearestColor = (r, g, b, activePalette) => {
+        if (!useDeltaE) return findNearestColor(r, g, b, activePalette);
+        return findNearestColorDeltaE(r, g, b, buildLabPalette(activePalette));
+    };
 
     // 颜色量化限制
     let finalPalette = palette;
@@ -319,12 +389,19 @@ export function generatePatternData({
             const representativeColors = medianCut(sampledPixels, maxColors);
             const reducedPaletteMap = new Map();
             representativeColors.forEach(rep => {
-                const nearest = findNearestColor(rep.r, rep.g, rep.b, palette);
+                const nearest = matchNearestColor(rep.r, rep.g, rep.b, palette);
                 reducedPaletteMap.set(nearest.id, nearest);
             });
             finalPalette = Array.from(reducedPaletteMap.values());
         }
     }
+
+    const finalLabPalette = useDeltaE ? buildLabPalette(finalPalette) : null;
+    const matchFinalPaletteColor = (r, g, b) => {
+        return useDeltaE
+            ? findNearestColorDeltaE(r, g, b, finalLabPalette)
+            : findNearestColor(r, g, b, finalPalette);
+    };
 
     const pixelData = [];
     const avgColors = [];
@@ -431,7 +508,7 @@ export function generatePatternData({
             if (a < 128) {
                 pixelData.push({ id: 'NONE', r: 255, g: 255, b: 255, a: 0 });
             } else {
-                const matched = findNearestColor(r, g, b, finalPalette);
+                const matched = matchFinalPaletteColor(r, g, b);
                 pixelData.push(matched);
             }
         }
@@ -460,7 +537,7 @@ export function generatePatternData({
                     let g = Math.max(0, Math.min(255, avgColor.g + errorBuffer[errIdx + 1]));
                     let b = Math.max(0, Math.min(255, avgColor.b + errorBuffer[errIdx + 2]));
 
-                    const matched = findNearestColor(r, g, b, finalPalette);
+                    const matched = matchFinalPaletteColor(r, g, b);
                     pixelData[idx] = matched;
 
                     const errR = r - matched.r;

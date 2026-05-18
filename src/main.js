@@ -17,6 +17,9 @@ import {
     resetWorkbenchComparePreview,
     toggleWorkbenchComparePreview,
     zoomWorkbenchComparePreview,
+    startWorkbenchCompareDrag,
+    moveWorkbenchCompareDrag,
+    endWorkbenchCompareDrag,
     startWorkbenchCropInteraction,
     moveWorkbenchCropInteraction,
     endWorkbenchCropInteraction,
@@ -72,6 +75,13 @@ const resetProjectForNewImage = () => {
     AppState.workbenchToolbarCollapsed = false;
     AppState.cropRect = null;
     AppState.cropInteraction = null;
+    AppState.comparePreviewScale = 1;
+    AppState.comparePreviewOffsetX = 0;
+    AppState.comparePreviewOffsetY = 0;
+    AppState.comparePreviewDragging = false;
+    AppState.comparePreviewDidDrag = false;
+    AppState.comparePreviewLastX = 0;
+    AppState.comparePreviewLastY = 0;
     AppState.comparePreviewVisible = false;
     AppState.selectedEdgeBeadsIndices = [];
 };
@@ -247,6 +257,11 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             zoomWorkbenchComparePreview(e.deltaY);
         }, { passive: false });
+        compareSourceFrame.addEventListener('mousedown', (e) => {
+            if (startWorkbenchCompareDrag(e)) {
+                e.preventDefault();
+            }
+        });
         compareSourceFrame.addEventListener('click', (e) => {
             if (handleOriginalFillPick(e)) {
                 e.preventDefault();
@@ -254,9 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         compareSourceFrame.addEventListener('touchstart', (e) => {
-            if (handleOriginalFillPick(e)) {
+            if (startWorkbenchCompareDrag(e)) {
                 e.preventDefault();
-                updateWorkbenchUI();
             }
         }, { passive: false });
     }
@@ -276,6 +290,24 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('mouseup', endWorkbenchCropInteraction);
     window.addEventListener('touchend', endWorkbenchCropInteraction);
     window.addEventListener('touchcancel', endWorkbenchCropInteraction);
+    window.addEventListener('mousemove', (e) => {
+        if (moveWorkbenchCompareDrag(e)) {
+            e.preventDefault();
+        }
+    });
+    window.addEventListener('touchmove', (e) => {
+        if (moveWorkbenchCompareDrag(e)) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    window.addEventListener('mouseup', endWorkbenchCompareDrag);
+    window.addEventListener('touchend', (e) => {
+        if (endWorkbenchCompareDrag() && handleOriginalFillPick(e)) {
+            e.preventDefault();
+            updateWorkbenchUI();
+        }
+    });
+    window.addEventListener('touchcancel', endWorkbenchCompareDrag);
 
     // --- Step 3: 编辑 / 导出前 ---
     const backToStep2 = document.getElementById('back-to-step-2');
