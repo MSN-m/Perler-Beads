@@ -2,7 +2,7 @@
  * 拼豆图纸生成器 - UI 与页面流程
  */
 import { AppState } from './state.js';
-import { removeBackground, cleanTinyFragments, generatePatternData } from './processor.js';
+import { removeBackground, cleanTinyFragments, generatePixelArtData, mapPixelArtToBeads } from './processor.js';
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
 import { calculateStats, configureEditorActions, deepClonePixels, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
@@ -419,6 +419,7 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.gridHeight = draft.gridHeight;
     AppState.brand = draft.brand;
     AppState.mardSet = draft.mardSet;
+    AppState.pixelArtData = null;
     AppState.pixelData = deepClonePixels(draft.pixelData);
     AppState.generatedPixelData = deepClonePixels(draft.pixelData);
     AppState.stagedPixelData = null;
@@ -1123,8 +1124,16 @@ export function handleGeneratePattern() {
     // 清除高亮颜色状态
     AppState.highlightedColorId = null;
 
-    AppState.pixelData = generatePatternData({
+    const precisionMode = document.getElementById('precision-mode-select')?.value || 'standard';
+    const colorMatchMode = document.getElementById('color-match-mode-select')?.value || 'redmean';
+    AppState.pixelArtData = generatePixelArtData({
         sourceImageData,
+        gridWidth: AppState.gridWidth,
+        gridHeight: AppState.gridHeight,
+        precisionMode
+    });
+    AppState.pixelData = mapPixelArtToBeads({
+        pixelArtData: AppState.pixelArtData,
         gridWidth: AppState.gridWidth,
         gridHeight: AppState.gridHeight,
         brand: AppState.brand,
@@ -1132,8 +1141,8 @@ export function handleGeneratePattern() {
         isColorLimitEnabled: document.getElementById('color-limit-toggle').checked,
         maxColors: parseInt(document.getElementById('max-colors-slider').value),
         isDitheringEnabled: document.getElementById('dithering-toggle').checked,
-        precisionMode: document.getElementById('precision-mode-select')?.value || 'standard',
-        colorMatchMode: document.getElementById('color-match-mode-select')?.value || 'redmean',
+        precisionMode,
+        colorMatchMode,
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
@@ -1175,6 +1184,7 @@ export function resetPatternToGenerated() {
     if (!AppState.generatedPixelData) return;
     if (!window.confirm('确定要重置当前图纸，放弃所有编辑操作吗？')) return;
     AppState.pixelData = deepClonePixels(AppState.generatedPixelData);
+    AppState.pixelArtData = null;
     AppState.stagedPixelData = null;
     AppState.stagedActions = [];
     AppState.editMode = 'none';

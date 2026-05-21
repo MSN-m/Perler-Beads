@@ -13,6 +13,7 @@ export const AppState = {
     brand: 'mard',
     mardSet: 221,
     pixelData: [],
+    pixelArtData: null,
     generatedPixelData: null,
     isBgRemoving: false,
     highlightedColorId: null,

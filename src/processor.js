@@ -342,6 +342,226 @@ export function cleanTinyFragments(imageData, minIslandSize = 15) {
  * @param {Object} options - 配置选项
  * @returns {Array} - 生成的像素数据
  */
+export function generatePixelArtData({
+    sourceImageData,
+    gridWidth,
+    gridHeight,
+    precisionMode = 'standard'
+}) {
+    const { data: sourceData, width: sourceWidth, height: sourceHeight } = sourceImageData;
+    const useHighPrecisionSampling = precisionMode === 'high';
+    const pixelArtData = [];
+
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const startX = Math.floor((x / gridWidth) * sourceWidth);
+            const startY = Math.floor((y / gridHeight) * sourceHeight);
+            const endX = Math.max(startX + 1, Math.floor(((x + 1) / gridWidth) * sourceWidth));
+            const endY = Math.max(startY + 1, Math.floor(((y + 1) / gridHeight) * sourceHeight));
+            const centerX = (startX + endX - 1) / 2;
+            const centerY = (startY + endY - 1) / 2;
+            const maxDistance = Math.max(1, Math.hypot(endX - startX, endY - startY) / 2);
+            const colorBuckets = new Map();
+            let rSum = 0, gSum = 0, bSum = 0, opaqueCount = 0, totalCount = 0;
+            let weightedR = 0, weightedG = 0, weightedB = 0, weightSum = 0;
+
+            for (let sy = startY; sy < endY; sy++) {
+                for (let sx = startX; sx < endX; sx++) {
+                    const idx = (sy * sourceWidth + sx) * 4;
+                    totalCount++;
+                    if (sourceData[idx + 3] <= 128) continue;
+
+                    const r = sourceData[idx];
+                    const g = sourceData[idx + 1];
+                    const b = sourceData[idx + 2];
+                    rSum += r;
+                    gSum += g;
+                    bSum += b;
+                    opaqueCount++;
+
+                    if (useHighPrecisionSampling) {
+                        const distance = Math.hypot(sx - centerX, sy - centerY);
+                        const weight = 1 + Math.max(0, 1 - distance / maxDistance);
+                        weightedR += r * weight;
+                        weightedG += g * weight;
+                        weightedB += b * weight;
+                        weightSum += weight;
+
+                        const bucketKey = `${Math.round(r / 24)}-${Math.round(g / 24)}-${Math.round(b / 24)}`;
+                        const bucket = colorBuckets.get(bucketKey) || { r: 0, g: 0, b: 0, count: 0 };
+                        bucket.r += r;
+                        bucket.g += g;
+                        bucket.b += b;
+                        bucket.count++;
+                        colorBuckets.set(bucketKey, bucket);
+                    }
+                }
+            }
+
+            const opaqueRatio = opaqueCount / Math.max(totalCount, 1);
+            const alphaThreshold = useHighPrecisionSampling ? 0.22 : 0.3;
+            if (opaqueRatio <= alphaThreshold) {
+                pixelArtData.push({ r: 255, g: 255, b: 255, a: 0 });
+                continue;
+            }
+
+            if (!useHighPrecisionSampling || weightSum === 0) {
+                pixelArtData.push({
+                    r: opaqueCount > 0 ? rSum / opaqueCount : 255,
+                    g: opaqueCount > 0 ? gSum / opaqueCount : 255,
+                    b: opaqueCount > 0 ? bSum / opaqueCount : 255,
+                    a: 255
+                });
+                continue;
+            }
+
+            const weightedAvg = {
+                r: weightedR / weightSum,
+                g: weightedG / weightSum,
+                b: weightedB / weightSum
+            };
+            let dominantBucket = null;
+            for (const bucket of colorBuckets.values()) {
+                if (!dominantBucket || bucket.count > dominantBucket.count) {
+                    dominantBucket = bucket;
+                }
+            }
+
+            if (dominantBucket && dominantBucket.count / opaqueCount >= 0.42) {
+                const dominantAvg = {
+                    r: dominantBucket.r / dominantBucket.count,
+                    g: dominantBucket.g / dominantBucket.count,
+                    b: dominantBucket.b / dominantBucket.count
+                };
+                pixelArtData.push({
+                    r: dominantAvg.r * 0.65 + weightedAvg.r * 0.35,
+                    g: dominantAvg.g * 0.65 + weightedAvg.g * 0.35,
+                    b: dominantAvg.b * 0.65 + weightedAvg.b * 0.35,
+                    a: 255
+                });
+                continue;
+            }
+
+            pixelArtData.push({ ...weightedAvg, a: 255 });
+        }
+    }
+
+    return pixelArtData;
+}
+
+export function mapPixelArtToBeads({
+    pixelArtData,
+    gridWidth,
+    gridHeight,
+    brand,
+    mardSet,
+    isColorLimitEnabled,
+    maxColors,
+    isDitheringEnabled,
+    precisionMode = 'standard',
+    colorMatchMode = 'redmean',
+    palettes
+}) {
+    let palette = palettes[brand] || palettes.perler;
+
+    if (brand === 'mard') {
+        palette = getFilteredMardPalette(mardSet);
+    }
+
+    const useDeltaE = colorMatchMode === 'deltae';
+    const baseLabPalette = useDeltaE ? buildLabPalette(palette) : null;
+    const matchNearestColor = (r, g, b, activePalette, labPalette = null) => {
+        if (!useDeltaE) return findNearestColor(r, g, b, activePalette);
+        return findNearestColorDeltaE(r, g, b, labPalette || buildLabPalette(activePalette));
+    };
+
+    let finalPalette = palette;
+    if (isColorLimitEnabled) {
+        const sampledPixels = pixelArtData
+            .filter(pixel => pixel.a > 128)
+            .map(pixel => ({ r: pixel.r, g: pixel.g, b: pixel.b }));
+
+        if (sampledPixels.length > 0) {
+            const representativeColors = medianCut(sampledPixels, maxColors);
+            const reducedPaletteMap = new Map();
+            representativeColors.forEach(rep => {
+                const nearest = matchNearestColor(rep.r, rep.g, rep.b, palette, baseLabPalette);
+                reducedPaletteMap.set(nearest.id, nearest);
+            });
+            finalPalette = Array.from(reducedPaletteMap.values());
+        }
+    }
+
+    const finalLabPalette = useDeltaE ? buildLabPalette(finalPalette) : null;
+    const matchFinalPaletteColor = (r, g, b) => {
+        return useDeltaE
+            ? findNearestColorDeltaE(r, g, b, finalLabPalette)
+            : findNearestColor(r, g, b, finalPalette);
+    };
+
+    const pixelData = pixelArtData.map(pixel => {
+        if (pixel.a < 128) return { id: 'NONE', r: 255, g: 255, b: 255, a: 0 };
+        return matchFinalPaletteColor(pixel.r, pixel.g, pixel.b);
+    });
+
+    if (isDitheringEnabled) {
+        const errorBuffer = new Float32Array(gridWidth * gridHeight * 3);
+        let ditheredCount = 0, skippedCount = 0;
+        const pixelDataSnapshot = pixelData.slice();
+
+        for (let y = 0; y < gridHeight; y++) {
+            for (let x = 0; x < gridWidth; x++) {
+                const idx = y * gridWidth + x;
+                const avgColor = pixelArtData[idx];
+
+                if (avgColor.a < 128) continue;
+
+                const needsDithering = shouldEnableDithering(x, y, gridWidth, gridHeight, pixelDataSnapshot);
+
+                if (needsDithering) {
+                    ditheredCount++;
+                    const errIdx = idx * 3;
+                    const r = Math.max(0, Math.min(255, avgColor.r + errorBuffer[errIdx]));
+                    const g = Math.max(0, Math.min(255, avgColor.g + errorBuffer[errIdx + 1]));
+                    const b = Math.max(0, Math.min(255, avgColor.b + errorBuffer[errIdx + 2]));
+
+                    const matched = matchFinalPaletteColor(r, g, b);
+                    pixelData[idx] = matched;
+
+                    const errR = r - matched.r;
+                    const errG = g - matched.g;
+                    const errB = b - matched.b;
+
+                    const distributeError = (nx, ny, weight) => {
+                        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                            const nIdx = (ny * gridWidth + nx) * 3;
+                            errorBuffer[nIdx] += errR * weight;
+                            errorBuffer[nIdx + 1] += errG * weight;
+                            errorBuffer[nIdx + 2] += errB * weight;
+                        }
+                    };
+
+                    distributeError(x + 1, y, 7 / 16);
+                    distributeError(x - 1, y + 1, 3 / 16);
+                    distributeError(x, y + 1, 5 / 16);
+                    distributeError(x + 1, y + 1, 1 / 16);
+                } else {
+                    skippedCount++;
+                }
+            }
+        }
+        console.log('[SmartDither] dithered:', ditheredCount, 'skipped:', skippedCount);
+    }
+
+    if (precisionMode === 'high') {
+        unifySmallRegions(pixelData, gridWidth, gridHeight, 2, 45, 2);
+    } else {
+        unifySmallRegions(pixelData, gridWidth, gridHeight, 2);
+    }
+
+    return pixelData;
+}
+
 export function generatePatternData({
     sourceImageData,
     gridWidth,

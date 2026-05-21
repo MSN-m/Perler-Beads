@@ -57,6 +57,7 @@ import { initZoomEvents, resetZoom } from './features/zoom.js';
  */
 const resetProjectForNewImage = () => {
     AppState.pixelData = [];
+    AppState.pixelArtData = null;
     AppState.generatedPixelData = null;
     AppState.originalImageData = null;
     AppState.history = [];
