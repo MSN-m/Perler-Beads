@@ -14,6 +14,11 @@ export const AppState = {
     mardSet: 221,
     pixelData: [],
     pixelArtData: null,
+    pixelArtSettings: {
+        contrast: 0,
+        sharpen: 0,
+        dominant: 50
+    },
     generatedPixelData: null,
     isBgRemoving: false,
     highlightedColorId: null,

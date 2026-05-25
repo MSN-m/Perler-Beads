@@ -2,7 +2,7 @@
  * 拼豆图纸生成器 - UI 与页面流程
  */
 import { AppState } from './state.js';
-import { removeBackground, cleanTinyFragments, generatePixelArtData, mapPixelArtToBeads } from './processor.js';
+import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, mapPixelArtToBeads } from './processor.js';
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
 import { calculateStats, configureEditorActions, deepClonePixels, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
@@ -573,7 +573,7 @@ function renderWorkbenchCropOverlay() {
     const cropBox = document.getElementById('workbench-crop-box');
     const previewCanvas = document.getElementById('workbench-source-preview');
     const hasPattern = Array.isArray(AppState.pixelData) && AppState.pixelData.length > 0;
-    const shouldShow = Boolean(AppState.image) && !hasPattern;
+    const shouldShow = Boolean(AppState.image) && !hasPattern && !AppState.pixelArtData;
     setHidden('workbench-crop-overlay', !shouldShow);
     if (!overlay || !cropBox || !previewCanvas || !shouldShow) {
         updateCropSummary();
@@ -719,6 +719,14 @@ function getSourceImageDataForGeneration() {
     return ctx.getImageData(rect.x, rect.y, rect.width, rect.height);
 }
 
+function getPixelArtSettingsFromUI() {
+    const contrast = Number(document.getElementById('pixel-contrast-slider')?.value || 0);
+    const sharpen = Number(document.getElementById('pixel-sharpen-slider')?.value || 0);
+    const dominant = Number(document.getElementById('pixel-dominant-slider')?.value || 50);
+    AppState.pixelArtSettings = { contrast, sharpen, dominant };
+    return AppState.pixelArtSettings;
+}
+
 function updateWorkbenchSourcePreview() {
     if (!isWorkbenchLayout() || !AppState.image) return;
     const previewCanvas = document.getElementById('workbench-source-preview');
@@ -745,6 +753,41 @@ function updateWorkbenchSourcePreview() {
     const ctx = previewCanvas.getContext('2d');
     ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
     ctx.drawImage(img, 0, 0);
+    renderWorkbenchCropOverlay();
+}
+
+function renderPixelArtPreview() {
+    if (!isWorkbenchLayout() || !AppState.pixelArtData) return;
+    const previewCanvas = document.getElementById('workbench-source-preview');
+    const resultContainer = document.getElementById('result-container-single');
+    if (!previewCanvas || !resultContainer) return;
+
+    const containerWidth = resultContainer.clientWidth || window.innerWidth;
+    const containerHeight = resultContainer.clientHeight || window.innerHeight;
+    const padding = 96;
+    const maxWidth = Math.max(240, containerWidth - padding);
+    const maxHeight = Math.max(240, containerHeight - padding);
+    const scale = Math.min(maxWidth / AppState.gridWidth, maxHeight / AppState.gridHeight);
+    const displayWidth = Math.max(1, Math.round(AppState.gridWidth * scale));
+    const displayHeight = Math.max(1, Math.round(AppState.gridHeight * scale));
+
+    previewCanvas.width = AppState.gridWidth;
+    previewCanvas.height = AppState.gridHeight;
+    previewCanvas.style.width = `${displayWidth}px`;
+    previewCanvas.style.height = `${displayHeight}px`;
+    previewCanvas.style.left = `${(containerWidth - displayWidth) / 2}px`;
+    previewCanvas.style.top = `${(containerHeight - displayHeight) / 2}px`;
+
+    const ctx = previewCanvas.getContext('2d');
+    ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    ctx.imageSmoothingEnabled = false;
+    AppState.pixelArtData.forEach((pixel, index) => {
+        if (!pixel || pixel.a < 128) return;
+        const x = index % AppState.gridWidth;
+        const y = Math.floor(index / AppState.gridWidth);
+        ctx.fillStyle = `rgb(${pixel.r},${pixel.g},${pixel.b})`;
+        ctx.fillRect(x, y, 1, 1);
+    });
     renderWorkbenchCropOverlay();
 }
 
@@ -822,12 +865,13 @@ export function updateWorkbenchUI() {
     if (!isWorkbenchLayout()) return;
     const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
+    const hasPixelArt = Boolean(AppState.pixelArtData) && !hasPattern;
     const toolbarCollapsed = Boolean(AppState.workbenchToolbarCollapsed);
     const settingsCollapsed = hasPattern && Boolean(AppState.workbenchSettingsCollapsed);
     const compareVisible = hasPattern && AppState.comparePreviewVisible;
     setHidden('workbench-upload-empty', hasImage || hasPattern);
     setHidden('workbench-change-image', !hasImage && !hasPattern);
-    setHidden('workbench-preview-empty', !hasImage || hasPattern);
+    setHidden('workbench-preview-empty', !hasImage || hasPattern || hasPixelArt);
     setHidden('workbench-source-preview', !hasImage || hasPattern);
     setHidden('result-canvas', !hasPattern);
     setHidden('workbench-single-stage', hasPattern);
@@ -840,14 +884,28 @@ export function updateWorkbenchUI() {
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
     setHidden('workbench-settings-content', settingsCollapsed);
-    setText('generate-pattern-label', hasPattern ? '更新图纸' : '生成图纸');
+    setText('generate-pattern-label', hasPattern ? 'Update beads' : 'Generate beads');
+    setText('pixel-art-status', hasPixelArt ? 'Preview ready' : 'No preview');
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
-        generateBtn.disabled = !hasImage;
-        generateBtn.classList.toggle('opacity-40', !hasImage);
-        generateBtn.classList.toggle('cursor-not-allowed', !hasImage);
+        generateBtn.disabled = !hasImage || !AppState.pixelArtData;
+        generateBtn.classList.toggle('opacity-40', !hasImage || !AppState.pixelArtData);
+        generateBtn.classList.toggle('cursor-not-allowed', !hasImage || !AppState.pixelArtData);
+    }
+    const pixelArtBtn = document.getElementById('generate-pixel-art-btn');
+    if (pixelArtBtn) {
+        pixelArtBtn.disabled = !hasImage;
+        pixelArtBtn.textContent = hasPixelArt ? 'Regenerate pixel preview' : 'Generate pixel preview';
+        pixelArtBtn.classList.toggle('opacity-40', !hasImage);
+        pixelArtBtn.classList.toggle('cursor-not-allowed', !hasImage);
+    }
+    const legacyGenerateBtn = document.getElementById('legacy-generate-pattern-btn');
+    if (legacyGenerateBtn) {
+        legacyGenerateBtn.disabled = !hasImage;
+        legacyGenerateBtn.classList.toggle('opacity-40', !hasImage);
+        legacyGenerateBtn.classList.toggle('cursor-not-allowed', !hasImage);
     }
     const exportBtn = document.getElementById('next-to-step-4');
     if (exportBtn) {
@@ -895,7 +953,8 @@ export function updateWorkbenchUI() {
     }
     renderWorkbenchCropOverlay();
     if (hasImage && !hasPattern) {
-        updateWorkbenchSourcePreview();
+        if (AppState.pixelArtData) renderPixelArtPreview();
+        else updateWorkbenchSourcePreview();
     }
     if (hasImage && compareVisible) {
         updateWorkbenchComparePreview(false);
@@ -986,6 +1045,9 @@ export function updateGridDimensions() {
     }
     
     sizeDisplay.innerText = `${AppState.gridWidth}x${AppState.gridHeight}`;
+    if (!hasWorkbenchPattern()) {
+        AppState.pixelArtData = null;
+    }
     updateBoardSizeUI();
     updateWorkbenchUI();
 }
@@ -1117,21 +1179,72 @@ export function handleCleanFragments() {
 /**
  * 根据当前设置生成图纸数据
  */
-export function handleGeneratePattern() {
+export function updatePixelArtControlDisplays() {
+    const settings = getPixelArtSettingsFromUI();
+    setText('pixel-contrast-display', String(settings.contrast));
+    setText('pixel-sharpen-display', String(settings.sharpen));
+    setText('pixel-dominant-display', String(settings.dominant));
+}
+
+export function handleGeneratePixelArt() {
     if (!AppState.image) return;
     const sourceImageData = getSourceImageDataForGeneration();
-
-    // 清除高亮颜色状态
-    AppState.highlightedColorId = null;
-
     const precisionMode = document.getElementById('precision-mode-select')?.value || 'standard';
-    const colorMatchMode = document.getElementById('color-match-mode-select')?.value || 'redmean';
+    const settings = getPixelArtSettingsFromUI();
+
     AppState.pixelArtData = generatePixelArtData({
         sourceImageData,
         gridWidth: AppState.gridWidth,
         gridHeight: AppState.gridHeight,
-        precisionMode
+        precisionMode,
+        contrast: settings.contrast,
+        sharpen: settings.sharpen,
+        dominant: settings.dominant
     });
+    AppState.pixelData = [];
+    AppState.generatedPixelData = null;
+    AppState.highlightedColorId = null;
+    AppState.workbenchSettingsCollapsed = false;
+    AppState.workbenchToolbarCollapsed = false;
+    AppState.comparePreviewVisible = false;
+    renderPixelArtPreview();
+    updateWorkbenchUI();
+}
+
+export function handleGeneratePatternLegacy() {
+    if (!AppState.image) return;
+    const sourceImageData = getSourceImageDataForGeneration();
+
+    AppState.highlightedColorId = null;
+    AppState.pixelArtData = null;
+    AppState.pixelData = generatePatternDataOriginal({
+        sourceImageData,
+        gridWidth: AppState.gridWidth,
+        gridHeight: AppState.gridHeight,
+        brand: AppState.brand,
+        mardSet: AppState.mardSet,
+        isColorLimitEnabled: document.getElementById('color-limit-toggle').checked,
+        maxColors: parseInt(document.getElementById('max-colors-slider').value),
+        palettes: PALETTES
+    });
+    AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
+    AppState.workbenchToolbarCollapsed = false;
+    AppState.comparePreviewVisible = false;
+    goToStep(3);
+}
+
+export function handleGeneratePattern() {
+    if (!AppState.image) return;
+    if (!isWorkbenchLayout() || !AppState.pixelArtData) {
+        handleGeneratePatternLegacy();
+        return;
+    }
+
+    AppState.highlightedColorId = null;
+
+    const precisionMode = document.getElementById('precision-mode-select')?.value || 'standard';
+    const colorMatchMode = document.getElementById('color-match-mode-select')?.value || 'redmean';
     AppState.pixelData = mapPixelArtToBeads({
         pixelArtData: AppState.pixelArtData,
         gridWidth: AppState.gridWidth,
@@ -1160,9 +1273,6 @@ export function handleGeneratePattern() {
     goToStep(3);
 }
 
-/**
- * 初始化编辑页（Step 3）
- */
 function initEditorView() {
     const resultCanvas = document.getElementById('result-canvas');
     renderResult(resultCanvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);

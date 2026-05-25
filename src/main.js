@@ -8,7 +8,9 @@ import {
     toggleBgRemovalMode,
     undoBgRemoval,
     handleCleanFragments,
+    handleGeneratePixelArt,
     handleGeneratePattern,
+    handleGeneratePatternLegacy,
     handleCanvasClick,
     updateTolerance,
     toggleColorLimit,
@@ -45,6 +47,7 @@ import {
     collapseWorkbenchEditToolbar,
     expandWorkbenchEditToolbar,
     toggleWorkbenchSettingsPanel,
+    updatePixelArtControlDisplays,
     updateWorkbenchUI,
     toggleEdgeAdjustMode,
     toggleDeleteMode
@@ -58,6 +61,7 @@ import { initZoomEvents, resetZoom } from './features/zoom.js';
 const resetProjectForNewImage = () => {
     AppState.pixelData = [];
     AppState.pixelArtData = null;
+    AppState.pixelArtSettings = { contrast: 0, sharpen: 0, dominant: 50 };
     AppState.generatedPixelData = null;
     AppState.originalImageData = null;
     AppState.history = [];
@@ -223,10 +227,34 @@ document.addEventListener('DOMContentLoaded', () => {
         maxColorsSlider.addEventListener('input', updateMaxColorsDisplay);
     }
 
+    ['pixel-contrast-slider', 'pixel-sharpen-slider', 'pixel-dominant-slider'].forEach((id) => {
+        const slider = document.getElementById(id);
+        if (slider) {
+            slider.addEventListener('input', updatePixelArtControlDisplays);
+        }
+    });
+    updatePixelArtControlDisplays();
+
+    const generatePixelArtBtn = document.getElementById('generate-pixel-art-btn');
+    if (generatePixelArtBtn) {
+        generatePixelArtBtn.addEventListener('click', () => {
+            handleGeneratePixelArt();
+            updateWorkbenchUI();
+        });
+    }
+
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
         generateBtn.addEventListener('click', () => {
             handleGeneratePattern();
+            updateWorkbenchUI();
+        });
+    }
+
+    const legacyGenerateBtn = document.getElementById('legacy-generate-pattern-btn');
+    if (legacyGenerateBtn) {
+        legacyGenerateBtn.addEventListener('click', () => {
+            handleGeneratePatternLegacy();
             updateWorkbenchUI();
         });
     }

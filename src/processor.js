@@ -67,6 +67,65 @@ function findNearestColorDeltaE(r, g, b, labPalette) {
     return nearest;
 }
 
+function clampChannel(value) {
+    return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function applyPixelArtContrast(pixelArtData, contrast) {
+    if (!contrast) return pixelArtData;
+    const factor = 1 + contrast / 100;
+    return pixelArtData.map(pixel => {
+        if (pixel.a < 128) return pixel;
+        return {
+            ...pixel,
+            r: clampChannel((pixel.r - 128) * factor + 128),
+            g: clampChannel((pixel.g - 128) * factor + 128),
+            b: clampChannel((pixel.b - 128) * factor + 128)
+        };
+    });
+}
+
+function applyPixelArtSharpen(pixelArtData, gridWidth, gridHeight, sharpen) {
+    if (!sharpen) return pixelArtData;
+    const amount = sharpen / 100;
+    const result = pixelArtData.map(pixel => ({ ...pixel }));
+    const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const idx = y * gridWidth + x;
+            const pixel = pixelArtData[idx];
+            if (!pixel || pixel.a < 128) continue;
+
+            let r = 0, g = 0, b = 0, count = 0;
+            for (const [dx, dy] of dirs) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) continue;
+                const neighbor = pixelArtData[ny * gridWidth + nx];
+                if (!neighbor || neighbor.a < 128) continue;
+                r += neighbor.r;
+                g += neighbor.g;
+                b += neighbor.b;
+                count++;
+            }
+            if (!count) continue;
+
+            const avgR = r / count;
+            const avgG = g / count;
+            const avgB = b / count;
+            result[idx] = {
+                ...pixel,
+                r: clampChannel(pixel.r + (pixel.r - avgR) * amount),
+                g: clampChannel(pixel.g + (pixel.g - avgG) * amount),
+                b: clampChannel(pixel.b + (pixel.b - avgB) * amount)
+            };
+        }
+    }
+
+    return result;
+}
+
 /**
  * 判断两个颜色是否相同（或非常接近）
  * @param {Object} color1 - 颜色对象 {id, r, g, b}
@@ -346,11 +405,17 @@ export function generatePixelArtData({
     sourceImageData,
     gridWidth,
     gridHeight,
-    precisionMode = 'standard'
+    precisionMode = 'standard',
+    contrast = 0,
+    sharpen = 0,
+    dominant = 50
 }) {
     const { data: sourceData, width: sourceWidth, height: sourceHeight } = sourceImageData;
     const useHighPrecisionSampling = precisionMode === 'high';
-    const pixelArtData = [];
+    let pixelArtData = [];
+    const dominantStrength = Math.max(0, Math.min(100, dominant)) / 100;
+    const dominantThreshold = 0.52 - dominantStrength * 0.2;
+    const dominantWeight = 0.5 + dominantStrength * 0.35;
 
     for (let y = 0; y < gridHeight; y++) {
         for (let x = 0; x < gridWidth; x++) {
@@ -427,16 +492,16 @@ export function generatePixelArtData({
                 }
             }
 
-            if (dominantBucket && dominantBucket.count / opaqueCount >= 0.42) {
+            if (dominantStrength > 0 && dominantBucket && dominantBucket.count / opaqueCount >= dominantThreshold) {
                 const dominantAvg = {
                     r: dominantBucket.r / dominantBucket.count,
                     g: dominantBucket.g / dominantBucket.count,
                     b: dominantBucket.b / dominantBucket.count
                 };
                 pixelArtData.push({
-                    r: dominantAvg.r * 0.65 + weightedAvg.r * 0.35,
-                    g: dominantAvg.g * 0.65 + weightedAvg.g * 0.35,
-                    b: dominantAvg.b * 0.65 + weightedAvg.b * 0.35,
+                    r: dominantAvg.r * dominantWeight + weightedAvg.r * (1 - dominantWeight),
+                    g: dominantAvg.g * dominantWeight + weightedAvg.g * (1 - dominantWeight),
+                    b: dominantAvg.b * dominantWeight + weightedAvg.b * (1 - dominantWeight),
                     a: 255
                 });
                 continue;
@@ -445,6 +510,9 @@ export function generatePixelArtData({
             pixelArtData.push({ ...weightedAvg, a: 255 });
         }
     }
+
+    pixelArtData = applyPixelArtContrast(pixelArtData, contrast);
+    pixelArtData = applyPixelArtSharpen(pixelArtData, gridWidth, gridHeight, sharpen);
 
     return pixelArtData;
 }
@@ -560,6 +628,84 @@ export function mapPixelArtToBeads({
     }
 
     return pixelData;
+}
+
+export function generatePatternDataOriginal({
+    sourceImageData,
+    gridWidth,
+    gridHeight,
+    brand,
+    mardSet,
+    isColorLimitEnabled,
+    maxColors,
+    palettes
+}) {
+    const { data: sourceData, width: sourceWidth, height: sourceHeight } = sourceImageData;
+    let palette = palettes[brand] || palettes.perler;
+
+    if (brand === 'mard') {
+        palette = getFilteredMardPalette(mardSet);
+    }
+
+    const avgColors = [];
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const startX = Math.floor((x / gridWidth) * sourceWidth);
+            const startY = Math.floor((y / gridHeight) * sourceHeight);
+            const endX = Math.floor(((x + 1) / gridWidth) * sourceWidth);
+            const endY = Math.floor(((y + 1) / gridHeight) * sourceHeight);
+
+            let rSum = 0;
+            let gSum = 0;
+            let bSum = 0;
+            let opaqueCount = 0;
+            let totalCount = 0;
+
+            for (let sy = startY; sy < endY; sy++) {
+                for (let sx = startX; sx < endX; sx++) {
+                    const idx = (sy * sourceWidth + sx) * 4;
+                    totalCount++;
+                    if (sourceData[idx + 3] > 128) {
+                        rSum += sourceData[idx];
+                        gSum += sourceData[idx + 1];
+                        bSum += sourceData[idx + 2];
+                        opaqueCount++;
+                    }
+                }
+            }
+
+            if (opaqueCount / Math.max(totalCount, 1) <= 0.3) {
+                avgColors.push({ r: 255, g: 255, b: 255, a: 0 });
+            } else {
+                avgColors.push({
+                    r: rSum / opaqueCount,
+                    g: gSum / opaqueCount,
+                    b: bSum / opaqueCount,
+                    a: 255
+                });
+            }
+        }
+    }
+
+    let finalPalette = palette;
+    if (isColorLimitEnabled) {
+        const representativeColors = medianCut(avgColors.filter(color => color.a >= 128), maxColors);
+        const reducedPaletteMap = new Map();
+        representativeColors.forEach(rep => {
+            const nearest = findNearestColor(rep.r, rep.g, rep.b, palette);
+            reducedPaletteMap.set(nearest.id, nearest);
+        });
+        if (reducedPaletteMap.size > 0) {
+            finalPalette = Array.from(reducedPaletteMap.values());
+        }
+    }
+
+    return avgColors.map(color => {
+        if (color.a < 128) {
+            return { id: 'NONE', r: 255, g: 255, b: 255, a: 0 };
+        }
+        return findNearestColor(color.r, color.g, color.b, finalPalette);
+    });
 }
 
 export function generatePatternData({
