@@ -67,6 +67,17 @@ function findNearestColorDeltaE(r, g, b, labPalette) {
     return nearest;
 }
 
+function colorDistanceForMode(r, g, b, color, useDeltaE, colorLab = null, sampleLab = null) {
+    if (useDeltaE) {
+        return deltaE76(sampleLab || rgbToLab(r, g, b), colorLab || rgbToLab(color.r, color.g, color.b));
+    }
+    const rMean = (r + color.r) / 2;
+    const dr = r - color.r;
+    const dg = g - color.g;
+    const db = b - color.b;
+    return (2 + rMean / 256) * (dr * dr) + 4 * (dg * dg) + (2 + (255 - rMean) / 256) * (db * db);
+}
+
 function clampChannel(value) {
     return Math.max(0, Math.min(255, Math.round(value)));
 }
@@ -518,6 +529,7 @@ export function generatePixelArtData({
 }
 
 export function mapPixelArtToBeads({
+    sourceImageData = null,
     pixelArtData,
     gridWidth,
     gridHeight,
@@ -537,6 +549,18 @@ export function mapPixelArtToBeads({
     }
 
     const useDeltaE = colorMatchMode === 'deltae';
+    if (precisionMode === 'high' && sourceImageData) {
+        return mapSourceToBeadsDirect({
+            sourceImageData,
+            gridWidth,
+            gridHeight,
+            palette,
+            isColorLimitEnabled,
+            maxColors,
+            useDeltaE
+        });
+    }
+
     const baseLabPalette = useDeltaE ? buildLabPalette(palette) : null;
     const matchNearestColor = (r, g, b, activePalette, labPalette = null) => {
         if (!useDeltaE) return findNearestColor(r, g, b, activePalette);
@@ -706,6 +730,143 @@ export function generatePatternDataOriginal({
         }
         return findNearestColor(color.r, color.g, color.b, finalPalette);
     });
+}
+
+function collectCellSamples(sourceImageData, gridWidth, gridHeight, cellX, cellY, useDeltaE = false) {
+    const { data: sourceData, width: sourceWidth, height: sourceHeight } = sourceImageData;
+    const startX = Math.floor((cellX / gridWidth) * sourceWidth);
+    const startY = Math.floor((cellY / gridHeight) * sourceHeight);
+    const endX = Math.max(startX + 1, Math.floor(((cellX + 1) / gridWidth) * sourceWidth));
+    const endY = Math.max(startY + 1, Math.floor(((cellY + 1) / gridHeight) * sourceHeight));
+    const centerX = (startX + endX - 1) / 2;
+    const centerY = (startY + endY - 1) / 2;
+    const maxDistance = Math.max(1, Math.hypot(endX - startX, endY - startY) / 2);
+    const cellPixelCount = Math.max(1, (endX - startX) * (endY - startY));
+    const sampleStride = Math.max(1, Math.ceil(Math.sqrt(cellPixelCount / 48)));
+    const samples = [];
+    let firstOpaqueSample = null;
+    let totalCount = 0;
+    let opaqueCount = 0;
+
+    for (let sy = startY; sy < endY; sy++) {
+        for (let sx = startX; sx < endX; sx++) {
+            const idx = (sy * sourceWidth + sx) * 4;
+            totalCount++;
+            if (sourceData[idx + 3] <= 128) continue;
+            opaqueCount++;
+            const distance = Math.hypot(sx - centerX, sy - centerY);
+            const r = sourceData[idx];
+            const g = sourceData[idx + 1];
+            const b = sourceData[idx + 2];
+            const sample = {
+                r,
+                g,
+                b,
+                weight: sampleStride * sampleStride * (1 + Math.max(0, 1 - distance / maxDistance)),
+                lab: useDeltaE ? rgbToLab(r, g, b) : null
+            };
+            if (!firstOpaqueSample) firstOpaqueSample = sample;
+            if ((sx - startX) % sampleStride !== 0 || (sy - startY) % sampleStride !== 0) continue;
+            samples.push(sample);
+        }
+    }
+
+    if (!samples.length && firstOpaqueSample) {
+        samples.push(firstOpaqueSample);
+    }
+
+    return {
+        samples,
+        opaqueRatio: opaqueCount / Math.max(totalCount, 1)
+    };
+}
+
+function scoreColorForSamples(samples, color, useDeltaE, colorLab = null) {
+    let score = 0;
+    for (const sample of samples) {
+        score += colorDistanceForMode(sample.r, sample.g, sample.b, color, useDeltaE, colorLab, sample.lab) * sample.weight;
+    }
+    return score;
+}
+
+function findBestBeadForSamples(samples, paletteEntries, useDeltaE) {
+    let bestColor = null;
+    let bestScore = Infinity;
+    for (const entry of paletteEntries) {
+        const score = scoreColorForSamples(samples, entry.color, useDeltaE, entry.lab);
+        if (score < bestScore) {
+            bestScore = score;
+            bestColor = entry.color;
+        }
+    }
+    return { color: bestColor, score: bestScore };
+}
+
+function limitDirectMappedColors(cells, paletteEntries, maxColors, useDeltaE) {
+    const usage = new Map();
+    for (const cell of cells) {
+        if (!cell.samples || !cell.color || cell.color.id === 'NONE') continue;
+        const item = usage.get(cell.color.id) || { color: cell.color, count: 0, score: 0 };
+        item.count++;
+        item.score += cell.score || 0;
+        usage.set(cell.color.id, item);
+    }
+
+    if (usage.size <= maxColors) return cells.map(cell => cell.color);
+
+    const keepIds = new Set([...usage.values()]
+        .sort((a, b) => b.count - a.count || a.score - b.score)
+        .slice(0, maxColors)
+        .map(item => item.color.id));
+    const limitedPaletteEntries = paletteEntries.filter(entry => keepIds.has(entry.color.id));
+
+    return cells.map(cell => {
+        if (!cell.samples || !cell.color || cell.color.id === 'NONE') return cell.color;
+        if (keepIds.has(cell.color.id)) return cell.color;
+        return findBestBeadForSamples(cell.samples, limitedPaletteEntries, useDeltaE).color;
+    });
+}
+
+function mapSourceToBeadsDirect({
+    sourceImageData,
+    gridWidth,
+    gridHeight,
+    palette,
+    isColorLimitEnabled,
+    maxColors,
+    useDeltaE
+}) {
+    const paletteEntries = useDeltaE
+        ? buildLabPalette(palette)
+        : palette.map(color => ({ color, lab: null }));
+    const cells = [];
+
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const { samples, opaqueRatio } = collectCellSamples(sourceImageData, gridWidth, gridHeight, x, y, useDeltaE);
+            if (opaqueRatio <= 0.22 || samples.length === 0) {
+                cells.push({
+                    samples: null,
+                    color: { id: 'NONE', r: 255, g: 255, b: 255, a: 0 },
+                    score: 0
+                });
+                continue;
+            }
+            const best = findBestBeadForSamples(samples, paletteEntries, useDeltaE);
+            cells.push({
+                samples,
+                color: best.color,
+                score: best.score
+            });
+        }
+    }
+
+    const pixelData = isColorLimitEnabled
+        ? limitDirectMappedColors(cells, paletteEntries, maxColors, useDeltaE)
+        : cells.map(cell => cell.color);
+
+    unifySmallRegions(pixelData, gridWidth, gridHeight, 2, 35, 2);
+    return pixelData;
 }
 
 export function generatePatternData({

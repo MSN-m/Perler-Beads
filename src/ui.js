@@ -884,8 +884,8 @@ export function updateWorkbenchUI() {
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
     setHidden('workbench-settings-content', settingsCollapsed);
-    setText('generate-pattern-label', hasPattern ? 'Update beads' : 'Generate beads');
-    setText('pixel-art-status', hasPixelArt ? 'Preview ready' : 'No preview');
+    setText('generate-pattern-label', hasPattern ? '更新拼豆图纸' : '生成拼豆图纸');
+    setText('pixel-art-status', hasPixelArt ? '预览已生成' : '未生成预览');
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
     const generateBtn = document.getElementById('generate-pattern-btn');
@@ -897,7 +897,7 @@ export function updateWorkbenchUI() {
     const pixelArtBtn = document.getElementById('generate-pixel-art-btn');
     if (pixelArtBtn) {
         pixelArtBtn.disabled = !hasImage;
-        pixelArtBtn.textContent = hasPixelArt ? 'Regenerate pixel preview' : 'Generate pixel preview';
+        pixelArtBtn.textContent = hasPixelArt ? '重新生成像素预览' : '生成像素预览';
         pixelArtBtn.classList.toggle('opacity-40', !hasImage);
         pixelArtBtn.classList.toggle('cursor-not-allowed', !hasImage);
     }
@@ -1245,7 +1245,9 @@ export function handleGeneratePattern() {
 
     const precisionMode = document.getElementById('precision-mode-select')?.value || 'standard';
     const colorMatchMode = document.getElementById('color-match-mode-select')?.value || 'redmean';
+    const sourceImageData = precisionMode === 'high' ? getSourceImageDataForGeneration() : null;
     AppState.pixelData = mapPixelArtToBeads({
+        sourceImageData,
         pixelArtData: AppState.pixelArtData,
         gridWidth: AppState.gridWidth,
         gridHeight: AppState.gridHeight,
