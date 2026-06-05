@@ -211,7 +211,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         ctx.fillText(globalY.toString(), scale / 2, textPos);
     }
 
-    if (AppState.fillMode && AppState.fillSelection) {
+    if ((AppState.fillMode || AppState.clearBaseMode) && AppState.fillSelection) {
         const startX = Math.min(AppState.fillSelection.startX, AppState.fillSelection.endX);
         const endX = Math.max(AppState.fillSelection.startX, AppState.fillSelection.endX);
         const startY = Math.min(AppState.fillSelection.startY, AppState.fillSelection.endY);

@@ -1,0 +1,29 @@
+# .understandignore - patterns for files/dirs to exclude from analysis
+# Syntax: same as .gitignore.
+#
+# Built-in defaults already exclude common generated folders, media files,
+# lockfiles, minified assets, and editor metadata unless negated.
+
+# --- From .gitignore ---
+
+.DS_Store
+.vscode/
+.specstory/
+.cursor/mcp.local.json
+node_modules/
+dist/
+.env
+
+# --- Project media / generated review pages ---
+
+image/
+选图/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# --- Optional docs archive exclusion ---
+
+# docs/archive/

@@ -21,6 +21,7 @@ export const AppState = {
     },
     generatedPixelData: null,
     isBgRemoving: false,
+    bgRemovalSelection: null,
     highlightedColorId: null,
     zoomState: {
         scale: 1,

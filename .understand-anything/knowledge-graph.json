@@ -1,0 +1,2381 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "Perler Beads",
+    "languages": [
+      "HTML",
+      "CSS",
+      "JavaScript"
+    ],
+    "frameworks": [
+      "Vanilla JS",
+      "Tailwind CSS CDN",
+      "Canvas API",
+      "IndexedDB"
+    ],
+    "description": "无构建浏览器应用：把上传图片转换为匹配拼豆调色板的图案，并生成可打印图纸。",
+    "analyzedAt": "2026-05-29T07:37:17.836Z",
+    "gitCommitHash": "413673e01984a8372d3eee6c0767386e9e808e62"
+  },
+  "nodes": [
+    {
+      "id": "file:index.html",
+      "type": "file",
+      "name": "index.html",
+      "filePath": "index.html",
+      "summary": "主界面入口，负责图片上传、拼豆参数配置、生成图纸编辑，以及可打印图纸导出。",
+      "tags": [
+        "ui",
+        "entry"
+      ],
+      "metadata": {
+        "sizeBytes": 23743,
+        "lineCount": 363
+      }
+    },
+    {
+      "id": "file:workbench.html",
+      "type": "file",
+      "name": "workbench.html",
+      "filePath": "workbench.html",
+      "summary": "工作台版界面入口，包含源图预览、裁剪控制、草稿管理、对比预览和编辑流程。",
+      "tags": [
+        "ui",
+        "entry"
+      ],
+      "metadata": {
+        "sizeBytes": 26462,
+        "lineCount": 380
+      }
+    },
+    {
+      "id": "file:color_check.html",
+      "type": "file",
+      "name": "color_check.html",
+      "filePath": "color_check.html",
+      "summary": "调色板颜色数据的检查和复核页面。",
+      "tags": [
+        "ui",
+        "entry"
+      ],
+      "metadata": {
+        "sizeBytes": 63409,
+        "lineCount": 1424
+      }
+    },
+    {
+      "id": "file:css/style.css",
+      "type": "file",
+      "name": "style.css",
+      "filePath": "css/style.css",
+      "summary": "叠加在 Tailwind CDN 之上的少量项目自定义样式。",
+      "tags": [
+        "project"
+      ],
+      "metadata": {
+        "sizeBytes": 705,
+        "lineCount": 38
+      }
+    },
+    {
+      "id": "service:server.js",
+      "type": "service",
+      "name": "server.js",
+      "filePath": "server.js",
+      "summary": "本地静态文件服务，用于在浏览器中预览这个无构建前端项目。",
+      "tags": [
+        "local-preview"
+      ],
+      "metadata": {
+        "sizeBytes": 1749,
+        "lineCount": 57
+      }
+    },
+    {
+      "id": "file:generate_check_page_dedup.js",
+      "type": "file",
+      "name": "generate_check_page_dedup.js",
+      "filePath": "generate_check_page_dedup.js",
+      "summary": "辅助脚本，用于生成或支持带去重逻辑的调色板检查页面。",
+      "tags": [
+        "project"
+      ],
+      "metadata": {
+        "sizeBytes": 6345,
+        "lineCount": 195
+      }
+    },
+    {
+      "id": "file:get_mard_221.js",
+      "type": "file",
+      "name": "get_mard_221.js",
+      "filePath": "get_mard_221.js",
+      "summary": "辅助脚本，导入调色板常量以提取或检查 MARD 颜色数据。",
+      "tags": [
+        "project"
+      ],
+      "metadata": {
+        "sizeBytes": 660,
+        "lineCount": 25
+      }
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "项目交接和归档规则，约定多 AI 协作时的长期记忆入口。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 661,
+        "lineCount": 13
+      }
+    },
+    {
+      "id": "document:COMMON_ISSUES.md",
+      "type": "document",
+      "name": "COMMON_ISSUES.md",
+      "filePath": "COMMON_ISSUES.md",
+      "summary": "项目常见问题和排查经验记录。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 4289,
+        "lineCount": 47
+      }
+    },
+    {
+      "id": "document:MARD_COLORS.md",
+      "type": "document",
+      "name": "MARD_COLORS.md",
+      "filePath": "MARD_COLORS.md",
+      "summary": "MARD 拼豆颜色数据参考文档。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 6249,
+        "lineCount": 279
+      }
+    },
+    {
+      "id": "document:guige221.md",
+      "type": "document",
+      "name": "guige221.md",
+      "filePath": "guige221.md",
+      "summary": "拼豆颜色或规格数据相关参考说明。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 3011,
+        "lineCount": 221
+      }
+    },
+    {
+      "id": "document:guige264.md",
+      "type": "document",
+      "name": "guige264.md",
+      "filePath": "guige264.md",
+      "summary": "规格说明占位或草稿文件。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 0,
+        "lineCount": 1
+      }
+    },
+    {
+      "id": "file:src/main.js",
+      "type": "file",
+      "name": "main.js",
+      "filePath": "src/main.js",
+      "summary": "应用启动入口：绑定 DOM 事件、Canvas 交互、上传流程、编辑控制、缩放和导出动作。",
+      "tags": [
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 20473,
+        "lineCount": 579
+      }
+    },
+    {
+      "id": "file:src/ui.js",
+      "type": "file",
+      "name": "ui.js",
+      "filePath": "src/ui.js",
+      "summary": "主 UI 流程模块：步骤切换、背景移除、像素图生成、图纸生成、草稿、裁剪/预览控制，并对外转发编辑命令。",
+      "tags": [
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 56558,
+        "lineCount": 1380
+      }
+    },
+    {
+      "id": "function:src/ui.js:saveWorkbenchDraft",
+      "type": "function",
+      "name": "saveWorkbenchDraft",
+      "filePath": "src/ui.js",
+      "summary": "saveWorkbenchDraft 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:exportWorkbenchDrafts",
+      "type": "function",
+      "name": "exportWorkbenchDrafts",
+      "filePath": "src/ui.js",
+      "summary": "exportWorkbenchDrafts 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:importWorkbenchDraftFile",
+      "type": "function",
+      "name": "importWorkbenchDraftFile",
+      "filePath": "src/ui.js",
+      "summary": "importWorkbenchDraftFile 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:restoreWorkbenchDraft",
+      "type": "function",
+      "name": "restoreWorkbenchDraft",
+      "filePath": "src/ui.js",
+      "summary": "restoreWorkbenchDraft 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:deleteWorkbenchDraft",
+      "type": "function",
+      "name": "deleteWorkbenchDraft",
+      "filePath": "src/ui.js",
+      "summary": "deleteWorkbenchDraft 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:renameWorkbenchDraft",
+      "type": "function",
+      "name": "renameWorkbenchDraft",
+      "filePath": "src/ui.js",
+      "summary": "renameWorkbenchDraft 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:toggleDraftDrawer",
+      "type": "function",
+      "name": "toggleDraftDrawer",
+      "filePath": "src/ui.js",
+      "summary": "toggleDraftDrawer 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:resetWorkbenchCropRect",
+      "type": "function",
+      "name": "resetWorkbenchCropRect",
+      "filePath": "src/ui.js",
+      "summary": "resetWorkbenchCropRect 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:startWorkbenchCropInteraction",
+      "type": "function",
+      "name": "startWorkbenchCropInteraction",
+      "filePath": "src/ui.js",
+      "summary": "startWorkbenchCropInteraction 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:moveWorkbenchCropInteraction",
+      "type": "function",
+      "name": "moveWorkbenchCropInteraction",
+      "filePath": "src/ui.js",
+      "summary": "moveWorkbenchCropInteraction 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:endWorkbenchCropInteraction",
+      "type": "function",
+      "name": "endWorkbenchCropInteraction",
+      "filePath": "src/ui.js",
+      "summary": "endWorkbenchCropInteraction 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:resetWorkbenchComparePreview",
+      "type": "function",
+      "name": "resetWorkbenchComparePreview",
+      "filePath": "src/ui.js",
+      "summary": "resetWorkbenchComparePreview 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:toggleWorkbenchComparePreview",
+      "type": "function",
+      "name": "toggleWorkbenchComparePreview",
+      "filePath": "src/ui.js",
+      "summary": "toggleWorkbenchComparePreview 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:toggleWorkbenchSettingsPanel",
+      "type": "function",
+      "name": "toggleWorkbenchSettingsPanel",
+      "filePath": "src/ui.js",
+      "summary": "toggleWorkbenchSettingsPanel 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:zoomWorkbenchComparePreview",
+      "type": "function",
+      "name": "zoomWorkbenchComparePreview",
+      "filePath": "src/ui.js",
+      "summary": "zoomWorkbenchComparePreview 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:updateWorkbenchUI",
+      "type": "function",
+      "name": "updateWorkbenchUI",
+      "filePath": "src/ui.js",
+      "summary": "updateWorkbenchUI 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:goToStep",
+      "type": "function",
+      "name": "goToStep",
+      "filePath": "src/ui.js",
+      "summary": "goToStep 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:updateGridDimensions",
+      "type": "function",
+      "name": "updateGridDimensions",
+      "filePath": "src/ui.js",
+      "summary": "updateGridDimensions 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:updateUndoButton",
+      "type": "function",
+      "name": "updateUndoButton",
+      "filePath": "src/ui.js",
+      "summary": "updateUndoButton 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:undoBgRemoval",
+      "type": "function",
+      "name": "undoBgRemoval",
+      "filePath": "src/ui.js",
+      "summary": "undoBgRemoval 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:toggleBgRemovalMode",
+      "type": "function",
+      "name": "toggleBgRemovalMode",
+      "filePath": "src/ui.js",
+      "summary": "toggleBgRemovalMode 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:handleCanvasClick",
+      "type": "function",
+      "name": "handleCanvasClick",
+      "filePath": "src/ui.js",
+      "summary": "handleCanvasClick 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:handleCleanFragments",
+      "type": "function",
+      "name": "handleCleanFragments",
+      "filePath": "src/ui.js",
+      "summary": "handleCleanFragments 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:updatePixelArtControlDisplays",
+      "type": "function",
+      "name": "updatePixelArtControlDisplays",
+      "filePath": "src/ui.js",
+      "summary": "updatePixelArtControlDisplays 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:handleGeneratePixelArt",
+      "type": "function",
+      "name": "handleGeneratePixelArt",
+      "filePath": "src/ui.js",
+      "summary": "handleGeneratePixelArt 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:handleGeneratePatternLegacy",
+      "type": "function",
+      "name": "handleGeneratePatternLegacy",
+      "filePath": "src/ui.js",
+      "summary": "handleGeneratePatternLegacy 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:handleGeneratePattern",
+      "type": "function",
+      "name": "handleGeneratePattern",
+      "filePath": "src/ui.js",
+      "summary": "handleGeneratePattern 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:resetPatternToGenerated",
+      "type": "function",
+      "name": "resetPatternToGenerated",
+      "filePath": "src/ui.js",
+      "summary": "resetPatternToGenerated 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:collapseWorkbenchEditToolbar",
+      "type": "function",
+      "name": "collapseWorkbenchEditToolbar",
+      "filePath": "src/ui.js",
+      "summary": "collapseWorkbenchEditToolbar 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:expandWorkbenchEditToolbar",
+      "type": "function",
+      "name": "expandWorkbenchEditToolbar",
+      "filePath": "src/ui.js",
+      "summary": "expandWorkbenchEditToolbar 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:updateTolerance",
+      "type": "function",
+      "name": "updateTolerance",
+      "filePath": "src/ui.js",
+      "summary": "updateTolerance 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:toggleColorLimit",
+      "type": "function",
+      "name": "toggleColorLimit",
+      "filePath": "src/ui.js",
+      "summary": "toggleColorLimit 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/ui.js:updateMaxColorsDisplay",
+      "type": "function",
+      "name": "updateMaxColorsDisplay",
+      "filePath": "src/ui.js",
+      "summary": "updateMaxColorsDisplay 是 src/ui.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/state.js",
+      "type": "file",
+      "name": "state.js",
+      "filePath": "src/state.js",
+      "summary": "共享 AppState，保存图片数据、生成图纸、编辑模式、缩放状态、裁剪状态、草稿和工作台设置。",
+      "tags": [
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 1758,
+        "lineCount": 74
+      }
+    },
+    {
+      "id": "function:src/state.js:AppState",
+      "type": "concept",
+      "name": "AppState",
+      "filePath": "src/state.js",
+      "summary": "AppState 是 src/state.js 对外导出的共享常量或数据对象。",
+      "tags": [
+        "exported",
+        "state-or-data"
+      ]
+    },
+    {
+      "id": "file:src/renderer.js",
+      "type": "file",
+      "name": "renderer.js",
+      "filePath": "src/renderer.js",
+      "summary": "Canvas 渲染模块，负责拼豆图纸、标尺、高亮颜色、内容边界和缩放变换。",
+      "tags": [
+        "frontend",
+        "module",
+        "canvas"
+      ],
+      "metadata": {
+        "sizeBytes": 10663,
+        "lineCount": 282
+      }
+    },
+    {
+      "id": "function:src/renderer.js:renderResult",
+      "type": "function",
+      "name": "renderResult",
+      "filePath": "src/renderer.js",
+      "summary": "renderResult 是 src/renderer.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/renderer.js:updateResultTransform",
+      "type": "function",
+      "name": "updateResultTransform",
+      "filePath": "src/renderer.js",
+      "summary": "updateResultTransform 是 src/renderer.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/renderer.js:getResetZoomState",
+      "type": "function",
+      "name": "getResetZoomState",
+      "filePath": "src/renderer.js",
+      "summary": "getResetZoomState 是 src/renderer.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/processor.js",
+      "type": "file",
+      "name": "processor.js",
+      "filePath": "src/processor.js",
+      "summary": "图像处理流水线：背景移除、碎片清理、像素采样、颜色量化、调色板匹配、dithering、区域清理和图纸数据生成。",
+      "tags": [
+        "frontend",
+        "module",
+        "image-processing"
+      ],
+      "metadata": {
+        "sizeBytes": 45042,
+        "lineCount": 1186
+      }
+    },
+    {
+      "id": "function:src/processor.js:medianCut",
+      "type": "function",
+      "name": "medianCut",
+      "filePath": "src/processor.js",
+      "summary": "medianCut 是 src/processor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/processor.js:getFilteredMardPalette",
+      "type": "function",
+      "name": "getFilteredMardPalette",
+      "filePath": "src/processor.js",
+      "summary": "getFilteredMardPalette 是 src/processor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/processor.js:removeBackground",
+      "type": "function",
+      "name": "removeBackground",
+      "filePath": "src/processor.js",
+      "summary": "removeBackground 是 src/processor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/processor.js:cleanTinyFragments",
+      "type": "function",
+      "name": "cleanTinyFragments",
+      "filePath": "src/processor.js",
+      "summary": "cleanTinyFragments 是 src/processor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/processor.js:generatePixelArtData",
+      "type": "function",
+      "name": "generatePixelArtData",
+      "filePath": "src/processor.js",
+      "summary": "generatePixelArtData 是 src/processor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/processor.js:mapPixelArtToBeads",
+      "type": "function",
+      "name": "mapPixelArtToBeads",
+      "filePath": "src/processor.js",
+      "summary": "mapPixelArtToBeads 是 src/processor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/processor.js:generatePatternDataOriginal",
+      "type": "function",
+      "name": "generatePatternDataOriginal",
+      "filePath": "src/processor.js",
+      "summary": "generatePatternDataOriginal 是 src/processor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/processor.js:generatePatternData",
+      "type": "function",
+      "name": "generatePatternData",
+      "filePath": "src/processor.js",
+      "summary": "generatePatternData 是 src/processor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/constants.js",
+      "type": "file",
+      "name": "constants.js",
+      "filePath": "src/constants.js",
+      "summary": "支持品牌和色组的调色板数据库。",
+      "tags": [
+        "frontend",
+        "module",
+        "palette-data"
+      ],
+      "metadata": {
+        "sizeBytes": 29969,
+        "lineCount": 447
+      }
+    },
+    {
+      "id": "function:src/constants.js:PALETTES",
+      "type": "concept",
+      "name": "PALETTES",
+      "filePath": "src/constants.js",
+      "summary": "PALETTES 是 src/constants.js 对外导出的共享常量或数据对象。",
+      "tags": [
+        "exported",
+        "state-or-data"
+      ]
+    },
+    {
+      "id": "file:src/exporter.js",
+      "type": "file",
+      "name": "exporter.js",
+      "filePath": "src/exporter.js",
+      "summary": "导出模块，生成原图、镜像图和带标注的可打印图片。",
+      "tags": [
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 19783,
+        "lineCount": 509
+      }
+    },
+    {
+      "id": "function:src/exporter.js:downloadImage",
+      "type": "function",
+      "name": "downloadImage",
+      "filePath": "src/exporter.js",
+      "summary": "downloadImage 是 src/exporter.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/exporter.js:downloadMirroredImage",
+      "type": "function",
+      "name": "downloadMirroredImage",
+      "filePath": "src/exporter.js",
+      "summary": "downloadMirroredImage 是 src/exporter.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/exporter.js:downloadRawImage",
+      "type": "function",
+      "name": "downloadRawImage",
+      "filePath": "src/exporter.js",
+      "summary": "downloadRawImage 是 src/exporter.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/utils.js",
+      "type": "file",
+      "name": "utils.js",
+      "filePath": "src/utils.js",
+      "summary": "通用颜色工具，例如 nearest-color 匹配。",
+      "tags": [
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 928,
+        "lineCount": 35
+      }
+    },
+    {
+      "id": "function:src/utils.js:findNearestColor",
+      "type": "function",
+      "name": "findNearestColor",
+      "filePath": "src/utils.js",
+      "summary": "findNearestColor 是 src/utils.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/editor.js",
+      "type": "file",
+      "name": "editor.js",
+      "filePath": "src/editor.js",
+      "summary": "编辑共享工具：暂存像素修改、调色板访问、批量替换、颜色距离、统计信息和编辑动作配置。",
+      "tags": [
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 13662,
+        "lineCount": 272
+      }
+    },
+    {
+      "id": "function:src/editor.js:configureEditorActions",
+      "type": "function",
+      "name": "configureEditorActions",
+      "filePath": "src/editor.js",
+      "summary": "configureEditorActions 是 src/editor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/editor.js:deepClonePixels",
+      "type": "function",
+      "name": "deepClonePixels",
+      "filePath": "src/editor.js",
+      "summary": "deepClonePixels 是 src/editor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/editor.js:updateAdjustUndoButton",
+      "type": "function",
+      "name": "updateAdjustUndoButton",
+      "filePath": "src/editor.js",
+      "summary": "updateAdjustUndoButton 是 src/editor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/editor.js:resetBatchReplaceState",
+      "type": "function",
+      "name": "resetBatchReplaceState",
+      "filePath": "src/editor.js",
+      "summary": "resetBatchReplaceState 是 src/editor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/editor.js:redmeanDistance",
+      "type": "function",
+      "name": "redmeanDistance",
+      "filePath": "src/editor.js",
+      "summary": "redmeanDistance 是 src/editor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/editor.js:getCurrentPalette",
+      "type": "function",
+      "name": "getCurrentPalette",
+      "filePath": "src/editor.js",
+      "summary": "getCurrentPalette 是 src/editor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/editor.js:performBatchReplace",
+      "type": "function",
+      "name": "performBatchReplace",
+      "filePath": "src/editor.js",
+      "summary": "performBatchReplace 是 src/editor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/editor.js:calculateStats",
+      "type": "function",
+      "name": "calculateStats",
+      "filePath": "src/editor.js",
+      "summary": "calculateStats 是 src/editor.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/features/zoom.js",
+      "type": "file",
+      "name": "zoom.js",
+      "filePath": "src/features/zoom.js",
+      "summary": "结果 Canvas 的缩放和平移模块，处理鼠标/触摸交互和重置行为。",
+      "tags": [
+        "editing",
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 7435,
+        "lineCount": 312
+      }
+    },
+    {
+      "id": "function:src/features/zoom.js:resetZoom",
+      "type": "function",
+      "name": "resetZoom",
+      "filePath": "src/features/zoom.js",
+      "summary": "resetZoom 是 src/features/zoom.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/zoom.js:initZoomEvents",
+      "type": "function",
+      "name": "initZoomEvents",
+      "filePath": "src/features/zoom.js",
+      "summary": "initZoomEvents 是 src/features/zoom.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/features/adjust.js",
+      "type": "file",
+      "name": "adjust.js",
+      "filePath": "src/features/adjust.js",
+      "summary": "颜色调整与填充/清除编辑模块，包含网格命中、暂存编辑、undo/apply/cancel、取色和对比拖拽交互。",
+      "tags": [
+        "editing",
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 26822,
+        "lineCount": 1002
+      }
+    },
+    {
+      "id": "function:src/features/adjust.js:enterEditSession",
+      "type": "function",
+      "name": "enterEditSession",
+      "filePath": "src/features/adjust.js",
+      "summary": "enterEditSession 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:toggleClearBaseMode",
+      "type": "function",
+      "name": "toggleClearBaseMode",
+      "filePath": "src/features/adjust.js",
+      "summary": "toggleClearBaseMode 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:toggleFillMode",
+      "type": "function",
+      "name": "toggleFillMode",
+      "filePath": "src/features/adjust.js",
+      "summary": "toggleFillMode 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:setFillSourceMode",
+      "type": "function",
+      "name": "setFillSourceMode",
+      "filePath": "src/features/adjust.js",
+      "summary": "setFillSourceMode 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:handleOriginalFillPick",
+      "type": "function",
+      "name": "handleOriginalFillPick",
+      "filePath": "src/features/adjust.js",
+      "summary": "handleOriginalFillPick 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:startWorkbenchCompareDrag",
+      "type": "function",
+      "name": "startWorkbenchCompareDrag",
+      "filePath": "src/features/adjust.js",
+      "summary": "startWorkbenchCompareDrag 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:moveWorkbenchCompareDrag",
+      "type": "function",
+      "name": "moveWorkbenchCompareDrag",
+      "filePath": "src/features/adjust.js",
+      "summary": "moveWorkbenchCompareDrag 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:endWorkbenchCompareDrag",
+      "type": "function",
+      "name": "endWorkbenchCompareDrag",
+      "filePath": "src/features/adjust.js",
+      "summary": "endWorkbenchCompareDrag 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:handleResultCanvasClickForAdjust",
+      "type": "function",
+      "name": "handleResultCanvasClickForAdjust",
+      "filePath": "src/features/adjust.js",
+      "summary": "handleResultCanvasClickForAdjust 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:startFillSelection",
+      "type": "function",
+      "name": "startFillSelection",
+      "filePath": "src/features/adjust.js",
+      "summary": "startFillSelection 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:moveFillSelection",
+      "type": "function",
+      "name": "moveFillSelection",
+      "filePath": "src/features/adjust.js",
+      "summary": "moveFillSelection 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:endFillSelection",
+      "type": "function",
+      "name": "endFillSelection",
+      "filePath": "src/features/adjust.js",
+      "summary": "endFillSelection 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:adjustUndo",
+      "type": "function",
+      "name": "adjustUndo",
+      "filePath": "src/features/adjust.js",
+      "summary": "adjustUndo 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:adjustCancel",
+      "type": "function",
+      "name": "adjustCancel",
+      "filePath": "src/features/adjust.js",
+      "summary": "adjustCancel 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/adjust.js:adjustApply",
+      "type": "function",
+      "name": "adjustApply",
+      "filePath": "src/features/adjust.js",
+      "summary": "adjustApply 是 src/features/adjust.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/features/delete.js",
+      "type": "file",
+      "name": "delete.js",
+      "filePath": "src/features/delete.js",
+      "summary": "删除模式模块，通过确认弹窗暂存并删除单个拼豆格。",
+      "tags": [
+        "editing",
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 6359,
+        "lineCount": 270
+      }
+    },
+    {
+      "id": "function:src/features/delete.js:toggleDeleteMode",
+      "type": "function",
+      "name": "toggleDeleteMode",
+      "filePath": "src/features/delete.js",
+      "summary": "toggleDeleteMode 是 src/features/delete.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/delete.js:handleDeleteClick",
+      "type": "function",
+      "name": "handleDeleteClick",
+      "filePath": "src/features/delete.js",
+      "summary": "handleDeleteClick 是 src/features/delete.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "file:src/features/edge.js",
+      "type": "file",
+      "name": "edge.js",
+      "filePath": "src/features/edge.js",
+      "summary": "边缘调整模块，识别边界拼豆并进入批量替换编辑流程。",
+      "tags": [
+        "editing",
+        "frontend",
+        "module"
+      ],
+      "metadata": {
+        "sizeBytes": 3911,
+        "lineCount": 196
+      }
+    },
+    {
+      "id": "function:src/features/edge.js:findAndSelectEdgeBeads",
+      "type": "function",
+      "name": "findAndSelectEdgeBeads",
+      "filePath": "src/features/edge.js",
+      "summary": "findAndSelectEdgeBeads 是 src/features/edge.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "function:src/features/edge.js:toggleEdgeAdjustMode",
+      "type": "function",
+      "name": "toggleEdgeAdjustMode",
+      "filePath": "src/features/edge.js",
+      "summary": "toggleEdgeAdjustMode 是 src/features/edge.js 对外导出的函数。",
+      "tags": [
+        "exported",
+        "function"
+      ]
+    },
+    {
+      "id": "document:docs/archive/TEST_CASES.md",
+      "type": "document",
+      "name": "TEST_CASES.md",
+      "filePath": "docs/archive/TEST_CASES.md",
+      "summary": "关键用户流程的手工回归测试清单。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 3405,
+        "lineCount": 47
+      }
+    },
+    {
+      "id": "document:docs/archive/REFACTOR_SPEC.md",
+      "type": "document",
+      "name": "REFACTOR_SPEC.md",
+      "filePath": "docs/archive/REFACTOR_SPEC.md",
+      "summary": "模块边界和迁移步骤的重构计划。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 3569,
+        "lineCount": 73
+      }
+    },
+    {
+      "id": "document:docs/archive/gonnengguize.md",
+      "type": "document",
+      "name": "gonnengguize.md",
+      "filePath": "docs/archive/gonnengguize.md",
+      "summary": "归档的项目规则或流程说明。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 2407,
+        "lineCount": 48
+      }
+    },
+    {
+      "id": "document:docs/archive/DEVELOPMENT_SUMMARY_20260409_1755.md",
+      "type": "document",
+      "name": "DEVELOPMENT_SUMMARY_20260409_1755.md",
+      "filePath": "docs/archive/DEVELOPMENT_SUMMARY_20260409_1755.md",
+      "summary": "最新开发归档，记录近期工作和后续计划。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 7559,
+        "lineCount": 244
+      }
+    },
+    {
+      "id": "document:docs/archive/DEVELOPMENT_SUMMARY_20260409_1658.md",
+      "type": "document",
+      "name": "DEVELOPMENT_SUMMARY_20260409_1658.md",
+      "filePath": "docs/archive/DEVELOPMENT_SUMMARY_20260409_1658.md",
+      "summary": "编辑模块抽离和剩余回归风险的开发总结。",
+      "tags": [
+        "documentation"
+      ],
+      "metadata": {
+        "sizeBytes": 6783,
+        "lineCount": 185
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:get_mard_221.js",
+      "target": "file:src/constants.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "get_mard_221.js 导入 constants.js。"
+    },
+    {
+      "source": "file:src/main.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "main.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/main.js",
+      "target": "file:src/ui.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "main.js 导入 ui.js。"
+    },
+    {
+      "source": "file:src/main.js",
+      "target": "file:src/exporter.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "main.js 导入 exporter.js。"
+    },
+    {
+      "source": "file:src/main.js",
+      "target": "file:src/features/zoom.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "main.js 导入 zoom.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:saveWorkbenchDraft",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 saveWorkbenchDraft。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:exportWorkbenchDrafts",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 exportWorkbenchDrafts。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:importWorkbenchDraftFile",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 importWorkbenchDraftFile。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:restoreWorkbenchDraft",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 restoreWorkbenchDraft。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:deleteWorkbenchDraft",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 deleteWorkbenchDraft。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:renameWorkbenchDraft",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 renameWorkbenchDraft。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:toggleDraftDrawer",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 toggleDraftDrawer。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:resetWorkbenchCropRect",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 resetWorkbenchCropRect。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:startWorkbenchCropInteraction",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 startWorkbenchCropInteraction。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:moveWorkbenchCropInteraction",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 moveWorkbenchCropInteraction。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:endWorkbenchCropInteraction",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 endWorkbenchCropInteraction。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:resetWorkbenchComparePreview",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 resetWorkbenchComparePreview。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:toggleWorkbenchComparePreview",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 toggleWorkbenchComparePreview。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:toggleWorkbenchSettingsPanel",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 toggleWorkbenchSettingsPanel。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:zoomWorkbenchComparePreview",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 zoomWorkbenchComparePreview。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:updateWorkbenchUI",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 updateWorkbenchUI。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:goToStep",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 goToStep。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:updateGridDimensions",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 updateGridDimensions。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:updateUndoButton",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 updateUndoButton。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:undoBgRemoval",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 undoBgRemoval。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:toggleBgRemovalMode",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 toggleBgRemovalMode。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:handleCanvasClick",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 handleCanvasClick。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:handleCleanFragments",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 handleCleanFragments。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:updatePixelArtControlDisplays",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 updatePixelArtControlDisplays。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:handleGeneratePixelArt",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 handleGeneratePixelArt。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:handleGeneratePatternLegacy",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 handleGeneratePatternLegacy。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:handleGeneratePattern",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 handleGeneratePattern。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:resetPatternToGenerated",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 resetPatternToGenerated。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:collapseWorkbenchEditToolbar",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 collapseWorkbenchEditToolbar。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:expandWorkbenchEditToolbar",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 expandWorkbenchEditToolbar。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:updateTolerance",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 updateTolerance。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:toggleColorLimit",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 toggleColorLimit。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "function:src/ui.js:updateMaxColorsDisplay",
+      "type": "contains",
+      "weight": 1,
+      "summary": "ui.js 包含 updateMaxColorsDisplay。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/processor.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 processor.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/renderer.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 renderer.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/constants.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 constants.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/editor.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 editor.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/features/delete.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 delete.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/features/zoom.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 zoom.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/features/edge.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 edge.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/features/adjust.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "ui.js 导入 adjust.js。"
+    },
+    {
+      "source": "file:src/state.js",
+      "target": "function:src/state.js:AppState",
+      "type": "contains",
+      "weight": 1,
+      "summary": "state.js 包含 AppState。"
+    },
+    {
+      "source": "file:src/renderer.js",
+      "target": "function:src/renderer.js:renderResult",
+      "type": "contains",
+      "weight": 1,
+      "summary": "renderer.js 包含 renderResult。"
+    },
+    {
+      "source": "file:src/renderer.js",
+      "target": "function:src/renderer.js:updateResultTransform",
+      "type": "contains",
+      "weight": 1,
+      "summary": "renderer.js 包含 updateResultTransform。"
+    },
+    {
+      "source": "file:src/renderer.js",
+      "target": "function:src/renderer.js:getResetZoomState",
+      "type": "contains",
+      "weight": 1,
+      "summary": "renderer.js 包含 getResetZoomState。"
+    },
+    {
+      "source": "file:src/renderer.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "renderer.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "function:src/processor.js:medianCut",
+      "type": "contains",
+      "weight": 1,
+      "summary": "processor.js 包含 medianCut。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "function:src/processor.js:getFilteredMardPalette",
+      "type": "contains",
+      "weight": 1,
+      "summary": "processor.js 包含 getFilteredMardPalette。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "function:src/processor.js:removeBackground",
+      "type": "contains",
+      "weight": 1,
+      "summary": "processor.js 包含 removeBackground。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "function:src/processor.js:cleanTinyFragments",
+      "type": "contains",
+      "weight": 1,
+      "summary": "processor.js 包含 cleanTinyFragments。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "function:src/processor.js:generatePixelArtData",
+      "type": "contains",
+      "weight": 1,
+      "summary": "processor.js 包含 generatePixelArtData。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "function:src/processor.js:mapPixelArtToBeads",
+      "type": "contains",
+      "weight": 1,
+      "summary": "processor.js 包含 mapPixelArtToBeads。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "function:src/processor.js:generatePatternDataOriginal",
+      "type": "contains",
+      "weight": 1,
+      "summary": "processor.js 包含 generatePatternDataOriginal。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "function:src/processor.js:generatePatternData",
+      "type": "contains",
+      "weight": 1,
+      "summary": "processor.js 包含 generatePatternData。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "file:src/utils.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "processor.js 导入 utils.js。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "file:src/constants.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "processor.js 导入 constants.js。"
+    },
+    {
+      "source": "file:src/constants.js",
+      "target": "function:src/constants.js:PALETTES",
+      "type": "contains",
+      "weight": 1,
+      "summary": "constants.js 包含 PALETTES。"
+    },
+    {
+      "source": "file:src/exporter.js",
+      "target": "function:src/exporter.js:downloadImage",
+      "type": "contains",
+      "weight": 1,
+      "summary": "exporter.js 包含 downloadImage。"
+    },
+    {
+      "source": "file:src/exporter.js",
+      "target": "function:src/exporter.js:downloadMirroredImage",
+      "type": "contains",
+      "weight": 1,
+      "summary": "exporter.js 包含 downloadMirroredImage。"
+    },
+    {
+      "source": "file:src/exporter.js",
+      "target": "function:src/exporter.js:downloadRawImage",
+      "type": "contains",
+      "weight": 1,
+      "summary": "exporter.js 包含 downloadRawImage。"
+    },
+    {
+      "source": "file:src/exporter.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "exporter.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/utils.js",
+      "target": "function:src/utils.js:findNearestColor",
+      "type": "contains",
+      "weight": 1,
+      "summary": "utils.js 包含 findNearestColor。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "function:src/editor.js:configureEditorActions",
+      "type": "contains",
+      "weight": 1,
+      "summary": "editor.js 包含 configureEditorActions。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "function:src/editor.js:deepClonePixels",
+      "type": "contains",
+      "weight": 1,
+      "summary": "editor.js 包含 deepClonePixels。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "function:src/editor.js:updateAdjustUndoButton",
+      "type": "contains",
+      "weight": 1,
+      "summary": "editor.js 包含 updateAdjustUndoButton。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "function:src/editor.js:resetBatchReplaceState",
+      "type": "contains",
+      "weight": 1,
+      "summary": "editor.js 包含 resetBatchReplaceState。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "function:src/editor.js:redmeanDistance",
+      "type": "contains",
+      "weight": 1,
+      "summary": "editor.js 包含 redmeanDistance。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "function:src/editor.js:getCurrentPalette",
+      "type": "contains",
+      "weight": 1,
+      "summary": "editor.js 包含 getCurrentPalette。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "function:src/editor.js:performBatchReplace",
+      "type": "contains",
+      "weight": 1,
+      "summary": "editor.js 包含 performBatchReplace。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "function:src/editor.js:calculateStats",
+      "type": "contains",
+      "weight": 1,
+      "summary": "editor.js 包含 calculateStats。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "editor.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "file:src/processor.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "editor.js 导入 processor.js。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "file:src/renderer.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "editor.js 导入 renderer.js。"
+    },
+    {
+      "source": "file:src/editor.js",
+      "target": "file:src/constants.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "editor.js 导入 constants.js。"
+    },
+    {
+      "source": "file:src/features/zoom.js",
+      "target": "function:src/features/zoom.js:resetZoom",
+      "type": "contains",
+      "weight": 1,
+      "summary": "zoom.js 包含 resetZoom。"
+    },
+    {
+      "source": "file:src/features/zoom.js",
+      "target": "function:src/features/zoom.js:initZoomEvents",
+      "type": "contains",
+      "weight": 1,
+      "summary": "zoom.js 包含 initZoomEvents。"
+    },
+    {
+      "source": "file:src/features/zoom.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "zoom.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/features/zoom.js",
+      "target": "file:src/renderer.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "zoom.js 导入 renderer.js。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:enterEditSession",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 enterEditSession。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:toggleClearBaseMode",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 toggleClearBaseMode。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:toggleFillMode",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 toggleFillMode。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:setFillSourceMode",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 setFillSourceMode。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:handleOriginalFillPick",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 handleOriginalFillPick。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:startWorkbenchCompareDrag",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 startWorkbenchCompareDrag。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:moveWorkbenchCompareDrag",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 moveWorkbenchCompareDrag。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:endWorkbenchCompareDrag",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 endWorkbenchCompareDrag。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:handleResultCanvasClickForAdjust",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 handleResultCanvasClickForAdjust。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:startFillSelection",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 startFillSelection。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:moveFillSelection",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 moveFillSelection。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:endFillSelection",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 endFillSelection。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:adjustUndo",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 adjustUndo。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:adjustCancel",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 adjustCancel。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "function:src/features/adjust.js:adjustApply",
+      "type": "contains",
+      "weight": 1,
+      "summary": "adjust.js 包含 adjustApply。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "adjust.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "file:src/renderer.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "adjust.js 导入 renderer.js。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "file:src/features/delete.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "adjust.js 导入 delete.js。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "file:src/editor.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "adjust.js 导入 editor.js。"
+    },
+    {
+      "source": "file:src/features/delete.js",
+      "target": "function:src/features/delete.js:toggleDeleteMode",
+      "type": "contains",
+      "weight": 1,
+      "summary": "delete.js 包含 toggleDeleteMode。"
+    },
+    {
+      "source": "file:src/features/delete.js",
+      "target": "function:src/features/delete.js:handleDeleteClick",
+      "type": "contains",
+      "weight": 1,
+      "summary": "delete.js 包含 handleDeleteClick。"
+    },
+    {
+      "source": "file:src/features/delete.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "delete.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/features/delete.js",
+      "target": "file:src/renderer.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "delete.js 导入 renderer.js。"
+    },
+    {
+      "source": "file:src/features/delete.js",
+      "target": "file:src/editor.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "delete.js 导入 editor.js。"
+    },
+    {
+      "source": "file:src/features/edge.js",
+      "target": "function:src/features/edge.js:findAndSelectEdgeBeads",
+      "type": "contains",
+      "weight": 1,
+      "summary": "edge.js 包含 findAndSelectEdgeBeads。"
+    },
+    {
+      "source": "file:src/features/edge.js",
+      "target": "function:src/features/edge.js:toggleEdgeAdjustMode",
+      "type": "contains",
+      "weight": 1,
+      "summary": "edge.js 包含 toggleEdgeAdjustMode。"
+    },
+    {
+      "source": "file:src/features/edge.js",
+      "target": "file:src/state.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "edge.js 导入 state.js。"
+    },
+    {
+      "source": "file:src/features/edge.js",
+      "target": "file:src/renderer.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "edge.js 导入 renderer.js。"
+    },
+    {
+      "source": "file:src/features/edge.js",
+      "target": "file:src/features/adjust.js",
+      "type": "imports",
+      "weight": 0.7,
+      "summary": "edge.js 导入 adjust.js。"
+    },
+    {
+      "source": "file:index.html",
+      "target": "file:src/main.js",
+      "type": "depends_on",
+      "weight": 0.5,
+      "summary": "index.html 依赖 main.js。"
+    },
+    {
+      "source": "file:index.html",
+      "target": "file:css/style.css",
+      "type": "depends_on",
+      "weight": 0.5,
+      "summary": "index.html 依赖 style.css。"
+    },
+    {
+      "source": "file:workbench.html",
+      "target": "file:src/main.js",
+      "type": "depends_on",
+      "weight": 0.5,
+      "summary": "workbench.html 依赖 main.js。"
+    },
+    {
+      "source": "file:src/main.js",
+      "target": "file:src/ui.js",
+      "type": "calls",
+      "weight": 0.8,
+      "summary": "main.js 调用 ui.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/processor.js",
+      "type": "calls",
+      "weight": 0.8,
+      "summary": "ui.js 调用 processor.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/renderer.js",
+      "type": "calls",
+      "weight": 0.8,
+      "summary": "ui.js 调用 renderer.js。"
+    },
+    {
+      "source": "file:src/ui.js",
+      "target": "file:src/editor.js",
+      "type": "calls",
+      "weight": 0.8,
+      "summary": "ui.js 调用 editor.js。"
+    },
+    {
+      "source": "file:src/features/adjust.js",
+      "target": "file:src/editor.js",
+      "type": "calls",
+      "weight": 0.8,
+      "summary": "adjust.js 调用 editor.js。"
+    },
+    {
+      "source": "file:src/features/delete.js",
+      "target": "file:src/editor.js",
+      "type": "calls",
+      "weight": 0.8,
+      "summary": "delete.js 调用 editor.js。"
+    },
+    {
+      "source": "file:src/features/edge.js",
+      "target": "file:src/features/adjust.js",
+      "type": "calls",
+      "weight": 0.8,
+      "summary": "edge.js 调用 adjust.js。"
+    },
+    {
+      "source": "file:src/processor.js",
+      "target": "file:src/constants.js",
+      "type": "reads_from",
+      "weight": 0.5,
+      "summary": "processor.js 读取 constants.js。"
+    },
+    {
+      "source": "file:src/renderer.js",
+      "target": "file:src/state.js",
+      "type": "writes_to",
+      "weight": 0.5,
+      "summary": "renderer.js 写入 state.js。"
+    },
+    {
+      "source": "file:src/exporter.js",
+      "target": "file:src/state.js",
+      "type": "reads_from",
+      "weight": 0.5,
+      "summary": "exporter.js 读取 state.js。"
+    },
+    {
+      "source": "document:docs/archive/TEST_CASES.md",
+      "target": "file:src/features/adjust.js",
+      "type": "documents",
+      "weight": 0.5,
+      "summary": "TEST_CASES.md 记录 adjust.js。"
+    },
+    {
+      "source": "document:docs/archive/TEST_CASES.md",
+      "target": "file:src/features/delete.js",
+      "type": "documents",
+      "weight": 0.5,
+      "summary": "TEST_CASES.md 记录 delete.js。"
+    },
+    {
+      "source": "document:docs/archive/TEST_CASES.md",
+      "target": "file:src/features/edge.js",
+      "type": "documents",
+      "weight": 0.5,
+      "summary": "TEST_CASES.md 记录 edge.js。"
+    },
+    {
+      "source": "document:docs/archive/REFACTOR_SPEC.md",
+      "target": "file:src/ui.js",
+      "type": "documents",
+      "weight": 0.5,
+      "summary": "REFACTOR_SPEC.md 记录 ui.js。"
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:entry-and-pages",
+      "name": "入口与页面",
+      "description": "HTML 页面、样式和本地预览服务，共同承载浏览器端应用。",
+      "nodeIds": [
+        "file:index.html",
+        "file:workbench.html",
+        "file:color_check.html",
+        "file:css/style.css",
+        "service:server.js"
+      ]
+    },
+    {
+      "id": "layer:application-ui",
+      "name": "应用 UI 流程",
+      "description": "负责启动绑定、流程编排、草稿、裁剪预览，以及协调用户操作的模块。",
+      "nodeIds": [
+        "file:src/main.js",
+        "file:src/ui.js",
+        "file:src/editor.js"
+      ]
+    },
+    {
+      "id": "layer:editing-features",
+      "name": "编辑功能",
+      "description": "缩放、颜色调整、填充/清除、删除和边缘调整等聚焦的交互模块。",
+      "nodeIds": [
+        "file:src/features/zoom.js",
+        "file:src/features/adjust.js",
+        "file:src/features/delete.js",
+        "file:src/features/edge.js"
+      ]
+    },
+    {
+      "id": "layer:image-and-rendering-core",
+      "name": "图像与渲染核心",
+      "description": "把源图转换成可打印拼豆图纸的处理、渲染、导出和颜色工具。",
+      "nodeIds": [
+        "file:src/processor.js",
+        "file:src/renderer.js",
+        "file:src/exporter.js",
+        "file:src/utils.js"
+      ]
+    },
+    {
+      "id": "layer:state-and-data",
+      "name": "状态与数据",
+      "description": "跨处理、渲染、编辑和导出流程共享的 AppState 与调色板数据。",
+      "nodeIds": [
+        "file:src/state.js",
+        "file:src/constants.js",
+        "file:get_mard_221.js",
+        "file:generate_check_page_dedup.js"
+      ]
+    },
+    {
+      "id": "layer:documentation",
+      "name": "文档与归档",
+      "description": "项目交接说明、参考数据、问题记录、回归计划和开发总结。",
+      "nodeIds": [
+        "document:README.md",
+        "document:COMMON_ISSUES.md",
+        "document:MARD_COLORS.md",
+        "document:guige221.md",
+        "document:guige264.md",
+        "document:docs/archive/TEST_CASES.md",
+        "document:docs/archive/REFACTOR_SPEC.md",
+        "document:docs/archive/gonnengguize.md",
+        "document:docs/archive/DEVELOPMENT_SUMMARY_20260409_1755.md",
+        "document:docs/archive/DEVELOPMENT_SUMMARY_20260409_1658.md"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "项目概览",
+      "description": "先看 README 和最新归档，了解项目规则、交接方式以及最近一次模块拆分。",
+      "nodeIds": [
+        "document:README.md",
+        "document:docs/archive/DEVELOPMENT_SUMMARY_20260409_1755.md",
+        "document:docs/archive/DEVELOPMENT_SUMMARY_20260409_1658.md"
+      ]
+    },
+    {
+      "order": 2,
+      "title": "浏览器入口",
+      "description": "从 HTML 入口进入 JavaScript bootstrap，理解上传、处理、编辑、缩放和导出控件如何绑定。",
+      "nodeIds": [
+        "file:index.html",
+        "file:src/main.js"
+      ]
+    },
+    {
+      "order": 3,
+      "title": "UI 工作流",
+      "description": "查看流程协调模块和共享编辑工具，理解 AppState 如何在上传、清理、生成、编辑、草稿和导出阶段流转。",
+      "nodeIds": [
+        "file:src/ui.js",
+        "file:src/editor.js",
+        "file:src/state.js"
+      ]
+    },
+    {
+      "order": 4,
+      "title": "图像处理流水线",
+      "description": "阅读图像处理核心，理解源像素如何转换为 pixel art，并进一步匹配到拼豆调色板。",
+      "nodeIds": [
+        "file:src/processor.js",
+        "file:src/constants.js",
+        "file:src/utils.js"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "Canvas 与导出",
+      "description": "查看生成的图纸数据如何渲染成 Canvas 图纸，并导出为可下载图片。",
+      "nodeIds": [
+        "file:src/renderer.js",
+        "file:src/exporter.js"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "编辑模式",
+      "description": "最后看缩放、调色、删除和边缘调整模块，这里是最需要回归验证的交互区域。",
+      "nodeIds": [
+        "file:src/features/zoom.js",
+        "file:src/features/adjust.js",
+        "file:src/features/delete.js",
+        "file:src/features/edge.js"
+      ]
+    }
+  ]
+}

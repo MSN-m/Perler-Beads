@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perler Beads 架构图谱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    @media print { #searchWrap { display: none; } }
+  </style>
+</head>
+<body class="bg-zinc-50 text-zinc-900">
+  <main class="mx-auto max-w-7xl px-4 py-6">
+    <header class="mb-5 border-b border-zinc-200 pb-4">
+      <h1 class="text-2xl font-semibold">Perler Beads 架构图谱</h1>
+      <p class="mt-2 max-w-4xl text-sm leading-6 text-zinc-600">无构建浏览器应用：把上传图片转换为匹配拼豆调色板的图案，并生成可打印图纸。</p>
+      <div class="mt-4 grid grid-cols-2 gap-2 text-sm md:grid-cols-5">
+        <div class="rounded border border-zinc-200 bg-white px-3 py-2"><div class="text-xs text-zinc-500">文件</div><div class="text-lg font-semibold">30</div></div>
+        <div class="rounded border border-zinc-200 bg-white px-3 py-2"><div class="text-xs text-zinc-500">节点</div><div class="text-lg font-semibold">109</div></div>
+        <div class="rounded border border-zinc-200 bg-white px-3 py-2"><div class="text-xs text-zinc-500">关系</div><div class="text-lg font-semibold">130</div></div>
+        <div class="rounded border border-zinc-200 bg-white px-3 py-2"><div class="text-xs text-zinc-500">分层</div><div class="text-lg font-semibold">6</div></div>
+        <div class="rounded border border-zinc-200 bg-white px-3 py-2"><div class="text-xs text-zinc-500">导览</div><div class="text-lg font-semibold">6</div></div>
+      </div>
+    </header>
+
+    <section id="searchWrap" class="mb-5 rounded-md border border-zinc-200 bg-white p-4">
+      <label class="text-sm font-medium" for="searchBox">搜索</label>
+      <input id="searchBox" class="mt-2 w-full rounded border border-zinc-300 px-3 py-2 text-sm" placeholder="搜索文件、函数、标签或说明">
+    </section>
+
+    <section class="mb-5 grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
+      <div class="space-y-4">
+        <h2 class="text-xl font-semibold">分层视图</h2>
+        
+    <section class="rounded-md border border-zinc-200 bg-zinc-50">
+      <div class="border-b border-zinc-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-lg font-semibold">入口与页面</h3>
+          <span class="text-sm text-zinc-500">5 项</span>
+        </div>
+        <p class="mt-1 text-sm leading-6 text-zinc-600">HTML 页面、样式和本地预览服务，共同承载浏览器端应用。</p>
+      </div>
+      <div class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+        
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="index.html file:index.html index.html 主界面入口，负责图片上传、拼豆参数配置、生成图纸编辑，以及可打印图纸导出。 ui entry">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">index.html</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">主界面入口，负责图片上传、拼豆参数配置、生成图纸编辑，以及可打印图纸导出。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">index.html</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="workbench.html file:workbench.html workbench.html 工作台版界面入口，包含源图预览、裁剪控制、草稿管理、对比预览和编辑流程。 ui entry">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">workbench.html</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">工作台版界面入口，包含源图预览、裁剪控制、草稿管理、对比预览和编辑流程。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">workbench.html</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="color_check.html file:color_check.html color_check.html 调色板颜色数据的检查和复核页面。 ui entry">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">color_check.html</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">调色板颜色数据的检查和复核页面。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">color_check.html</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="style.css file:css/style.css css/style.css 叠加在 tailwind cdn 之上的少量项目自定义样式。 project">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">style.css</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">叠加在 Tailwind CDN 之上的少量项目自定义样式。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">css/style.css</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="server.js service:server.js server.js 本地静态文件服务，用于在浏览器中预览这个无构建前端项目。 local-preview">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">server.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">service</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">本地静态文件服务，用于在浏览器中预览这个无构建前端项目。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">server.js</p>
+    </article>
+  
+      </div>
+    </section>
+  
+
+    <section class="rounded-md border border-zinc-200 bg-zinc-50">
+      <div class="border-b border-zinc-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-lg font-semibold">应用 UI 流程</h3>
+          <span class="text-sm text-zinc-500">3 项</span>
+        </div>
+        <p class="mt-1 text-sm leading-6 text-zinc-600">负责启动绑定、流程编排、草稿、裁剪预览，以及协调用户操作的模块。</p>
+      </div>
+      <div class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+        
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="main.js file:src/main.js src/main.js 应用启动入口：绑定 dom 事件、canvas 交互、上传流程、编辑控制、缩放和导出动作。 frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">main.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">应用启动入口：绑定 DOM 事件、Canvas 交互、上传流程、编辑控制、缩放和导出动作。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/main.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="ui.js file:src/ui.js src/ui.js 主 ui 流程模块：步骤切换、背景移除、像素图生成、图纸生成、草稿、裁剪/预览控制，并对外转发编辑命令。 frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">ui.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">主 UI 流程模块：步骤切换、背景移除、像素图生成、图纸生成、草稿、裁剪/预览控制，并对外转发编辑命令。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/ui.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="editor.js file:src/editor.js src/editor.js 编辑共享工具：暂存像素修改、调色板访问、批量替换、颜色距离、统计信息和编辑动作配置。 frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">editor.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">编辑共享工具：暂存像素修改、调色板访问、批量替换、颜色距离、统计信息和编辑动作配置。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/editor.js</p>
+    </article>
+  
+      </div>
+    </section>
+  
+
+    <section class="rounded-md border border-zinc-200 bg-zinc-50">
+      <div class="border-b border-zinc-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-lg font-semibold">编辑功能</h3>
+          <span class="text-sm text-zinc-500">4 项</span>
+        </div>
+        <p class="mt-1 text-sm leading-6 text-zinc-600">缩放、颜色调整、填充/清除、删除和边缘调整等聚焦的交互模块。</p>
+      </div>
+      <div class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+        
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="zoom.js file:src/features/zoom.js src/features/zoom.js 结果 canvas 的缩放和平移模块，处理鼠标/触摸交互和重置行为。 editing frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">zoom.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">结果 Canvas 的缩放和平移模块，处理鼠标/触摸交互和重置行为。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/features/zoom.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="adjust.js file:src/features/adjust.js src/features/adjust.js 颜色调整与填充/清除编辑模块，包含网格命中、暂存编辑、undo/apply/cancel、取色和对比拖拽交互。 editing frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">adjust.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">颜色调整与填充/清除编辑模块，包含网格命中、暂存编辑、undo/apply/cancel、取色和对比拖拽交互。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/features/adjust.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="delete.js file:src/features/delete.js src/features/delete.js 删除模式模块，通过确认弹窗暂存并删除单个拼豆格。 editing frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">delete.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">删除模式模块，通过确认弹窗暂存并删除单个拼豆格。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/features/delete.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="edge.js file:src/features/edge.js src/features/edge.js 边缘调整模块，识别边界拼豆并进入批量替换编辑流程。 editing frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">edge.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">边缘调整模块，识别边界拼豆并进入批量替换编辑流程。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/features/edge.js</p>
+    </article>
+  
+      </div>
+    </section>
+  
+
+    <section class="rounded-md border border-zinc-200 bg-zinc-50">
+      <div class="border-b border-zinc-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-lg font-semibold">图像与渲染核心</h3>
+          <span class="text-sm text-zinc-500">4 项</span>
+        </div>
+        <p class="mt-1 text-sm leading-6 text-zinc-600">把源图转换成可打印拼豆图纸的处理、渲染、导出和颜色工具。</p>
+      </div>
+      <div class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+        
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="processor.js file:src/processor.js src/processor.js 图像处理流水线：背景移除、碎片清理、像素采样、颜色量化、调色板匹配、dithering、区域清理和图纸数据生成。 frontend module image-processing">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">processor.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">图像处理流水线：背景移除、碎片清理、像素采样、颜色量化、调色板匹配、dithering、区域清理和图纸数据生成。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/processor.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="renderer.js file:src/renderer.js src/renderer.js canvas 渲染模块，负责拼豆图纸、标尺、高亮颜色、内容边界和缩放变换。 frontend module canvas">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">renderer.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">Canvas 渲染模块，负责拼豆图纸、标尺、高亮颜色、内容边界和缩放变换。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/renderer.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="exporter.js file:src/exporter.js src/exporter.js 导出模块，生成原图、镜像图和带标注的可打印图片。 frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">exporter.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">导出模块，生成原图、镜像图和带标注的可打印图片。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/exporter.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="utils.js file:src/utils.js src/utils.js 通用颜色工具，例如 nearest-color 匹配。 frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">utils.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">通用颜色工具，例如 nearest-color 匹配。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/utils.js</p>
+    </article>
+  
+      </div>
+    </section>
+  
+
+    <section class="rounded-md border border-zinc-200 bg-zinc-50">
+      <div class="border-b border-zinc-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-lg font-semibold">状态与数据</h3>
+          <span class="text-sm text-zinc-500">4 项</span>
+        </div>
+        <p class="mt-1 text-sm leading-6 text-zinc-600">跨处理、渲染、编辑和导出流程共享的 AppState 与调色板数据。</p>
+      </div>
+      <div class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+        
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="state.js file:src/state.js src/state.js 共享 appstate，保存图片数据、生成图纸、编辑模式、缩放状态、裁剪状态、草稿和工作台设置。 frontend module">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">state.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">共享 AppState，保存图片数据、生成图纸、编辑模式、缩放状态、裁剪状态、草稿和工作台设置。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/state.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="constants.js file:src/constants.js src/constants.js 支持品牌和色组的调色板数据库。 frontend module palette-data">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">constants.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">支持品牌和色组的调色板数据库。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">src/constants.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="get_mard_221.js file:get_mard_221.js get_mard_221.js 辅助脚本，导入调色板常量以提取或检查 mard 颜色数据。 project">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">get_mard_221.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">辅助脚本，导入调色板常量以提取或检查 MARD 颜色数据。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">get_mard_221.js</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="generate_check_page_dedup.js file:generate_check_page_dedup.js generate_check_page_dedup.js 辅助脚本，用于生成或支持带去重逻辑的调色板检查页面。 project">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">generate_check_page_dedup.js</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">file</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">辅助脚本，用于生成或支持带去重逻辑的调色板检查页面。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">generate_check_page_dedup.js</p>
+    </article>
+  
+      </div>
+    </section>
+  
+
+    <section class="rounded-md border border-zinc-200 bg-zinc-50">
+      <div class="border-b border-zinc-200 px-4 py-3">
+        <div class="flex items-center justify-between gap-3">
+          <h3 class="text-lg font-semibold">文档与归档</h3>
+          <span class="text-sm text-zinc-500">10 项</span>
+        </div>
+        <p class="mt-1 text-sm leading-6 text-zinc-600">项目交接说明、参考数据、问题记录、回归计划和开发总结。</p>
+      </div>
+      <div class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+        
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="readme.md document:readme.md readme.md 项目交接和归档规则，约定多 ai 协作时的长期记忆入口。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">README.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">项目交接和归档规则，约定多 AI 协作时的长期记忆入口。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">README.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="common_issues.md document:common_issues.md common_issues.md 项目常见问题和排查经验记录。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">COMMON_ISSUES.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">项目常见问题和排查经验记录。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">COMMON_ISSUES.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="mard_colors.md document:mard_colors.md mard_colors.md mard 拼豆颜色数据参考文档。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">MARD_COLORS.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">MARD 拼豆颜色数据参考文档。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">MARD_COLORS.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="guige221.md document:guige221.md guige221.md 拼豆颜色或规格数据相关参考说明。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">guige221.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">拼豆颜色或规格数据相关参考说明。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">guige221.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="guige264.md document:guige264.md guige264.md 规格说明占位或草稿文件。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">guige264.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">规格说明占位或草稿文件。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">guige264.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="test_cases.md document:docs/archive/test_cases.md docs/archive/test_cases.md 关键用户流程的手工回归测试清单。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">TEST_CASES.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">关键用户流程的手工回归测试清单。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">docs/archive/TEST_CASES.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="refactor_spec.md document:docs/archive/refactor_spec.md docs/archive/refactor_spec.md 模块边界和迁移步骤的重构计划。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">REFACTOR_SPEC.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">模块边界和迁移步骤的重构计划。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">docs/archive/REFACTOR_SPEC.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="gonnengguize.md document:docs/archive/gonnengguize.md docs/archive/gonnengguize.md 归档的项目规则或流程说明。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">gonnengguize.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">归档的项目规则或流程说明。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">docs/archive/gonnengguize.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="development_summary_20260409_1755.md document:docs/archive/development_summary_20260409_1755.md docs/archive/development_summary_20260409_1755.md 最新开发归档，记录近期工作和后续计划。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">DEVELOPMENT_SUMMARY_20260409_1755.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">最新开发归档，记录近期工作和后续计划。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">docs/archive/DEVELOPMENT_SUMMARY_20260409_1755.md</p>
+    </article>
+  
+    <article class="node-card rounded-md border border-zinc-200 bg-white p-3" data-search="development_summary_20260409_1658.md document:docs/archive/development_summary_20260409_1658.md docs/archive/development_summary_20260409_1658.md 编辑模块抽离和剩余回归风险的开发总结。 documentation">
+      <div class="flex items-center justify-between gap-3">
+        <h4 class="truncate font-medium">DEVELOPMENT_SUMMARY_20260409_1658.md</h4>
+        <span class="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">document</span>
+      </div>
+      <p class="mt-2 text-sm leading-6 text-zinc-600">编辑模块抽离和剩余回归风险的开发总结。</p>
+      <p class="mt-2 break-all font-mono text-xs text-zinc-500">docs/archive/DEVELOPMENT_SUMMARY_20260409_1658.md</p>
+    </article>
+  
+      </div>
+    </section>
+  
+      </div>
+      <aside class="space-y-3">
+        <h2 class="text-xl font-semibold">导览路线</h2>
+        
+  <article class="rounded-md border border-zinc-200 bg-white p-4">
+    <div class="text-xs font-semibold text-teal-700">Step 1</div>
+    <h3 class="mt-1 font-semibold">项目概览</h3>
+    <p class="mt-2 text-sm leading-6 text-zinc-600">先看 README 和最新归档，了解项目规则、交接方式以及最近一次模块拆分。</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">README.md</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">DEVELOPMENT_SUMMARY_20260409_1755.md</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">DEVELOPMENT_SUMMARY_20260409_1658.md</span>
+    </div>
+  </article>
+
+
+  <article class="rounded-md border border-zinc-200 bg-white p-4">
+    <div class="text-xs font-semibold text-teal-700">Step 2</div>
+    <h3 class="mt-1 font-semibold">浏览器入口</h3>
+    <p class="mt-2 text-sm leading-6 text-zinc-600">从 HTML 入口进入 JavaScript bootstrap，理解上传、处理、编辑、缩放和导出控件如何绑定。</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">index.html</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">main.js</span>
+    </div>
+  </article>
+
+
+  <article class="rounded-md border border-zinc-200 bg-white p-4">
+    <div class="text-xs font-semibold text-teal-700">Step 3</div>
+    <h3 class="mt-1 font-semibold">UI 工作流</h3>
+    <p class="mt-2 text-sm leading-6 text-zinc-600">查看流程协调模块和共享编辑工具，理解 AppState 如何在上传、清理、生成、编辑、草稿和导出阶段流转。</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">ui.js</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">editor.js</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">state.js</span>
+    </div>
+  </article>
+
+
+  <article class="rounded-md border border-zinc-200 bg-white p-4">
+    <div class="text-xs font-semibold text-teal-700">Step 4</div>
+    <h3 class="mt-1 font-semibold">图像处理流水线</h3>
+    <p class="mt-2 text-sm leading-6 text-zinc-600">阅读图像处理核心，理解源像素如何转换为 pixel art，并进一步匹配到拼豆调色板。</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">processor.js</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">constants.js</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">utils.js</span>
+    </div>
+  </article>
+
+
+  <article class="rounded-md border border-zinc-200 bg-white p-4">
+    <div class="text-xs font-semibold text-teal-700">Step 5</div>
+    <h3 class="mt-1 font-semibold">Canvas 与导出</h3>
+    <p class="mt-2 text-sm leading-6 text-zinc-600">查看生成的图纸数据如何渲染成 Canvas 图纸，并导出为可下载图片。</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">renderer.js</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">exporter.js</span>
+    </div>
+  </article>
+
+
+  <article class="rounded-md border border-zinc-200 bg-white p-4">
+    <div class="text-xs font-semibold text-teal-700">Step 6</div>
+    <h3 class="mt-1 font-semibold">编辑模式</h3>
+    <p class="mt-2 text-sm leading-6 text-zinc-600">最后看缩放、调色、删除和边缘调整模块，这里是最需要回归验证的交互区域。</p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">zoom.js</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">adjust.js</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">delete.js</span><span class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">edge.js</span>
+    </div>
+  </article>
+
+      </aside>
+    </section>
+
+    <section class="rounded-md border border-zinc-200 bg-white p-4">
+      <h2 class="text-xl font-semibold">主要关系</h2>
+      <div class="mt-3 overflow-auto">
+        <table class="w-full min-w-[640px] text-left text-sm">
+          <thead class="border-b border-zinc-200 text-xs uppercase text-zinc-500">
+            <tr><th class="pb-2 pr-3">来源</th><th class="pb-2 pr-3">关系</th><th class="pb-2">目标</th></tr>
+          </thead>
+          <tbody>
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">get_mard_221.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">constants.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">main.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">main.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">ui.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">main.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">exporter.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">main.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">zoom.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">processor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">renderer.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">constants.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">editor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">delete.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">zoom.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">edge.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">adjust.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">renderer.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">processor.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">utils.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">processor.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">constants.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">exporter.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">editor.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">editor.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">processor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">editor.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">renderer.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">editor.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">constants.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">zoom.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">zoom.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">renderer.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">adjust.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">adjust.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">renderer.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">adjust.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">delete.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">adjust.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">editor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">delete.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">delete.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">renderer.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">delete.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">editor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">edge.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">edge.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">renderer.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">edge.js</td>
+        <td class="py-2 pr-3 text-zinc-500">导入</td>
+        <td class="py-2">adjust.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">index.html</td>
+        <td class="py-2 pr-3 text-zinc-500">依赖</td>
+        <td class="py-2">main.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">index.html</td>
+        <td class="py-2 pr-3 text-zinc-500">依赖</td>
+        <td class="py-2">style.css</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">workbench.html</td>
+        <td class="py-2 pr-3 text-zinc-500">依赖</td>
+        <td class="py-2">main.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">main.js</td>
+        <td class="py-2 pr-3 text-zinc-500">调用</td>
+        <td class="py-2">ui.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">调用</td>
+        <td class="py-2">processor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">调用</td>
+        <td class="py-2">renderer.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">ui.js</td>
+        <td class="py-2 pr-3 text-zinc-500">调用</td>
+        <td class="py-2">editor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">adjust.js</td>
+        <td class="py-2 pr-3 text-zinc-500">调用</td>
+        <td class="py-2">editor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">delete.js</td>
+        <td class="py-2 pr-3 text-zinc-500">调用</td>
+        <td class="py-2">editor.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">edge.js</td>
+        <td class="py-2 pr-3 text-zinc-500">调用</td>
+        <td class="py-2">adjust.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">processor.js</td>
+        <td class="py-2 pr-3 text-zinc-500">读取</td>
+        <td class="py-2">constants.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">renderer.js</td>
+        <td class="py-2 pr-3 text-zinc-500">写入</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">exporter.js</td>
+        <td class="py-2 pr-3 text-zinc-500">读取</td>
+        <td class="py-2">state.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">TEST_CASES.md</td>
+        <td class="py-2 pr-3 text-zinc-500">记录</td>
+        <td class="py-2">adjust.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">TEST_CASES.md</td>
+        <td class="py-2 pr-3 text-zinc-500">记录</td>
+        <td class="py-2">delete.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">TEST_CASES.md</td>
+        <td class="py-2 pr-3 text-zinc-500">记录</td>
+        <td class="py-2">edge.js</td>
+      </tr>
+    
+
+      <tr class="border-b border-zinc-100">
+        <td class="py-2 pr-3">REFACTOR_SPEC.md</td>
+        <td class="py-2 pr-3 text-zinc-500">记录</td>
+        <td class="py-2">ui.js</td>
+      </tr>
+    </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script>
+    const searchBox = document.getElementById('searchBox');
+    const cards = Array.from(document.querySelectorAll('.node-card'));
+    searchBox.addEventListener('input', () => {
+      const query = searchBox.value.trim().toLowerCase();
+      for (const card of cards) {
+        card.style.display = !query || card.dataset.search.includes(query) ? '' : 'none';
+      }
+    });
+  </script>
+</body>
+</html>

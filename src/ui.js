@@ -1084,6 +1084,104 @@ export function updateUndoButton() {
     }
 }
 
+function getSourceCanvasPoint(event) {
+    const sourceCanvas = document.getElementById('source-canvas');
+    if (!sourceCanvas) return null;
+
+    const rect = sourceCanvas.getBoundingClientRect();
+    const pointer = event.touches ? event.touches[0] : event.changedTouches ? event.changedTouches[0] : event;
+    const displayX = pointer.clientX - rect.left;
+    const displayY = pointer.clientY - rect.top;
+    const scaleX = sourceCanvas.width / rect.width;
+    const scaleY = sourceCanvas.height / rect.height;
+
+    return {
+        displayX,
+        displayY,
+        canvasX: Math.max(0, Math.min(sourceCanvas.width - 1, Math.floor(displayX * scaleX))),
+        canvasY: Math.max(0, Math.min(sourceCanvas.height - 1, Math.floor(displayY * scaleY)))
+    };
+}
+
+function getBgSelectionOverlay() {
+    const container = document.getElementById('canvas-container');
+    if (!container) return null;
+
+    let overlay = document.getElementById('bg-selection-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'bg-selection-overlay';
+        overlay.className = 'absolute border-2 border-primary bg-primary/20 pointer-events-none hidden z-20';
+        container.appendChild(overlay);
+    }
+    return overlay;
+}
+
+function updateBgSelectionOverlay(start, current) {
+    const overlay = getBgSelectionOverlay();
+    if (!overlay) return;
+
+    const sourceCanvas = document.getElementById('source-canvas');
+    const container = document.getElementById('canvas-container');
+    const canvasRect = sourceCanvas.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const offsetX = canvasRect.left - containerRect.left;
+    const offsetY = canvasRect.top - containerRect.top;
+    const left = Math.min(start.displayX, current.displayX);
+    const top = Math.min(start.displayY, current.displayY);
+    const width = Math.abs(current.displayX - start.displayX);
+    const height = Math.abs(current.displayY - start.displayY);
+
+    overlay.style.left = `${left + offsetX}px`;
+    overlay.style.top = `${top + offsetY}px`;
+    overlay.style.width = `${width}px`;
+    overlay.style.height = `${height}px`;
+    overlay.classList.remove('hidden');
+}
+
+function clearBgSelectionOverlay() {
+    const overlay = document.getElementById('bg-selection-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.style.width = '0px';
+        overlay.style.height = '0px';
+    }
+}
+
+function pushSourceCanvasHistory(sourceCanvas) {
+    const ctx = sourceCanvas.getContext('2d');
+    AppState.history.push(ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height));
+    if (AppState.history.length > 10) AppState.history.shift();
+    updateUndoButton();
+}
+
+function removeSelectedBackgroundRect(start, end) {
+    const sourceCanvas = document.getElementById('source-canvas');
+    if (!sourceCanvas) return false;
+
+    const x1 = Math.min(start.canvasX, end.canvasX);
+    const y1 = Math.min(start.canvasY, end.canvasY);
+    const x2 = Math.max(start.canvasX, end.canvasX);
+    const y2 = Math.max(start.canvasY, end.canvasY);
+    const width = x2 - x1 + 1;
+    const height = y2 - y1 + 1;
+    if (width < 2 || height < 2) return false;
+
+    const ctx = sourceCanvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+    const data = imageData.data;
+
+    for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x <= x2; x++) {
+            data[(y * sourceCanvas.width + x) * 4 + 3] = 0;
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    pushSourceCanvasHistory(sourceCanvas);
+    return true;
+}
+
 /**
  * 撤销背景移除
  */
@@ -1102,6 +1200,8 @@ export function undoBgRemoval() {
  */
 export function toggleBgRemovalMode() {
     AppState.isBgRemoving = !AppState.isBgRemoving;
+    AppState.bgRemovalSelection = null;
+    clearBgSelectionOverlay();
     const tip = document.getElementById('bg-remove-tip');
     const btn = document.getElementById('remove-bg-btn');
     const tolerancePanel = document.getElementById('tolerance-panel');
@@ -1124,41 +1224,81 @@ export function toggleBgRemovalMode() {
     }
 }
 
+export function startBgRemovalSelection(event) {
+    if (!AppState.isBgRemoving) return false;
+
+    const point = getSourceCanvasPoint(event);
+    if (!point) return false;
+
+    AppState.bgRemovalSelection = {
+        start: point,
+        current: point,
+        isDragging: true,
+        didDrag: false,
+        suppressNextClick: false
+    };
+    clearBgSelectionOverlay();
+    return true;
+}
+
+export function moveBgRemovalSelection(event) {
+    const selection = AppState.bgRemovalSelection;
+    if (!AppState.isBgRemoving || !selection || !selection.isDragging) return false;
+
+    const point = getSourceCanvasPoint(event);
+    if (!point) return false;
+
+    selection.current = point;
+    const dx = Math.abs(point.displayX - selection.start.displayX);
+    const dy = Math.abs(point.displayY - selection.start.displayY);
+    if (dx >= 6 || dy >= 6) {
+        selection.didDrag = true;
+        updateBgSelectionOverlay(selection.start, point);
+    }
+    return true;
+}
+
+export function endBgRemovalSelection(event) {
+    const selection = AppState.bgRemovalSelection;
+    if (!AppState.isBgRemoving || !selection || !selection.isDragging) return false;
+
+    const point = getSourceCanvasPoint(event) || selection.current;
+    selection.isDragging = false;
+    clearBgSelectionOverlay();
+
+    if (!selection.didDrag) return false;
+
+    const removed = removeSelectedBackgroundRect(selection.start, point);
+    AppState.bgRemovalSelection = { suppressNextClick: true };
+    if (removed) {
+        toggleBgRemovalMode();
+    }
+    return true;
+}
+
 /**
  * 处理原图 Canvas 点击移除背景
  */
 export function handleCanvasClick(e) {
     if (!AppState.isBgRemoving) return;
-
-    const sourceCanvas = document.getElementById('source-canvas');
-    const rect = sourceCanvas.getBoundingClientRect();
-    let x, y;
-    
-    if (e.touches) {
-        x = e.touches[0].clientX - rect.left;
-        y = e.touches[0].clientY - rect.top;
-    } else {
-        x = e.clientX - rect.left;
-        y = e.clientY - rect.top;
+    if (AppState.bgRemovalSelection?.suppressNextClick) {
+        AppState.bgRemovalSelection = null;
+        return;
     }
 
-    // 将显示坐标换算为画布像素坐标
-    const scaleX = sourceCanvas.width / rect.width;
-    const scaleY = sourceCanvas.height / rect.height;
-    const startX = Math.floor(x * scaleX);
-    const startY = Math.floor(y * scaleY);
+    const sourceCanvas = document.getElementById('source-canvas');
+    const point = getSourceCanvasPoint(e);
+    if (!sourceCanvas || !point) return;
 
     const ctx = sourceCanvas.getContext('2d');
     const tolerance = parseInt(document.getElementById('tolerance-slider').value);
     const imageData = ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
-    
-    const resultData = removeBackground(imageData, startX, startY, tolerance);
+
+    const resultData = removeBackground(imageData, point.canvasX, point.canvasY, tolerance);
     ctx.putImageData(resultData, 0, 0);
 
-    AppState.history.push(ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height));
-    if (AppState.history.length > 10) AppState.history.shift();
-    updateUndoButton();
-    toggleBgRemovalMode(); // 点击一次后自动退出
+    pushSourceCanvasHistory(sourceCanvas);
+    toggleBgRemovalMode();
 }
 
 /**

@@ -12,6 +12,9 @@ import {
     handleGeneratePattern,
     handleGeneratePatternLegacy,
     handleCanvasClick,
+    startBgRemovalSelection,
+    moveBgRemovalSelection,
+    endBgRemovalSelection,
     updateTolerance,
     toggleColorLimit,
     updateMaxColorsDisplay,
@@ -267,12 +270,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const sourceCanvas = document.getElementById('source-canvas');
     if (sourceCanvas) {
         sourceCanvas.onclick = handleCanvasClick;
-        sourceCanvas.ontouchstart = (e) => {
-            if (AppState.isBgRemoving) {
+        sourceCanvas.addEventListener('mousedown', (e) => {
+            if (startBgRemovalSelection(e)) {
                 e.preventDefault();
-                handleCanvasClick(e);
             }
-        };
+        });
+        sourceCanvas.addEventListener('mousemove', (e) => {
+            if (moveBgRemovalSelection(e)) {
+                e.preventDefault();
+            }
+        });
+        sourceCanvas.addEventListener('mouseup', (e) => {
+            if (endBgRemovalSelection(e)) {
+                e.preventDefault();
+            }
+        });
+        sourceCanvas.addEventListener('mouseleave', (e) => {
+            if (endBgRemovalSelection(e)) {
+                e.preventDefault();
+            }
+        });
+        sourceCanvas.addEventListener('touchstart', (e) => {
+            if (startBgRemovalSelection(e)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        sourceCanvas.addEventListener('touchmove', (e) => {
+            if (moveBgRemovalSelection(e)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        sourceCanvas.addEventListener('touchend', (e) => {
+            if (endBgRemovalSelection(e)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     }
 
     const cropOverlay = document.getElementById('workbench-crop-overlay');

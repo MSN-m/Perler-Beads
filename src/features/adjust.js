@@ -144,6 +144,49 @@ function applyFillSelection(canvas) {
     updateAdjustUndoButton();
 }
 
+function applyClearSelection(canvas) {
+
+    const selection = AppState.fillSelection;
+
+    if (!selection) return;
+
+    const minX = Math.min(selection.startX, selection.endX);
+
+    const maxX = Math.max(selection.startX, selection.endX);
+
+    const minY = Math.min(selection.startY, selection.endY);
+
+    const maxY = Math.max(selection.startY, selection.endY);
+
+    const indices = [];
+
+    const prevColors = [];
+
+    for (let y = minY; y <= maxY; y++) {
+        for (let x = minX; x <= maxX; x++) {
+            const idx = y * AppState.gridWidth + x;
+            const pixel = AppState.stagedPixelData[idx];
+            if (!pixel || pixel.id === 'NONE') continue;
+            indices.push(idx);
+            prevColors.push({ ...pixel });
+            AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
+        }
+    }
+
+    if (indices.length > 0) {
+        AppState.stagedActions.push({
+            indices,
+            prevColors,
+            nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }
+        });
+    }
+
+    AppState.fillSelection = null;
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    calculateStats();
+    updateAdjustUndoButton();
+}
+
 function getNearestPaletteColor(color) {
     const palette = getCurrentPalette();
     if (!palette.length) return color;
@@ -886,7 +929,7 @@ export function handleResultCanvasClickForAdjust(e) {
 
 export function startFillSelection(e) {
 
-    if (!AppState.fillMode || !AppState.fillColor) return false;
+    if ((!AppState.fillMode || !AppState.fillColor) && !AppState.clearBaseMode) return false;
 
     const hit = getGridHitFromEvent(e);
 
@@ -896,7 +939,8 @@ export function startFillSelection(e) {
         startX: hit.gx,
         startY: hit.gy,
         endX: hit.gx,
-        endY: hit.gy
+        endY: hit.gy,
+        didDrag: false
     };
 
     const canvas = document.getElementById('result-canvas');
@@ -912,7 +956,7 @@ export function startFillSelection(e) {
 
 export function moveFillSelection(e) {
 
-    if (!AppState.fillMode || !AppState.fillColor || !AppState.fillSelection) return false;
+    if (((!AppState.fillMode || !AppState.fillColor) && !AppState.clearBaseMode) || !AppState.fillSelection) return false;
 
     const hit = getGridHitFromEvent(e);
 
@@ -921,6 +965,10 @@ export function moveFillSelection(e) {
     AppState.fillSelection.endX = hit.gx;
 
     AppState.fillSelection.endY = hit.gy;
+
+    if (hit.gx !== AppState.fillSelection.startX || hit.gy !== AppState.fillSelection.startY) {
+        AppState.fillSelection.didDrag = true;
+    }
 
     const canvas = document.getElementById('result-canvas');
     renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
@@ -935,11 +983,20 @@ export function moveFillSelection(e) {
 
 export function endFillSelection() {
 
-    if (!AppState.fillMode || !AppState.fillColor || !AppState.fillSelection) return false;
+    if (((!AppState.fillMode || !AppState.fillColor) && !AppState.clearBaseMode) || !AppState.fillSelection) return false;
 
     const canvas = document.getElementById('result-canvas');
 
-    applyFillSelection(canvas);
+    if (AppState.clearBaseMode) {
+        if (!AppState.fillSelection.didDrag) {
+            AppState.fillSelection = null;
+            renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+            return false;
+        }
+        applyClearSelection(canvas);
+    } else {
+        applyFillSelection(canvas);
+    }
 
     return true;
 }

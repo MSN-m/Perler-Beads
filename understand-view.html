@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perler Beads 架构图谱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .node-card { transition: border-color .15s ease, background .15s ease; }
+    .node-card.is-active { border-color: #0f766e; background: #f0fdfa; }
+  </style>
+</head>
+<body class="bg-zinc-50 text-zinc-900">
+  <main class="mx-auto max-w-7xl px-4 py-6">
+    <header class="mb-5 flex flex-col gap-3 border-b border-zinc-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-normal">Perler Beads 架构图谱</h1>
+        <p id="projectSummary" class="mt-1 max-w-3xl text-sm text-zinc-600"></p>
+      </div>
+      <div id="stats" class="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4"></div>
+    </header>
+
+    <section class="mb-5 grid gap-4 lg:grid-cols-[1.25fr_.75fr]">
+      <div class="rounded-md border border-zinc-200 bg-white p-4">
+        <div class="mb-3 flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold">分层视图</h2>
+          <input id="searchBox" class="w-64 rounded border border-zinc-300 px-3 py-2 text-sm" placeholder="搜索文件、函数、标签">
+        </div>
+        <div id="layers" class="space-y-3"></div>
+      </div>
+
+      <aside class="rounded-md border border-zinc-200 bg-white p-4">
+        <h2 class="mb-3 text-base font-semibold">导览路线</h2>
+        <ol id="tour" class="space-y-3"></ol>
+      </aside>
+    </section>
+
+    <section class="grid gap-4 lg:grid-cols-[1fr_1fr]">
+      <div class="rounded-md border border-zinc-200 bg-white p-4">
+        <h2 class="mb-3 text-base font-semibold">关系边</h2>
+        <div id="edges" class="max-h-[520px] overflow-auto text-sm"></div>
+      </div>
+      <div class="rounded-md border border-zinc-200 bg-white p-4">
+        <h2 class="mb-3 text-base font-semibold">当前选择</h2>
+        <div id="detail" class="text-sm text-zinc-600">点击任意节点查看详情。</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = { graph: null, activeNodeId: null, query: "" };
+    const typeTone = {
+      file: "bg-sky-50 text-sky-800 border-sky-200",
+      function: "bg-emerald-50 text-emerald-800 border-emerald-200",
+      concept: "bg-violet-50 text-violet-800 border-violet-200",
+      document: "bg-amber-50 text-amber-800 border-amber-200",
+      service: "bg-rose-50 text-rose-800 border-rose-200"
+    };
+
+    const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[ch]));
+
+    function nodeById(id) {
+      return state.graph.nodes.find((node) => node.id === id);
+    }
+
+    function renderStats() {
+      const graph = state.graph;
+      const items = [
+        ["文件", graph.project.analyzedFiles || graph.nodes.filter((n) => n.filePath).length],
+        ["节点", graph.nodes.length],
+        ["关系", graph.edges.length],
+        ["分层", graph.layers.length]
+      ];
+      document.getElementById("stats").innerHTML = items.map(([label, value]) => `
+        <div class="rounded border border-zinc-200 bg-white px-3 py-2">
+          <div class="text-xs text-zinc-500">${label}</div>
+          <div class="text-lg font-semibold">${value}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderLayers() {
+      const query = state.query.trim().toLowerCase();
+      const layersHtml = state.graph.layers.map((layer) => {
+        const nodes = layer.nodeIds.map(nodeById).filter(Boolean).filter((node) => {
+          if (!query) return true;
+          return [node.name, node.id, node.filePath, node.summary, ...(node.tags || [])]
+            .join(" ").toLowerCase().includes(query);
+        });
+        if (!nodes.length && query) return "";
+        return `
+          <section class="rounded-md border border-zinc-200">
+            <div class="border-b border-zinc-200 bg-zinc-50 px-3 py-2">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="font-medium">${esc(layer.name)}</h3>
+                <span class="text-xs text-zinc-500">${nodes.length} 项</span>
+              </div>
+              <p class="mt-1 text-xs text-zinc-600">${esc(layer.description)}</p>
+            </div>
+            <div class="grid gap-2 p-3 md:grid-cols-2">
+              ${nodes.map(renderNodeCard).join("")}
+            </div>
+          </section>
+        `;
+      }).join("");
+      document.getElementById("layers").innerHTML = layersHtml || `<p class="text-sm text-zinc-500">没有匹配结果。</p>`;
+      document.querySelectorAll("[data-node-id]").forEach((el) => {
+        el.addEventListener("click", () => selectNode(el.dataset.nodeId));
+      });
+    }
+
+    function renderNodeCard(node) {
+      const tone = typeTone[node.type] || "bg-zinc-50 text-zinc-700 border-zinc-200";
+      const active = node.id === state.activeNodeId ? "is-active" : "";
+      return `
+        <button data-node-id="${esc(node.id)}" class="node-card ${active} w-full rounded-md border border-zinc-200 p-3 text-left">
+          <div class="flex items-center justify-between gap-2">
+            <span class="truncate font-medium">${esc(node.name)}</span>
+            <span class="shrink-0 rounded border px-2 py-0.5 text-xs ${tone}">${esc(node.type)}</span>
+          </div>
+          <p class="mt-2 line-clamp-2 text-xs leading-5 text-zinc-600">${esc(node.summary)}</p>
+          <div class="mt-2 flex flex-wrap gap-1">
+            ${(node.tags || []).slice(0, 4).map((tag) => `<span class="rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">${esc(tag)}</span>`).join("")}
+          </div>
+        </button>
+      `;
+    }
+
+    function renderTour() {
+      document.getElementById("tour").innerHTML = state.graph.tour.map((step) => `
+        <li class="rounded-md border border-zinc-200 p-3">
+          <div class="text-xs font-semibold text-teal-700">Step ${step.order}</div>
+          <div class="mt-1 font-medium">${esc(step.title)}</div>
+          <p class="mt-1 text-sm leading-5 text-zinc-600">${esc(step.description)}</p>
+          <div class="mt-2 flex flex-wrap gap-1">
+            ${step.nodeIds.map((id) => `<button data-node-id="${esc(id)}" class="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-700">${esc((nodeById(id) || {}).name || id)}</button>`).join("")}
+          </div>
+        </li>
+      `).join("");
+      document.querySelectorAll("#tour [data-node-id]").forEach((el) => {
+        el.addEventListener("click", () => selectNode(el.dataset.nodeId));
+      });
+    }
+
+    function renderEdges() {
+      const rows = state.graph.edges.slice(0, 300).map((edge) => {
+        const source = nodeById(edge.source);
+        const target = nodeById(edge.target);
+        return `
+          <div class="grid grid-cols-[1fr_auto_1fr] gap-2 border-b border-zinc-100 py-2">
+            <button data-node-id="${esc(edge.source)}" class="truncate text-left text-teal-700">${esc(source?.name || edge.source)}</button>
+            <span class="rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">${esc(edge.type)}</span>
+            <button data-node-id="${esc(edge.target)}" class="truncate text-left text-teal-700">${esc(target?.name || edge.target)}</button>
+          </div>
+        `;
+      }).join("");
+      document.getElementById("edges").innerHTML = rows;
+      document.querySelectorAll("#edges [data-node-id]").forEach((el) => {
+        el.addEventListener("click", () => selectNode(el.dataset.nodeId));
+      });
+    }
+
+    function selectNode(id) {
+      state.activeNodeId = id;
+      const node = nodeById(id);
+      const incoming = state.graph.edges.filter((edge) => edge.target === id);
+      const outgoing = state.graph.edges.filter((edge) => edge.source === id);
+      document.getElementById("detail").innerHTML = node ? `
+        <div class="space-y-3">
+          <div>
+            <div class="text-xs uppercase text-zinc-500">${esc(node.type)}</div>
+            <h3 class="mt-1 text-lg font-semibold text-zinc-900">${esc(node.name)}</h3>
+            <p class="mt-1 text-zinc-600">${esc(node.summary)}</p>
+          </div>
+          <div class="rounded bg-zinc-50 p-3">
+            <div class="text-xs text-zinc-500">路径</div>
+            <div class="mt-1 break-all font-mono text-xs text-zinc-800">${esc(node.filePath || node.id)}</div>
+          </div>
+          <div>
+            <div class="mb-1 font-medium">流出关系</div>
+            ${renderEdgeList(outgoing)}
+          </div>
+          <div>
+            <div class="mb-1 font-medium">流入关系</div>
+            ${renderEdgeList(incoming)}
+          </div>
+        </div>
+      ` : "未找到节点。";
+      renderLayers();
+    }
+
+    function renderEdgeList(edges) {
+      if (!edges.length) return `<p class="text-zinc-500">无</p>`;
+      return `<ul class="space-y-1">${edges.slice(0, 12).map((edge) => {
+        const other = edge.source === state.activeNodeId ? nodeById(edge.target) : nodeById(edge.source);
+        return `<li class="text-sm"><span class="text-zinc-500">${esc(edge.type)}</span> <button data-node-id="${esc(other?.id || "")}" class="text-teal-700">${esc(other?.name || edge.target || edge.source)}</button></li>`;
+      }).join("")}</ul>`;
+    }
+
+    async function init() {
+      const response = await fetch(".understand-anything/knowledge-graph.json");
+      state.graph = await response.json();
+      document.getElementById("projectSummary").textContent = state.graph.project.description;
+      state.graph.project.analyzedFiles = state.graph.project.analyzedFiles || 30;
+      renderStats();
+      renderLayers();
+      renderTour();
+      renderEdges();
+      document.getElementById("detail").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-node-id]");
+        if (button) selectNode(button.dataset.nodeId);
+      });
+      document.getElementById("searchBox").addEventListener("input", (event) => {
+        state.query = event.target.value;
+        renderLayers();
+      });
+    }
+
+    init().catch((error) => {
+      document.body.innerHTML = `<main class="mx-auto max-w-2xl p-6"><h1 class="text-xl font-semibold">图谱加载失败</h1><p class="mt-2 text-zinc-600">${esc(error.message)}</p><p class="mt-4 text-sm text-zinc-500">请通过项目本地服务器打开本页，而不是直接双击 HTML 文件。</p></main>`;
+    });
+  </script>
+</body>
+</html>
