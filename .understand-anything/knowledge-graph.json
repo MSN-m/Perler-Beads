@@ -14,8 +14,8 @@
       "IndexedDB"
     ],
     "description": "无构建浏览器应用：把上传图片转换为匹配拼豆调色板的图案，并生成可打印图纸。",
-    "analyzedAt": "2026-05-29T07:37:17.836Z",
-    "gitCommitHash": "413673e01984a8372d3eee6c0767386e9e808e62"
+    "analyzedAt": "2026-06-05T09:26:21.694Z",
+    "gitCommitHash": "3b7464055d5e0702cf785ee944614e59c1ce7e03"
   },
   "nodes": [
     {
