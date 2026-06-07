@@ -50,6 +50,10 @@ import {
     collapseWorkbenchEditToolbar,
     expandWorkbenchEditToolbar,
     toggleWorkbenchSettingsPanel,
+    togglePalettePanel,
+    closePalettePanel,
+    updatePalettePanelQuery,
+    handlePaletteColorSelect,
     updatePixelArtControlDisplays,
     updateWorkbenchUI,
     toggleEdgeAdjustMode,
@@ -81,6 +85,8 @@ const resetProjectForNewImage = () => {
     AppState.fillColor = null;
     AppState.fillColorId = null;
     AppState.fillSourceIndex = null;
+    AppState.palettePanelOpen = false;
+    AppState.palettePanelQuery = '';
     AppState.workbenchSettingsCollapsed = false;
     AppState.workbenchToolbarCollapsed = false;
     AppState.cropRect = null;
@@ -265,6 +271,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleWorkbenchSettingsBtn = document.getElementById('toggle-workbench-settings-btn');
     if (toggleWorkbenchSettingsBtn) {
         toggleWorkbenchSettingsBtn.addEventListener('click', toggleWorkbenchSettingsPanel);
+    }
+
+    const togglePalettePanelBtn = document.getElementById('toggle-palette-panel-btn');
+    if (togglePalettePanelBtn) {
+        togglePalettePanelBtn.addEventListener('click', togglePalettePanel);
+    }
+
+    const closePalettePanelBtn = document.getElementById('close-palette-panel-btn');
+    if (closePalettePanelBtn) {
+        closePalettePanelBtn.addEventListener('click', closePalettePanel);
+    }
+
+    const paletteSearchInput = document.getElementById('palette-search-input');
+    if (paletteSearchInput) {
+        paletteSearchInput.addEventListener('input', (e) => updatePalettePanelQuery(e.target.value));
+    }
+
+    const paletteColorGrid = document.getElementById('palette-color-grid');
+    if (paletteColorGrid) {
+        paletteColorGrid.addEventListener('click', (e) => {
+            const button = e.target.closest('button[data-palette-color-id]');
+            if (!button) return;
+            handlePaletteColorSelect(button.getAttribute('data-palette-color-id'));
+        });
     }
 
     const sourceCanvas = document.getElementById('source-canvas');

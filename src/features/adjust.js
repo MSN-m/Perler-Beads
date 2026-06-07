@@ -526,6 +526,7 @@ export function toggleFillMode() {
     }
 
     AppState.fillMode = !AppState.fillMode;
+    AppState.fillSourceMode = 'canvas';
 
     AppState.clearBaseMode = false;
 
@@ -551,8 +552,34 @@ export function toggleFillMode() {
 
 }
 
+export function selectPaletteFillColor(color) {
+    if (!color || color.id === 'NONE') return;
+
+    if (AppState.editMode !== 'adjust') {
+        enterEditSession();
+    }
+
+    AppState.fillMode = true;
+    AppState.fillSourceMode = 'palette';
+    AppState.clearBaseMode = false;
+    AppState.edgeSelectionMode = false;
+    AppState.deleteMode = false;
+    AppState.adjustPhase = 'waiting_receiver';
+    AppState.receiverIndex = null;
+    AppState.fillColorId = color.id;
+    AppState.fillColor = { id: color.id, r: color.r, g: color.g, b: color.b };
+    AppState.fillSourceIndex = null;
+    AppState.fillSourceSample = null;
+    AppState.fillSelection = null;
+
+    const resultCanvas = document.getElementById('result-canvas');
+    renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    calculateStats();
+    updateAdjustUndoButton();
+}
+
 export function setFillSourceMode(mode) {
-    if (mode !== 'canvas' && mode !== 'original') return;
+    if (mode !== 'canvas' && mode !== 'original' && mode !== 'palette') return;
     AppState.fillSourceMode = mode;
     AppState.fillColor = null;
     AppState.fillColorId = null;

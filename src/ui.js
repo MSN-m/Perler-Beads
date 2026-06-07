@@ -5,7 +5,7 @@ import { AppState } from './state.js';
 import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, mapPixelArtToBeads } from './processor.js';
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
-import { calculateStats, configureEditorActions, deepClonePixels, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
+import { calculateStats, configureEditorActions, deepClonePixels, getCurrentPalette, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
 import { toggleDeleteMode as _toggleDeleteMode } from './features/delete.js';
 import { resetZoom as _resetZoom } from './features/zoom.js';
 import { toggleEdgeAdjustMode as _toggleEdgeAdjustMode } from './features/edge.js';
@@ -13,6 +13,7 @@ import {
     enterEditSession as _enterEditSession,
     toggleFillMode as _toggleFillMode,
     toggleClearBaseMode as _toggleClearBaseMode,
+    selectPaletteFillColor as _selectPaletteFillColor,
     handleResultCanvasClickForAdjust as _handleResultCanvasClickForAdjust,
     setFillSourceMode as _setFillSourceMode,
     handleOriginalFillPick as _handleOriginalFillPick,
@@ -37,6 +38,7 @@ export {
     _toggleEdgeAdjustMode as toggleEdgeAdjustMode,
     _toggleFillMode as toggleFillMode,
     _toggleClearBaseMode as toggleClearBaseMode,
+    _selectPaletteFillColor as selectPaletteFillColor,
     _handleResultCanvasClickForAdjust as handleResultCanvasClickForAdjust,
     _setFillSourceMode as setFillSourceMode,
     _handleOriginalFillPick as handleOriginalFillPick,
@@ -84,11 +86,87 @@ function getWorkbenchSettingsSummary() {
     return `${AppState.gridWidth}x${AppState.gridHeight} · ${brand}${setText} · ${colorLimitText}`;
 }
 
+function getPaletteTitle() {
+    if (AppState.brand === 'mard') return `MARD ${AppState.mardSet} 色`;
+    return (AppState.brand || 'perler').toUpperCase();
+}
+
+function getPaletteTextColor(color) {
+    const yiq = ((color.r * 299) + (color.g * 587) + (color.b * 114)) / 1000;
+    return yiq >= 145 ? '#111827' : '#ffffff';
+}
+
 const WORKBENCH_DRAFTS_DB = 'perler_beads_workbench_drafts_db';
 const WORKBENCH_DRAFTS_STORE = 'drafts';
 
 function hasWorkbenchPattern() {
     return Array.isArray(AppState.pixelData) && AppState.pixelData.length > 0;
+}
+
+function renderPalettePanel() {
+    if (!isWorkbenchLayout()) return;
+    const panel = document.getElementById('palette-panel');
+    const grid = document.getElementById('palette-color-grid');
+    const summary = document.getElementById('palette-panel-summary');
+    const searchInput = document.getElementById('palette-search-input');
+    const toggleBtn = document.getElementById('toggle-palette-panel-btn');
+    if (!panel || !grid || !summary) return;
+
+    const hasPattern = hasWorkbenchPattern();
+    const shouldShow = hasPattern && AppState.palettePanelOpen;
+    panel.classList.toggle('hidden', !shouldShow);
+    toggleBtn?.classList.toggle('bg-primary/10', shouldShow);
+    toggleBtn?.classList.toggle('text-primary', shouldShow);
+    if (!shouldShow) return;
+
+    const query = (AppState.palettePanelQuery || '').trim().toLowerCase();
+    const palette = getCurrentPalette();
+    const filtered = query
+        ? palette.filter((color) => String(color.id).toLowerCase().includes(query))
+        : palette;
+
+    summary.textContent = `${getPaletteTitle()} · ${filtered.length}/${palette.length} 色${AppState.fillColorId ? ` · 当前 ${AppState.fillColorId}` : ''}`;
+    if (searchInput && searchInput.value !== AppState.palettePanelQuery) {
+        searchInput.value = AppState.palettePanelQuery;
+    }
+
+    grid.innerHTML = filtered.map((color) => {
+        const selected = AppState.fillMode && AppState.fillColorId === color.id;
+        const textColor = getPaletteTextColor(color);
+        return `
+            <button type="button" data-palette-color-id="${color.id}"
+                class="h-14 rounded-xl border ${selected ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'} shadow-sm text-[11px] font-bold font-mono active:scale-95 transition"
+                title="${color.id} · RGB(${color.r}, ${color.g}, ${color.b})"
+                style="background-color: rgb(${color.r},${color.g},${color.b}); color: ${textColor};">
+                ${color.id}
+            </button>
+        `;
+    }).join('');
+}
+
+export function togglePalettePanel() {
+    if (!hasWorkbenchPattern()) return;
+    AppState.palettePanelOpen = !AppState.palettePanelOpen;
+    renderPalettePanel();
+}
+
+export function closePalettePanel() {
+    AppState.palettePanelOpen = false;
+    renderPalettePanel();
+}
+
+export function updatePalettePanelQuery(value) {
+    AppState.palettePanelQuery = value || '';
+    renderPalettePanel();
+}
+
+export function handlePaletteColorSelect(colorId) {
+    const color = getCurrentPalette().find((item) => item.id === colorId);
+    if (!color) return;
+    _selectPaletteFillColor(color);
+    AppState.palettePanelOpen = true;
+    renderPalettePanel();
+    updateWorkbenchUI();
 }
 
 function getDraftTimestampLabel(timestamp) {
@@ -436,6 +514,8 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.fillColor = null;
     AppState.fillColorId = null;
     AppState.fillSourceIndex = null;
+    AppState.palettePanelOpen = false;
+    AppState.palettePanelQuery = '';
     AppState.selectedEdgeBeadsIndices = [];
     AppState.comparePreviewScale = 1;
     AppState.comparePreviewOffsetX = 0;
@@ -447,6 +527,8 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.comparePreviewVisible = false;
     AppState.workbenchSettingsCollapsed = true;
     AppState.workbenchToolbarCollapsed = false;
+    AppState.palettePanelOpen = false;
+    AppState.palettePanelQuery = '';
     resetBatchReplaceState();
 
     const gridSizeSlider = document.getElementById('grid-size-slider');
@@ -888,6 +970,7 @@ export function updateWorkbenchUI() {
     setText('pixel-art-status', hasPixelArt ? '预览已生成' : '未生成预览');
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
+    renderPalettePanel();
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
         generateBtn.disabled = !hasImage || !AppState.pixelArtData;
@@ -914,7 +997,13 @@ export function updateWorkbenchUI() {
         exportBtn.classList.toggle('cursor-not-allowed', !hasPattern);
     }
     const modeLabel = AppState.fillMode
-        ? (AppState.fillColorId ? (AppState.fillSourceMode === 'original' ? '原图取色' : '填色中') : '取色填色')
+        ? (AppState.fillColorId
+            ? (AppState.fillSourceMode === 'original'
+                ? '原图取色'
+                : AppState.fillSourceMode === 'palette'
+                    ? `色盘填色 ${AppState.fillColorId}`
+                    : '填色中')
+            : '取色填色')
         : AppState.clearBaseMode
             ? '移除底色'
             : AppState.deleteMode
@@ -923,7 +1012,7 @@ export function updateWorkbenchUI() {
                 ? '边缘调整'
                 : '编辑';
     setText('workbench-active-mode-label', modeLabel);
-    setHidden('fill-source-toggle', !AppState.fillMode);
+    setHidden('fill-source-toggle', !AppState.fillMode || AppState.fillSourceMode === 'palette');
     const canvasBtn = document.getElementById('fill-source-canvas-btn');
     const originalBtn = document.getElementById('fill-source-original-btn');
     if (canvasBtn && originalBtn) {
@@ -1346,6 +1435,8 @@ export function handleGeneratePixelArt() {
     AppState.highlightedColorId = null;
     AppState.workbenchSettingsCollapsed = false;
     AppState.workbenchToolbarCollapsed = false;
+    AppState.palettePanelOpen = false;
+    AppState.palettePanelQuery = '';
     AppState.comparePreviewVisible = false;
     renderPixelArtPreview();
     updateWorkbenchUI();
@@ -1370,6 +1461,8 @@ export function handleGeneratePatternLegacy() {
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchToolbarCollapsed = false;
+    AppState.palettePanelOpen = false;
+    AppState.palettePanelQuery = '';
     AppState.comparePreviewVisible = false;
     goToStep(3);
 }
@@ -1403,6 +1496,8 @@ export function handleGeneratePattern() {
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchToolbarCollapsed = false;
+    AppState.palettePanelOpen = false;
+    AppState.palettePanelQuery = '';
     AppState.comparePreviewScale = 1;
     AppState.comparePreviewOffsetX = 0;
     AppState.comparePreviewOffsetY = 0;
@@ -1448,6 +1543,8 @@ export function resetPatternToGenerated() {
     AppState.fillColorId = null;
     AppState.fillSourceIndex = null;
     AppState.workbenchToolbarCollapsed = false;
+    AppState.palettePanelOpen = false;
+    AppState.palettePanelQuery = '';
     AppState.comparePreviewVisible = false;
     AppState.selectedEdgeBeadsIndices = [];
     AppState.receiverIndex = null;

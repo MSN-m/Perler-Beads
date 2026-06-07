@@ -47,6 +47,8 @@ export const AppState = {
     fillSourceIndex: null,
     fillSourceSample: null,
     fillSelection: null,
+    palettePanelOpen: false,
+    palettePanelQuery: '',
     workbenchSettingsCollapsed: false,
     workbenchToolbarCollapsed: false,
     cropRect: null,

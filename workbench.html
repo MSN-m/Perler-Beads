@@ -108,6 +108,7 @@
                 <div id="workbench-edit-toolbar"
                     class="hidden absolute left-1/2 bottom-6 -translate-x-1/2 z-30 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-white px-4 py-3 flex items-center gap-2">
                     <button id="toggle-fill-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">取色填色</button>
+                    <button id="toggle-palette-panel-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">色盘</button>
                     <button id="toggle-clear-base-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">移除底色</button>
                     <button id="toggle-edge-adjust-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">边缘调整</button>
                     <button id="toggle-delete-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">删除色块</button>
@@ -133,6 +134,22 @@
                     class="hidden absolute right-6 bottom-6 z-30 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-white px-5 py-3 text-sm font-bold hover:text-primary">
                     编辑图纸
                 </button>
+
+                <div id="palette-panel"
+                    class="hidden absolute right-6 bottom-24 z-40 w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
+                    <div class="p-4 border-b border-gray-100">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-900">当前色盘</h3>
+                                <p id="palette-panel-summary" class="mt-1 text-xs text-gray-500">请选择颜色用于填色</p>
+                            </div>
+                            <button id="close-palette-panel-btn" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
+                        </div>
+                        <input id="palette-search-input" type="search" placeholder="搜索色号，例如 C29"
+                            class="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div id="palette-color-grid" class="grid grid-cols-5 gap-2 p-4 overflow-y-auto max-h-[48vh] no-scrollbar"></div>
+                </div>
             </main>
 
             <aside class="min-h-0 flex flex-col gap-4">
