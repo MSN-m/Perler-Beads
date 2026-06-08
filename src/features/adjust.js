@@ -738,9 +738,11 @@ export function handleResultCanvasClickForAdjust(e) {
 
         const pixel = AppState.stagedPixelData[idx];
 
-        if (!pixel || pixel.id === 'NONE') return;
+        if (!pixel) return;
 
         if (!AppState.fillColor || !AppState.fillColorId) {
+
+            if (pixel.id === 'NONE') return;
 
             AppState.fillColorId = pixel.id;
 
@@ -961,6 +963,10 @@ export function startFillSelection(e) {
     const hit = getGridHitFromEvent(e);
 
     if (!hit) return false;
+
+    const pixel = AppState.stagedPixelData[hit.idx];
+
+    if (!pixel || pixel.id === 'NONE') return false;
 
     AppState.fillSelection = {
         startX: hit.gx,

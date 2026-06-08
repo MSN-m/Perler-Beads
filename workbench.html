@@ -109,11 +109,12 @@
                     class="hidden absolute left-1/2 bottom-6 -translate-x-1/2 z-30 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-white px-4 py-3 flex items-center gap-2">
                     <button id="toggle-fill-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">取色填色</button>
                     <button id="toggle-palette-panel-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">色盘</button>
+                    <button id="quality-check-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">质量检查（0）</button>
                     <button id="toggle-clear-base-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">移除底色</button>
                     <button id="toggle-edge-adjust-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">边缘调整</button>
                     <button id="toggle-delete-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">删除色块</button>
                     <button id="reset-pattern-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary">重置图纸</button>
-                    <button id="collapse-edit-toolbar-btn" class="text-sm font-bold px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-100">收起</button>
+                    <button id="collapse-edit-toolbar-btn" class="hidden text-sm font-bold px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-100">收起</button>
                 </div>
 
                 <div id="workbench-active-toolbar"
@@ -389,6 +390,19 @@
                 <button id="delete-confirm-yes" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition">确认</button>
                 <button id="delete-confirm-no" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition">取消</button>
             </div>
+        </div>
+    </div>
+
+    <div id="quality-check-modal" class="fixed inset-0 bg-black/45 flex items-center justify-center z-50 hidden">
+        <div class="w-[420px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-white overflow-hidden">
+            <div class="p-5 border-b border-gray-100 flex items-start justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">质量检查</h3>
+                    <p id="quality-check-summary" class="mt-1 text-sm text-gray-500">正在检查图纸</p>
+                </div>
+                <button id="quality-check-close-btn" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
+            </div>
+            <ol id="quality-check-list" class="max-h-[58vh] overflow-y-auto p-5 space-y-3"></ol>
         </div>
     </div>
 

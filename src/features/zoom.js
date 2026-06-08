@@ -20,6 +20,58 @@ function getMinZoomScale() {
 
 }
 
+function isEditingMode() {
+    return AppState.editMode === 'adjust' || AppState.editMode === 'delete';
+}
+
+function canPanFromCurrentEditMode() {
+    return AppState.fillMode || AppState.clearBaseMode || AppState.deleteMode;
+}
+
+function getEventPoint(e) {
+    if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.changedTouches && e.changedTouches[0]) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+}
+
+function getGridHitFromPoint(point, resultCanvas) {
+    if (!resultCanvas || !AppState.zoomState) return null;
+
+    const rect = resultCanvas.getBoundingClientRect();
+    const localX = point.x - rect.left;
+    const localY = point.y - rect.top;
+    const canvasX = localX / AppState.zoomState.scale;
+    const canvasY = localY / AppState.zoomState.scale;
+    const scale = 30;
+    const gridOffset = scale;
+    const minX = AppState.renderedMinX || 0;
+    const minY = AppState.renderedMinY || 0;
+    const contentWidth = AppState.renderedContentWidth || AppState.gridWidth;
+    const contentHeight = AppState.renderedContentHeight || AppState.gridHeight;
+    const xOnRenderedGrid = Math.floor((canvasX - gridOffset) / scale);
+    const yOnRenderedGrid = Math.floor((canvasY - gridOffset) / scale);
+    const gx = minX + xOnRenderedGrid;
+    const gy = minY + yOnRenderedGrid;
+
+    if (xOnRenderedGrid < 0 || yOnRenderedGrid < 0 || xOnRenderedGrid >= contentWidth || yOnRenderedGrid >= contentHeight) return null;
+    if (gx < 0 || gy < 0 || gx >= AppState.gridWidth || gy >= AppState.gridHeight) return null;
+
+    return { idx: gy * AppState.gridWidth + gx };
+}
+
+function shouldStartPan(e, resultCanvas) {
+    if (!isEditingMode()) return true;
+    if (!canPanFromCurrentEditMode()) return false;
+    if (e.target !== resultCanvas) return true;
+
+    const hit = getGridHitFromPoint(getEventPoint(e), resultCanvas);
+    if (!hit) return true;
+
+    const pixels = AppState.stagedPixelData || AppState.pixelData || [];
+    const pixel = pixels[hit.idx];
+    return !pixel || pixel.id === 'NONE';
+}
+
 
 
 /**
@@ -78,6 +130,10 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     if (!resultContainer || !resultCanvas) return;
 
+    let panStartedInEditMode = false;
+    let panDidMove = false;
+    let suppressNextCanvasClick = false;
+
 
 
     // 滚轮缩放
@@ -124,7 +180,13 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     // 画布点击（编辑模式）
 
-    resultCanvas.addEventListener('click', handleCanvasClick);
+    resultCanvas.addEventListener('click', (e) => {
+        if (suppressNextCanvasClick) {
+            suppressNextCanvasClick = false;
+            return;
+        }
+        handleCanvasClick(e);
+    });
 
 
 
@@ -132,9 +194,11 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     resultContainer.addEventListener('mousedown', (e) => {
 
-        if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
+        if (!shouldStartPan(e, resultCanvas)) return;
 
         AppState.zoomState.isDragging = true;
+        panStartedInEditMode = isEditingMode();
+        panDidMove = false;
 
         AppState.zoomState.lastX = e.clientX;
 
@@ -152,13 +216,13 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     window.addEventListener('mousemove', (e) => {
 
-        if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
-
         if (!AppState.zoomState || !AppState.zoomState.isDragging) return;
 
         const dx = e.clientX - AppState.zoomState.lastX;
 
         const dy = e.clientY - AppState.zoomState.lastY;
+
+        if (panStartedInEditMode && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) panDidMove = true;
 
         AppState.zoomState.x += dx;
 
@@ -176,9 +240,11 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     window.addEventListener('mouseup', () => {
 
-        if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
+        if (panStartedInEditMode && panDidMove) suppressNextCanvasClick = true;
 
         AppState.zoomState.isDragging = false;
+        panStartedInEditMode = false;
+        panDidMove = false;
 
         resultCanvas.classList.remove('cursor-grabbing');
 
@@ -202,11 +268,13 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     resultContainer.addEventListener('touchstart', (e) => {
 
-        if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
+        if (!shouldStartPan(e, resultCanvas)) return;
 
         if (e.touches.length === 1) {
 
             AppState.zoomState.isDragging = true;
+            panStartedInEditMode = isEditingMode();
+            panDidMove = false;
 
             AppState.zoomState.lastX = e.touches[0].clientX;
 
@@ -232,8 +300,6 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     resultContainer.addEventListener('touchmove', (e) => {
 
-        if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
-
         if (!AppState.zoomState) return;
 
         e.preventDefault();
@@ -243,6 +309,8 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
             const dx = e.touches[0].clientX - AppState.zoomState.lastX;
 
             const dy = e.touches[0].clientY - AppState.zoomState.lastY;
+
+            if (panStartedInEditMode && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) panDidMove = true;
 
             AppState.zoomState.x += dx;
 
@@ -302,9 +370,11 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     resultContainer.addEventListener('touchend', () => {
 
-        if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') return;
+        if (panStartedInEditMode && panDidMove) suppressNextCanvasClick = true;
 
         if (AppState.zoomState) AppState.zoomState.isDragging = false;
+        panStartedInEditMode = false;
+        panDidMove = false;
 
     });
 

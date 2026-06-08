@@ -54,6 +54,8 @@ import {
     closePalettePanel,
     updatePalettePanelQuery,
     handlePaletteColorSelect,
+    openQualityCheckModal,
+    closeQualityCheckModal,
     updatePixelArtControlDisplays,
     updateWorkbenchUI,
     toggleEdgeAdjustMode,
@@ -87,6 +89,9 @@ const resetProjectForNewImage = () => {
     AppState.fillSourceIndex = null;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
+    AppState.qualityIssues = [];
+    AppState.qualityModalOpen = false;
+    AppState.qualityOverlayVisible = false;
     AppState.workbenchSettingsCollapsed = false;
     AppState.workbenchToolbarCollapsed = false;
     AppState.cropRect = null;
@@ -276,6 +281,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const togglePalettePanelBtn = document.getElementById('toggle-palette-panel-btn');
     if (togglePalettePanelBtn) {
         togglePalettePanelBtn.addEventListener('click', togglePalettePanel);
+    }
+
+    const qualityCheckBtn = document.getElementById('quality-check-btn');
+    if (qualityCheckBtn) {
+        qualityCheckBtn.addEventListener('click', openQualityCheckModal);
+    }
+
+    const qualityCheckCloseBtn = document.getElementById('quality-check-close-btn');
+    if (qualityCheckCloseBtn) {
+        qualityCheckCloseBtn.addEventListener('click', closeQualityCheckModal);
+    }
+
+    const qualityCheckModal = document.getElementById('quality-check-modal');
+    if (qualityCheckModal) {
+        qualityCheckModal.addEventListener('click', (e) => {
+            if (e.target === qualityCheckModal) closeQualityCheckModal();
+        });
     }
 
     const closePalettePanelBtn = document.getElementById('close-palette-panel-btn');

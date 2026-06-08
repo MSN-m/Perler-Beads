@@ -231,6 +231,42 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         ctx.setLineDash([]);
         ctx.restore();
     }
+
+    if (AppState.qualityOverlayVisible && AppState.qualityIssues && AppState.qualityIssues.length) {
+        ctx.save();
+        for (const issue of AppState.qualityIssues) {
+            const bounds = issue.bounds;
+            if (!bounds) continue;
+
+            const drawX = gridOffset + (bounds.minX - minX) * scale;
+            const drawY = gridOffset + (bounds.minY - minY) * scale;
+            const drawW = (bounds.maxX - bounds.minX + 1) * scale;
+            const drawH = (bounds.maxY - bounds.minY + 1) * scale;
+            const badgeX = Math.min(canvas.width - 14, Math.max(gridOffset + 14, drawX + drawW - 6));
+            const badgeY = Math.min(canvas.height - 14, Math.max(gridOffset + 14, drawY + 6));
+
+            ctx.strokeStyle = 'rgba(255, 127, 80, 0.9)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([7, 5]);
+            ctx.strokeRect(drawX + 2, drawY + 2, Math.max(4, drawW - 4), Math.max(4, drawH - 4));
+            ctx.setLineDash([]);
+
+            ctx.beginPath();
+            ctx.arc(badgeX, badgeY, 12, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 127, 80, 0.96)';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(issue.number), badgeX, badgeY + 0.5);
+        }
+        ctx.restore();
+    }
 }
 
 /**

@@ -10,6 +10,12 @@ import { toggleDeleteMode as _toggleDeleteMode } from './features/delete.js';
 import { resetZoom as _resetZoom } from './features/zoom.js';
 import { toggleEdgeAdjustMode as _toggleEdgeAdjustMode } from './features/edge.js';
 import {
+    refreshQualityIssues,
+    renderQualityModal,
+    openQualityCheckModal as _openQualityCheckModal,
+    closeQualityCheckModal as _closeQualityCheckModal
+} from './features/quality.js';
+import {
     enterEditSession as _enterEditSession,
     toggleFillMode as _toggleFillMode,
     toggleClearBaseMode as _toggleClearBaseMode,
@@ -50,7 +56,9 @@ export {
     _endFillSelection as endFillSelection,
     _adjustUndo as adjustUndo,
     _adjustCancel as adjustCancel,
-    _adjustApply as adjustApply
+    _adjustApply as adjustApply,
+    _openQualityCheckModal as openQualityCheckModal,
+    _closeQualityCheckModal as closeQualityCheckModal
 };
 
 function isWorkbenchLayout() {
@@ -948,7 +956,7 @@ export function updateWorkbenchUI() {
     const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
     const hasPixelArt = Boolean(AppState.pixelArtData) && !hasPattern;
-    const toolbarCollapsed = Boolean(AppState.workbenchToolbarCollapsed);
+    const toolbarCollapsed = false;
     const settingsCollapsed = hasPattern && Boolean(AppState.workbenchSettingsCollapsed);
     const compareVisible = hasPattern && AppState.comparePreviewVisible;
     setHidden('workbench-upload-empty', hasImage || hasPattern);
@@ -961,7 +969,8 @@ export function updateWorkbenchUI() {
     setHidden('toggle-compare-preview-btn', !hasPattern);
     setHidden('compare-source-pane', !compareVisible);
     setHidden('workbench-edit-toolbar', !hasPattern || AppState.editMode !== 'none' || toolbarCollapsed);
-    setHidden('expand-edit-toolbar-btn', !hasPattern || AppState.editMode !== 'none' || !toolbarCollapsed);
+    setHidden('collapse-edit-toolbar-btn', true);
+    setHidden('expand-edit-toolbar-btn', true);
     setHidden('workbench-active-toolbar', AppState.editMode === 'none');
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
@@ -970,6 +979,10 @@ export function updateWorkbenchUI() {
     setText('pixel-art-status', hasPixelArt ? '预览已生成' : '未生成预览');
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
+    if (hasPattern) refreshQualityIssues();
+    else AppState.qualityIssues = [];
+    setText('quality-check-btn', `质量检查（${AppState.qualityIssues.length}）`);
+    renderQualityModal();
     renderPalettePanel();
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
@@ -1437,6 +1450,9 @@ export function handleGeneratePixelArt() {
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
+    AppState.qualityIssues = [];
+    AppState.qualityModalOpen = false;
+    AppState.qualityOverlayVisible = false;
     AppState.comparePreviewVisible = false;
     renderPixelArtPreview();
     updateWorkbenchUI();
