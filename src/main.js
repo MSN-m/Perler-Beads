@@ -29,7 +29,6 @@ import {
     moveWorkbenchCropInteraction,
     endWorkbenchCropInteraction,
     toggleFillMode,
-    setFillSourceMode,
     handleOriginalFillPick,
     toggleClearBaseMode,
     handleResultCanvasClickForAdjust,
@@ -55,7 +54,7 @@ import {
     updatePalettePanelQuery,
     handlePaletteColorSelect,
     openQualityCheckModal,
-    closeQualityCheckModal,
+    refreshQualityOverlay,
     updatePixelArtControlDisplays,
     updateWorkbenchUI,
     toggleEdgeAdjustMode,
@@ -90,7 +89,6 @@ const resetProjectForNewImage = () => {
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
     AppState.qualityIssues = [];
-    AppState.qualityModalOpen = false;
     AppState.qualityOverlayVisible = false;
     AppState.workbenchSettingsCollapsed = false;
     AppState.workbenchToolbarCollapsed = false;
@@ -285,18 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const qualityCheckBtn = document.getElementById('quality-check-btn');
     if (qualityCheckBtn) {
-        qualityCheckBtn.addEventListener('click', openQualityCheckModal);
-    }
-
-    const qualityCheckCloseBtn = document.getElementById('quality-check-close-btn');
-    if (qualityCheckCloseBtn) {
-        qualityCheckCloseBtn.addEventListener('click', closeQualityCheckModal);
-    }
-
-    const qualityCheckModal = document.getElementById('quality-check-modal');
-    if (qualityCheckModal) {
-        qualityCheckModal.addEventListener('click', (e) => {
-            if (e.target === qualityCheckModal) closeQualityCheckModal();
+        qualityCheckBtn.addEventListener('click', () => {
+            openQualityCheckModal();
+            updateWorkbenchUI();
         });
     }
 
@@ -448,26 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const fillSourceCanvasBtn = document.getElementById('fill-source-canvas-btn');
-    if (fillSourceCanvasBtn) {
-        fillSourceCanvasBtn.addEventListener('click', () => {
-            setFillSourceMode('canvas');
-            updateWorkbenchUI();
-        });
-    }
-
-    const fillSourceOriginalBtn = document.getElementById('fill-source-original-btn');
-    if (fillSourceOriginalBtn) {
-        fillSourceOriginalBtn.addEventListener('click', () => {
-            setFillSourceMode('original');
-            if (!AppState.comparePreviewVisible) {
-                toggleWorkbenchComparePreview();
-            } else {
-                updateWorkbenchUI();
-            }
-        });
-    }
-
     const toggleClearBaseBtn = document.getElementById('toggle-clear-base-btn');
     if (toggleClearBaseBtn) {
         toggleClearBaseBtn.addEventListener('click', () => {
@@ -494,13 +463,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const adjustUndoBtn = document.getElementById('adjust-undo-btn');
     if (adjustUndoBtn) {
-        adjustUndoBtn.addEventListener('click', adjustUndo);
+        adjustUndoBtn.addEventListener('click', () => {
+            adjustUndo();
+            refreshQualityOverlay();
+            updateWorkbenchUI();
+        });
     }
 
     const adjustCancelBtn = document.getElementById('adjust-cancel-btn');
     if (adjustCancelBtn) {
         adjustCancelBtn.addEventListener('click', () => {
             adjustCancel();
+            refreshQualityOverlay();
             updateWorkbenchUI();
         });
     }
@@ -509,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adjustApplyBtn) {
         adjustApplyBtn.addEventListener('click', () => {
             adjustApply();
+            refreshQualityOverlay();
             updateWorkbenchUI();
         });
     }
@@ -626,6 +601,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, (e) => {
         if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') {
             handleResultCanvasClickForAdjust(e);
+            refreshQualityOverlay();
+            updateWorkbenchUI();
         }
     });
 
@@ -642,6 +619,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         window.addEventListener('mouseup', () => {
             endFillSelection();
+            refreshQualityOverlay();
+            updateWorkbenchUI();
         });
         resultCanvas.addEventListener('touchstart', (e) => {
             if (startFillSelection(e)) {
@@ -655,6 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
         window.addEventListener('touchend', () => {
             endFillSelection();
+            refreshQualityOverlay();
+            updateWorkbenchUI();
         });
     }
 

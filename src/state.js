@@ -50,7 +50,6 @@ export const AppState = {
     palettePanelOpen: false,
     palettePanelQuery: '',
     qualityIssues: [],
-    qualityModalOpen: false,
     qualityOverlayVisible: false,
     workbenchSettingsCollapsed: false,
     workbenchToolbarCollapsed: false,

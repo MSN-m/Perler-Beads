@@ -13,6 +13,7 @@ import { renderResult, updateResultTransform } from '../renderer.js';
 
 
 import { calculateStats, deepClonePixels } from '../editor.js';
+import { refreshQualityOverlay } from './quality.js';
 
 
 
@@ -257,6 +258,7 @@ export function handleDeleteClick(idx, canvas) {
         AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
 
         renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+        refreshQualityOverlay();
 
         calculateStats();
 

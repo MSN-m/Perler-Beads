@@ -578,26 +578,11 @@ export function selectPaletteFillColor(color) {
     updateAdjustUndoButton();
 }
 
-export function setFillSourceMode(mode) {
-    if (mode !== 'canvas' && mode !== 'original' && mode !== 'palette') return;
-    AppState.fillSourceMode = mode;
-    AppState.fillColor = null;
-    AppState.fillColorId = null;
-    AppState.fillSourceIndex = null;
-    AppState.fillSelection = null;
-    const canvas = document.getElementById('result-canvas');
-    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-    if (AppState.fillSourceIndex !== null) {
-        const fillX = AppState.fillSourceIndex % AppState.gridWidth;
-        const fillY = Math.floor(AppState.fillSourceIndex / AppState.gridWidth);
-        drawReceiverOutline(canvas, fillX, fillY);
-    }
-}
-
 export function handleOriginalFillPick(event) {
-    if (!AppState.fillMode || AppState.fillSourceMode !== 'original') return false;
+    if (!AppState.fillMode) return false;
     const sampled = sampleFromOriginalImage(event);
     if (!sampled) return false;
+    AppState.fillSourceMode = 'original';
     setFillColorFromSample(sampled);
     const canvas = document.getElementById('result-canvas');
     renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
@@ -720,22 +705,6 @@ export function handleResultCanvasClickForAdjust(e) {
     }
 
     if (AppState.fillMode) {
-
-        if (AppState.fillSourceMode === 'original') {
-            const sampled = sampleFromOriginalImage(e);
-            if (sampled) {
-                const matched = getNearestPaletteColor(sampled);
-                AppState.fillSourceSample = sampled;
-                AppState.fillColorId = matched.id;
-                AppState.fillColor = { id: matched.id, r: matched.r, g: matched.g, b: matched.b };
-                AppState.fillSourceIndex = null;
-                AppState.fillSelection = null;
-                renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-                calculateStats();
-                return;
-            }
-        }
-
         const pixel = AppState.stagedPixelData[idx];
 
         if (!pixel) return;

@@ -11,9 +11,8 @@ import { resetZoom as _resetZoom } from './features/zoom.js';
 import { toggleEdgeAdjustMode as _toggleEdgeAdjustMode } from './features/edge.js';
 import {
     refreshQualityIssues,
-    renderQualityModal,
     openQualityCheckModal as _openQualityCheckModal,
-    closeQualityCheckModal as _closeQualityCheckModal
+    refreshQualityOverlay as _refreshQualityOverlay
 } from './features/quality.js';
 import {
     enterEditSession as _enterEditSession,
@@ -21,7 +20,6 @@ import {
     toggleClearBaseMode as _toggleClearBaseMode,
     selectPaletteFillColor as _selectPaletteFillColor,
     handleResultCanvasClickForAdjust as _handleResultCanvasClickForAdjust,
-    setFillSourceMode as _setFillSourceMode,
     handleOriginalFillPick as _handleOriginalFillPick,
     startWorkbenchCompareDrag as _startWorkbenchCompareDrag,
     moveWorkbenchCompareDrag as _moveWorkbenchCompareDrag,
@@ -46,7 +44,6 @@ export {
     _toggleClearBaseMode as toggleClearBaseMode,
     _selectPaletteFillColor as selectPaletteFillColor,
     _handleResultCanvasClickForAdjust as handleResultCanvasClickForAdjust,
-    _setFillSourceMode as setFillSourceMode,
     _handleOriginalFillPick as handleOriginalFillPick,
     _startWorkbenchCompareDrag as startWorkbenchCompareDrag,
     _moveWorkbenchCompareDrag as moveWorkbenchCompareDrag,
@@ -58,7 +55,7 @@ export {
     _adjustCancel as adjustCancel,
     _adjustApply as adjustApply,
     _openQualityCheckModal as openQualityCheckModal,
-    _closeQualityCheckModal as closeQualityCheckModal
+    _refreshQualityOverlay as refreshQualityOverlay
 };
 
 function isWorkbenchLayout() {
@@ -75,6 +72,43 @@ function setText(id, text) {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = text;
+}
+
+const WORKBENCH_CURSORS = {
+    eyedropper: 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23111827%22 stroke-width=%222.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M14.5 4.5 19.5 9.5%22 stroke=%22white%22 stroke-width=%224.8%22/%3E%3Cpath d=%22M14.5 4.5 19.5 9.5%22/%3E%3Cpath d=%22M13 6 18 11 9.5 19.5 5 21 6.5 16.5 15 8%22 fill=%22white%22/%3E%3Cpath d=%22M13 6 18 11 9.5 19.5 5 21 6.5 16.5 15 8%22/%3E%3C/svg%3E") 5 20, crosshair',
+    brush: 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23111827%22 stroke-width=%222.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M15 4 20 9%22 stroke=%22white%22 stroke-width=%224.8%22/%3E%3Cpath d=%22M15 4 20 9 12 17 7 12 15 4Z%22 fill=%22white%22/%3E%3Cpath d=%22M15 4 20 9 12 17 7 12 15 4Z%22/%3E%3Cpath d=%22M7 12C4.8 12.6 3.8 14.2 4 17.2 5.7 16.2 7.1 16.1 8.5 16.9%22 fill=%22white%22/%3E%3Cpath d=%22M7 12C4.8 12.6 3.8 14.2 4 17.2 5.7 16.2 7.1 16.1 8.5 16.9%22/%3E%3C/svg%3E") 5 20, crosshair',
+    eraser: 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23111827%22 stroke-width=%222.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M7 15 14 8 20 14 13 21H7L4 18 7 15Z%22 fill=%22white%22/%3E%3Cpath d=%22M7 15 14 8 20 14 13 21H7L4 18 7 15Z%22/%3E%3Cpath d=%22M10 12 16 18%22/%3E%3C/svg%3E") 5 20, crosshair'
+};
+
+function setCursor(id, cursor) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.cursor = cursor || '';
+}
+
+function getResultCanvasCursor() {
+    if (!hasWorkbenchPattern()) return '';
+    if (AppState.deleteMode || AppState.clearBaseMode) return WORKBENCH_CURSORS.eraser;
+    if (AppState.fillMode) {
+        if (AppState.fillColor) return WORKBENCH_CURSORS.brush;
+        return WORKBENCH_CURSORS.eyedropper;
+    }
+    if (AppState.edgeSelectionMode) return 'crosshair';
+    if (AppState.editMode === 'adjust') return WORKBENCH_CURSORS.eyedropper;
+    return '';
+}
+
+function updateWorkbenchCursors(compareVisible = false) {
+    setCursor('result-canvas', getResultCanvasCursor());
+    const originalPickerActive = AppState.fillMode && compareVisible;
+    const compareCursor = AppState.comparePreviewDragging
+        ? 'grabbing'
+        : originalPickerActive
+            ? WORKBENCH_CURSORS.eyedropper
+            : '';
+    setCursor('compare-source-frame', compareCursor);
+    setCursor('compare-source-preview', compareCursor);
+    setCursor('source-canvas', AppState.isBgRemoving ? WORKBENCH_CURSORS.eraser : '');
 }
 
 function getWorkbenchSettingsSummary() {
@@ -981,8 +1015,7 @@ export function updateWorkbenchUI() {
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
     if (hasPattern) refreshQualityIssues();
     else AppState.qualityIssues = [];
-    setText('quality-check-btn', `质量检查（${AppState.qualityIssues.length}）`);
-    renderQualityModal();
+    setText('quality-check-btn', AppState.qualityOverlayVisible ? '\u5173\u95ed\u68c0\u67e5' : `\u8d28\u91cf\u68c0\u67e5\uff08${AppState.qualityIssues.length}\uff09`);
     renderPalettePanel();
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
@@ -1003,6 +1036,11 @@ export function updateWorkbenchUI() {
         legacyGenerateBtn.classList.toggle('opacity-40', !hasImage);
         legacyGenerateBtn.classList.toggle('cursor-not-allowed', !hasImage);
     }
+    const qualityCheckBtn = document.getElementById('quality-check-btn');
+    if (qualityCheckBtn) {
+        qualityCheckBtn.classList.toggle('bg-primary', AppState.qualityOverlayVisible);
+        qualityCheckBtn.classList.toggle('text-white', AppState.qualityOverlayVisible);
+    }
     const exportBtn = document.getElementById('next-to-step-4');
     if (exportBtn) {
         exportBtn.disabled = !hasPattern;
@@ -1011,11 +1049,7 @@ export function updateWorkbenchUI() {
     }
     const modeLabel = AppState.fillMode
         ? (AppState.fillColorId
-            ? (AppState.fillSourceMode === 'original'
-                ? '原图取色'
-                : AppState.fillSourceMode === 'palette'
-                    ? `色盘填色 ${AppState.fillColorId}`
-                    : '填色中')
+            ? `填色 ${AppState.fillColorId}`
             : '取色填色')
         : AppState.clearBaseMode
             ? '移除底色'
@@ -1025,26 +1059,16 @@ export function updateWorkbenchUI() {
                 ? '边缘调整'
                 : '编辑';
     setText('workbench-active-mode-label', modeLabel);
-    setHidden('fill-source-toggle', !AppState.fillMode || AppState.fillSourceMode === 'palette');
-    const canvasBtn = document.getElementById('fill-source-canvas-btn');
-    const originalBtn = document.getElementById('fill-source-original-btn');
-    if (canvasBtn && originalBtn) {
-        canvasBtn.classList.toggle('bg-white', AppState.fillSourceMode === 'canvas');
-        canvasBtn.classList.toggle('text-gray-800', AppState.fillSourceMode === 'canvas');
-        canvasBtn.classList.toggle('text-gray-500', AppState.fillSourceMode !== 'canvas');
-        originalBtn.classList.toggle('bg-white', AppState.fillSourceMode === 'original');
-        originalBtn.classList.toggle('text-gray-800', AppState.fillSourceMode === 'original');
-        originalBtn.classList.toggle('text-gray-500', AppState.fillSourceMode !== 'original');
-    }
     const compareSourceFrame = document.getElementById('compare-source-frame');
     const compareSourcePreview = document.getElementById('compare-source-preview');
-    const shouldUseOriginalPickerCursor = AppState.fillMode && AppState.fillSourceMode === 'original' && compareVisible;
+    const shouldUseOriginalPickerCursor = AppState.fillMode && compareVisible;
     if (compareSourceFrame) {
         compareSourceFrame.classList.toggle('cursor-crosshair', shouldUseOriginalPickerCursor);
     }
     if (compareSourcePreview) {
         compareSourcePreview.classList.toggle('cursor-crosshair', shouldUseOriginalPickerCursor);
     }
+    updateWorkbenchCursors(compareVisible);
     const compareBtn = document.getElementById('toggle-compare-preview-btn');
     if (compareBtn) {
         compareBtn.textContent = compareVisible ? '收起原图' : '原图对照';
@@ -1324,6 +1348,7 @@ export function toggleBgRemovalMode() {
         btn.classList.remove('text-white');
         btn.querySelector('span').innerText = '点击图片移除背景';
     }
+    updateWorkbenchCursors(AppState.comparePreviewVisible);
 }
 
 export function startBgRemovalSelection(event) {
@@ -1451,7 +1476,6 @@ export function handleGeneratePixelArt() {
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
     AppState.qualityIssues = [];
-    AppState.qualityModalOpen = false;
     AppState.qualityOverlayVisible = false;
     AppState.comparePreviewVisible = false;
     renderPixelArtPreview();
@@ -1566,6 +1590,7 @@ export function resetPatternToGenerated() {
     AppState.receiverIndex = null;
     AppState.adjustPhase = 'waiting_receiver';
     resetBatchReplaceState();
+    if (AppState.qualityOverlayVisible) refreshQualityIssues();
     const resultCanvas = document.getElementById('result-canvas');
     renderResult(resultCanvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
     calculateStats();

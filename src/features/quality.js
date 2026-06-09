@@ -3,15 +3,28 @@ import { renderResult } from '../renderer.js';
 
 const NONE_ID = 'NONE';
 const SMALL_COMPONENT_MAX_SIZE = 3;
-const MAX_ISSUES = 24;
+const REGION_SIZE = 8;
+const QUALITY_GRID_COLUMNS = 3;
+const QUALITY_GRID_ROWS = 3;
 
 function getActivePixels() {
     return AppState.stagedPixelData || AppState.pixelData || [];
 }
 
-function makeBounds(indices, gridWidth) {
+function getNeighbors(idx, gridWidth, gridHeight) {
+    const x = idx % gridWidth;
+    const y = Math.floor(idx / gridWidth);
+    const neighbors = [];
+    if (x > 0) neighbors.push(idx - 1);
+    if (x < gridWidth - 1) neighbors.push(idx + 1);
+    if (y > 0) neighbors.push(idx - gridWidth);
+    if (y < gridHeight - 1) neighbors.push(idx + gridWidth);
+    return neighbors;
+}
+
+function makeBounds(indices, gridWidth, gridHeight) {
     let minX = gridWidth;
-    let minY = AppState.gridHeight;
+    let minY = gridHeight;
     let maxX = -1;
     let maxY = -1;
 
@@ -27,15 +40,26 @@ function makeBounds(indices, gridWidth) {
     return { minX, minY, maxX, maxY };
 }
 
-function getNeighbors(idx, gridWidth, gridHeight) {
+function overlaps(a, b) {
+    return !(a.maxX < b.minX || a.minX > b.maxX || a.maxY < b.minY || a.minY > b.maxY);
+}
+
+function uniqueIndices(indices) {
+    return Array.from(new Set(indices)).sort((a, b) => a - b);
+}
+
+function isIndexInsideBounds(idx, bounds, gridWidth) {
     const x = idx % gridWidth;
     const y = Math.floor(idx / gridWidth);
-    const neighbors = [];
-    if (x > 0) neighbors.push(idx - 1);
-    if (x < gridWidth - 1) neighbors.push(idx + 1);
-    if (y > 0) neighbors.push(idx - gridWidth);
-    if (y < gridHeight - 1) neighbors.push(idx + gridWidth);
-    return neighbors;
+    return x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY;
+}
+
+function getFixedRegionIndexForCell(idx, gridWidth, gridHeight) {
+    const x = idx % gridWidth;
+    const y = Math.floor(idx / gridWidth);
+    const col = Math.min(QUALITY_GRID_COLUMNS - 1, Math.floor((x / Math.max(gridWidth, 1)) * QUALITY_GRID_COLUMNS));
+    const row = Math.min(QUALITY_GRID_ROWS - 1, Math.floor((y / Math.max(gridHeight, 1)) * QUALITY_GRID_ROWS));
+    return row * QUALITY_GRID_COLUMNS + col;
 }
 
 function findSmallComponentIssues(pixels, gridWidth, gridHeight) {
@@ -66,10 +90,11 @@ function findSmallComponentIssues(pixels, gridWidth, gridHeight) {
 
         issues.push({
             type: 'small_component',
-            label: indices.length === 1 ? '独立色块' : '少量独立色块',
-            description: `${start.id} · ${indices.length} 颗`,
+            label: indices.length === 1 ? '\u72ec\u7acb\u8272\u5757' : '\u5c11\u91cf\u72ec\u7acb\u8272\u5757',
+            description: `${start.id} \u5171 ${indices.length} \u683c`,
             indices,
-            bounds: makeBounds(indices, gridWidth),
+            suspectIndices: indices,
+            bounds: makeBounds(indices, gridWidth, gridHeight),
             severity: indices.length === 1 ? 3 : 2
         });
     }
@@ -77,13 +102,9 @@ function findSmallComponentIssues(pixels, gridWidth, gridHeight) {
     return issues;
 }
 
-function overlaps(a, b) {
-    return !(a.maxX < b.minX || a.minX > b.maxX || a.maxY < b.minY || a.minY > b.maxY);
-}
-
 function findFragmentedRegionIssues(pixels, gridWidth, gridHeight) {
     const issues = [];
-    const windowSize = Math.min(8, gridWidth, gridHeight);
+    const windowSize = Math.min(REGION_SIZE, gridWidth, gridHeight);
     if (windowSize < 6) return issues;
 
     const stride = Math.max(4, Math.floor(windowSize / 2));
@@ -91,6 +112,7 @@ function findFragmentedRegionIssues(pixels, gridWidth, gridHeight) {
     for (let startY = 0; startY <= gridHeight - windowSize; startY += stride) {
         for (let startX = 0; startX <= gridWidth - windowSize; startX += stride) {
             const colorCounts = new Map();
+            const colorIndices = new Map();
             const indices = [];
 
             for (let y = startY; y < startY + windowSize; y++) {
@@ -100,6 +122,9 @@ function findFragmentedRegionIssues(pixels, gridWidth, gridHeight) {
                     if (!pixel || pixel.id === NONE_ID) continue;
                     indices.push(idx);
                     colorCounts.set(pixel.id, (colorCounts.get(pixel.id) || 0) + 1);
+                    const list = colorIndices.get(pixel.id) || [];
+                    list.push(idx);
+                    colorIndices.set(pixel.id, list);
                 }
             }
 
@@ -112,14 +137,23 @@ function findFragmentedRegionIssues(pixels, gridWidth, gridHeight) {
 
             if (uniqueColors < 6 || dominantRatio > 0.42) continue;
 
+            const rareLimit = Math.max(2, Math.floor(coloredCount * 0.08));
+            const suspectIndices = [];
+            for (const [colorId, count] of colorCounts.entries()) {
+                if (count <= rareLimit) {
+                    suspectIndices.push(...(colorIndices.get(colorId) || []));
+                }
+            }
+
             const bounds = { minX: startX, minY: startY, maxX: startX + windowSize - 1, maxY: startY + windowSize - 1 };
             if (issues.some(issue => overlaps(issue.bounds, bounds))) continue;
 
             issues.push({
                 type: 'fragmented_region',
-                label: '颜色散碎',
-                description: `${windowSize}x${windowSize} 区域内 ${uniqueColors} 色`,
+                label: '\u989c\u8272\u6563\u788e',
+                description: `${windowSize}x${windowSize} \u533a\u57df\u5185 ${uniqueColors} \u8272`,
                 indices,
+                suspectIndices: suspectIndices.length ? uniqueIndices(suspectIndices) : indices,
                 bounds,
                 severity: uniqueColors >= 8 ? 3 : 2
             });
@@ -129,18 +163,80 @@ function findFragmentedRegionIssues(pixels, gridWidth, gridHeight) {
     return issues;
 }
 
+function makeFixedRegion(col, row, gridWidth, gridHeight) {
+    const minX = Math.floor((col / QUALITY_GRID_COLUMNS) * gridWidth);
+    const maxX = Math.floor(((col + 1) / QUALITY_GRID_COLUMNS) * gridWidth) - 1;
+    const minY = Math.floor((row / QUALITY_GRID_ROWS) * gridHeight);
+    const maxY = Math.floor(((row + 1) / QUALITY_GRID_ROWS) * gridHeight) - 1;
+    return { minX, minY, maxX, maxY };
+}
+
+function createFixedRegions(gridWidth, gridHeight) {
+    const regions = [];
+    for (let row = 0; row < QUALITY_GRID_ROWS; row++) {
+        for (let col = 0; col < QUALITY_GRID_COLUMNS; col++) {
+            regions.push({
+                bounds: makeFixedRegion(col, row, gridWidth, gridHeight),
+                col,
+                row,
+                issues: [],
+                suspectIndices: [],
+                severity: 0
+            });
+        }
+    }
+    return regions;
+}
+
+function buildQualityRegions(issues, gridWidth, gridHeight) {
+    const regions = createFixedRegions(gridWidth, gridHeight);
+
+    for (const issue of issues) {
+        const suspectIndices = uniqueIndices(issue.suspectIndices || issue.indices || []);
+        const indicesByRegion = new Map();
+
+        for (const idx of suspectIndices) {
+            const regionIndex = getFixedRegionIndexForCell(idx, gridWidth, gridHeight);
+            const list = indicesByRegion.get(regionIndex) || [];
+            list.push(idx);
+            indicesByRegion.set(regionIndex, list);
+        }
+
+        for (const [regionIndex, indices] of indicesByRegion.entries()) {
+            const region = regions[regionIndex];
+            const localIndices = indices.filter(idx => isIndexInsideBounds(idx, region.bounds, gridWidth));
+            if (!localIndices.length) continue;
+            region.issues.push(issue);
+            region.suspectIndices = uniqueIndices([...region.suspectIndices, ...localIndices]);
+            region.severity = Math.max(region.severity, issue.severity);
+        }
+    }
+
+    return regions
+        .filter(region => region.suspectIndices.length > 0)
+        .sort((a, b) => {
+            if (b.severity !== a.severity) return b.severity - a.severity;
+            return b.suspectIndices.length - a.suspectIndices.length;
+        })
+        .map((region, index) => ({
+            ...region,
+            number: index + 1,
+            issueCount: region.suspectIndices.length,
+            label: `\u533a\u57df ${region.row + 1}-${region.col + 1}`,
+            description: `\u5305\u542b ${region.suspectIndices.length} \u4e2a\u7591\u4f3c\u683c\u5b50`
+        }));
+}
+
 export function analyzeQualityIssues() {
     const pixels = getActivePixels();
     if (!pixels.length || !AppState.gridWidth || !AppState.gridHeight) return [];
 
-    const fragmentedIssues = findFragmentedRegionIssues(pixels, AppState.gridWidth, AppState.gridHeight);
-    const smallIssues = findSmallComponentIssues(pixels, AppState.gridWidth, AppState.gridHeight);
-    const issues = [...fragmentedIssues, ...smallIssues]
-        .sort((a, b) => b.severity - a.severity)
-        .slice(0, MAX_ISSUES)
-        .map((issue, index) => ({ ...issue, number: index + 1 }));
+    const issues = [
+        ...findFragmentedRegionIssues(pixels, AppState.gridWidth, AppState.gridHeight),
+        ...findSmallComponentIssues(pixels, AppState.gridWidth, AppState.gridHeight)
+    ];
 
-    return issues;
+    return buildQualityRegions(issues, AppState.gridWidth, AppState.gridHeight);
 }
 
 export function refreshQualityIssues() {
@@ -148,51 +244,27 @@ export function refreshQualityIssues() {
     return AppState.qualityIssues;
 }
 
-export function renderQualityModal() {
-    const modal = document.getElementById('quality-check-modal');
-    const list = document.getElementById('quality-check-list');
-    const summary = document.getElementById('quality-check-summary');
-    if (!modal || !list || !summary) return;
-
-    modal.classList.toggle('hidden', !AppState.qualityModalOpen);
-
-    const issues = AppState.qualityIssues || [];
-    summary.textContent = issues.length
-        ? `发现 ${issues.length} 个可能影响拼豆效果的问题`
-        : '暂未发现明显的颜色散碎或独立色块问题';
-
-    list.innerHTML = issues.length
-        ? issues.map(issue => `
-            <li class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">${issue.number}</span>
-                <span class="min-w-0">
-                    <span class="block text-sm font-bold text-gray-900">${issue.number}. ${issue.label}</span>
-                    <span class="mt-1 block text-xs text-gray-500">${issue.description}</span>
-                </span>
-            </li>
-        `).join('')
-        : '<li class="rounded-xl bg-green-50 px-4 py-5 text-sm font-bold text-green-700">当前图纸看起来比较干净。</li>';
-}
-
-export function openQualityCheckModal() {
-    refreshQualityIssues();
-    AppState.qualityModalOpen = true;
-    AppState.qualityOverlayVisible = true;
-    renderQualityModal();
-
-    const resultCanvas = document.getElementById('result-canvas');
-    if (resultCanvas) {
-        renderResult(resultCanvas, getActivePixels(), AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
-    }
-}
-
-export function closeQualityCheckModal() {
-    AppState.qualityModalOpen = false;
-    AppState.qualityOverlayVisible = false;
-    renderQualityModal();
-
+function renderQualityLayer() {
     const resultCanvas = document.getElementById('result-canvas');
     if (resultCanvas && AppState.pixelData.length) {
         renderResult(resultCanvas, getActivePixels(), AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
     }
+}
+
+export function toggleQualityCheck() {
+    AppState.qualityOverlayVisible = !AppState.qualityOverlayVisible;
+    if (AppState.qualityOverlayVisible) {
+        refreshQualityIssues();
+    }
+    renderQualityLayer();
+}
+
+export function openQualityCheckModal() {
+    toggleQualityCheck();
+}
+
+export function refreshQualityOverlay() {
+    if (!AppState.qualityOverlayVisible) return;
+    refreshQualityIssues();
+    renderQualityLayer();
 }

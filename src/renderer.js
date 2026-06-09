@@ -245,6 +245,24 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             const badgeX = Math.min(canvas.width - 14, Math.max(gridOffset + 14, drawX + drawW - 6));
             const badgeY = Math.min(canvas.height - 14, Math.max(gridOffset + 14, drawY + 6));
 
+            ctx.fillStyle = 'rgba(255, 127, 80, 0.025)';
+            ctx.fillRect(drawX, drawY, drawW, drawH);
+
+            if (issue.suspectIndices && issue.suspectIndices.length) {
+                ctx.fillStyle = 'rgba(255, 127, 80, 0.12)';
+                ctx.strokeStyle = 'rgba(255, 127, 80, 0.42)';
+                ctx.lineWidth = 1.5;
+                for (const idx of issue.suspectIndices) {
+                    const sx = idx % gridWidth;
+                    const sy = Math.floor(idx / gridWidth);
+                    if (sx < bounds.minX || sx > bounds.maxX || sy < bounds.minY || sy > bounds.maxY) continue;
+                    const cellX = gridOffset + (sx - minX) * scale;
+                    const cellY = gridOffset + (sy - minY) * scale;
+                    ctx.fillRect(cellX + 3, cellY + 3, scale - 6, scale - 6);
+                    ctx.strokeRect(cellX + 3, cellY + 3, scale - 6, scale - 6);
+                }
+            }
+
             ctx.strokeStyle = 'rgba(255, 127, 80, 0.9)';
             ctx.lineWidth = 3;
             ctx.setLineDash([7, 5]);
@@ -263,7 +281,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             ctx.font = 'bold 13px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(String(issue.number), badgeX, badgeY + 0.5);
+            ctx.fillText(String(issue.issueCount || issue.number), badgeX, badgeY + 0.5);
         }
         ctx.restore();
     }
