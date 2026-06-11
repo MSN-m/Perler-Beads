@@ -53,6 +53,9 @@ import {
     closePalettePanel,
     updatePalettePanelQuery,
     handlePaletteColorSelect,
+    startPalettePanelDrag,
+    movePalettePanelDrag,
+    endPalettePanelDrag,
     openQualityCheckModal,
     refreshQualityOverlay,
     updatePixelArtControlDisplays,
@@ -88,6 +91,8 @@ const resetProjectForNewImage = () => {
     AppState.fillSourceIndex = null;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
+    AppState.palettePanelPosition = null;
+    AppState.palettePanelDrag = null;
     AppState.qualityIssues = [];
     AppState.qualityOverlayVisible = false;
     AppState.workbenchSettingsCollapsed = false;
@@ -294,6 +299,23 @@ document.addEventListener('DOMContentLoaded', () => {
         closePalettePanelBtn.addEventListener('click', closePalettePanel);
     }
 
+    const palettePanelDragHandle = document.getElementById('palette-panel-drag-handle');
+    if (palettePanelDragHandle) {
+        palettePanelDragHandle.addEventListener('pointerdown', (event) => {
+            if (startPalettePanelDrag(event)) {
+                event.preventDefault();
+                palettePanelDragHandle.setPointerCapture?.(event.pointerId);
+            }
+        });
+        window.addEventListener('pointermove', (event) => {
+            if (movePalettePanelDrag(event)) {
+                event.preventDefault();
+            }
+        });
+        window.addEventListener('pointerup', endPalettePanelDrag);
+        window.addEventListener('pointercancel', endPalettePanelDrag);
+    }
+
     const paletteSearchInput = document.getElementById('palette-search-input');
     if (paletteSearchInput) {
         paletteSearchInput.addEventListener('input', (e) => updatePalettePanelQuery(e.target.value));
@@ -301,10 +323,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const paletteColorGrid = document.getElementById('palette-color-grid');
     if (paletteColorGrid) {
+        let suppressPaletteClickUntil = 0;
+        const handlePaletteButton = (button) => {
+            if (!button) return false;
+            return handlePaletteColorSelect(button.getAttribute('data-palette-color-id'));
+        };
+        paletteColorGrid.addEventListener('pointerdown', (e) => {
+            const button = e.target.closest('button[data-palette-color-id]');
+            if (!button) return;
+            e.preventDefault();
+            e.stopPropagation();
+            suppressPaletteClickUntil = Date.now() + 600;
+            handlePaletteButton(button);
+        });
         paletteColorGrid.addEventListener('click', (e) => {
             const button = e.target.closest('button[data-palette-color-id]');
             if (!button) return;
-            handlePaletteColorSelect(button.getAttribute('data-palette-color-id'));
+            if (Date.now() < suppressPaletteClickUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            handlePaletteButton(button);
         });
     }
 
@@ -522,9 +562,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const draftBoxList = document.getElementById('draft-box-list');
     if (draftBoxList) {
-        draftBoxList.addEventListener('click', async (event) => {
-            const button = event.target.closest('button[data-draft-action]');
-            if (!button) return;
+        let suppressDraftClickUntil = 0;
+        const handleDraftButtonAction = async (button) => {
             const action = button.getAttribute('data-draft-action');
             const draftId = button.getAttribute('data-draft-id');
             if (!draftId) return;
@@ -536,6 +575,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 await deleteWorkbenchDraft(draftId);
                 updateWorkbenchUI();
             }
+        };
+        draftBoxList.addEventListener('pointerdown', async (event) => {
+            const button = event.target.closest('button[data-draft-action]');
+            if (!button) return;
+            event.preventDefault();
+            event.stopPropagation();
+            suppressDraftClickUntil = Date.now() + 600;
+            await handleDraftButtonAction(button);
+        });
+        draftBoxList.addEventListener('click', async (event) => {
+            const button = event.target.closest('button[data-draft-action]');
+            if (!button) return;
+            if (Date.now() < suppressDraftClickUntil) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+            await handleDraftButtonAction(button);
         });
         draftBoxList.addEventListener('focusin', (event) => {
             const input = event.target.closest('input[data-draft-action="rename"]');
@@ -559,6 +616,8 @@ document.addEventListener('DOMContentLoaded', () => {
         draftBoxList.addEventListener('focusout', async (event) => {
             const input = event.target.closest('input[data-draft-action="rename"]');
             if (!input) return;
+            const nextDraftAction = event.relatedTarget?.closest?.('button[data-draft-action]');
+            if (nextDraftAction) return;
             await renameWorkbenchDraft(input.getAttribute('data-draft-id'), input.value);
             updateWorkbenchUI();
         });

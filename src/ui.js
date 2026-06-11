@@ -138,6 +138,46 @@ function getPaletteTextColor(color) {
     return yiq >= 145 ? '#111827' : '#ffffff';
 }
 
+function getPaletteGroupKey(color) {
+    const id = String(color.id || '').trim();
+    const match = id.match(/[A-Za-z]/);
+    return match ? match[0].toUpperCase() : '#';
+}
+
+function getPaletteColorButtonHtml(color) {
+    const selected = AppState.fillMode && String(AppState.fillColorId) === String(color.id);
+    const textColor = getPaletteTextColor(color);
+    return `
+        <button type="button" data-palette-color-id="${color.id}"
+            class="h-14 rounded-xl border ${selected ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'} shadow-sm text-[11px] font-bold font-mono active:scale-95 transition"
+            title="${color.id} · RGB(${color.r}, ${color.g}, ${color.b})"
+            style="background-color: rgb(${color.r},${color.g},${color.b}); color: ${textColor};">
+            ${color.id}
+        </button>
+    `;
+}
+
+function applyPalettePanelPosition(panel) {
+    const position = AppState.palettePanelPosition;
+    if (!position) {
+        panel.style.left = '';
+        panel.style.top = '';
+        panel.style.right = '';
+        panel.style.bottom = '';
+        return;
+    }
+
+    panel.style.left = `${position.x}px`;
+    panel.style.top = `${position.y}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+}
+
+function resetPalettePanelPosition() {
+    AppState.palettePanelPosition = null;
+    AppState.palettePanelDrag = null;
+}
+
 const WORKBENCH_DRAFTS_DB = 'perler_beads_workbench_drafts_db';
 const WORKBENCH_DRAFTS_STORE = 'drafts';
 
@@ -160,6 +200,7 @@ function renderPalettePanel() {
     toggleBtn?.classList.toggle('bg-primary/10', shouldShow);
     toggleBtn?.classList.toggle('text-primary', shouldShow);
     if (!shouldShow) return;
+    applyPalettePanelPosition(panel);
 
     const query = (AppState.palettePanelQuery || '').trim().toLowerCase();
     const palette = getCurrentPalette();
@@ -172,18 +213,22 @@ function renderPalettePanel() {
         searchInput.value = AppState.palettePanelQuery;
     }
 
-    grid.innerHTML = filtered.map((color) => {
-        const selected = AppState.fillMode && AppState.fillColorId === color.id;
-        const textColor = getPaletteTextColor(color);
-        return `
-            <button type="button" data-palette-color-id="${color.id}"
-                class="h-14 rounded-xl border ${selected ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'} shadow-sm text-[11px] font-bold font-mono active:scale-95 transition"
-                title="${color.id} · RGB(${color.r}, ${color.g}, ${color.b})"
-                style="background-color: rgb(${color.r},${color.g},${color.b}); color: ${textColor};">
-                ${color.id}
-            </button>
-        `;
-    }).join('');
+    const grouped = filtered.reduce((groups, color) => {
+        const key = getPaletteGroupKey(color);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(color);
+        return groups;
+    }, new Map());
+    const sortedGroups = [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
+
+    grid.innerHTML = sortedGroups.map(([group, colors]) => `
+        <section class="col-span-5">
+            <div class="sticky top-0 z-10 -mx-1 mb-2 bg-white/95 px-1 py-1 text-xs font-bold text-gray-500 backdrop-blur">${group}</div>
+            <div class="grid grid-cols-5 gap-2">
+                ${colors.map(getPaletteColorButtonHtml).join('')}
+            </div>
+        </section>
+    `).join('');
 }
 
 export function togglePalettePanel() {
@@ -194,6 +239,7 @@ export function togglePalettePanel() {
 
 export function closePalettePanel() {
     AppState.palettePanelOpen = false;
+    AppState.palettePanelDrag = null;
     renderPalettePanel();
 }
 
@@ -203,12 +249,62 @@ export function updatePalettePanelQuery(value) {
 }
 
 export function handlePaletteColorSelect(colorId) {
-    const color = getCurrentPalette().find((item) => item.id === colorId);
-    if (!color) return;
+    const color = getCurrentPalette().find((item) => String(item.id) === String(colorId));
+    if (!color) return false;
     _selectPaletteFillColor(color);
-    AppState.palettePanelOpen = true;
-    renderPalettePanel();
+    AppState.palettePanelOpen = false;
     updateWorkbenchUI();
+    return true;
+}
+
+export function startPalettePanelDrag(event) {
+    const panel = document.getElementById('palette-panel');
+    if (!panel || !AppState.palettePanelOpen) return false;
+    if (event.target.closest('button, input, select, textarea')) return false;
+
+    const rect = panel.getBoundingClientRect();
+    const stage = document.getElementById('workbench-stage');
+    const stageRect = stage?.getBoundingClientRect();
+    const point = event.touches && event.touches[0] ? event.touches[0] : event;
+    if (!stageRect || typeof point.clientX !== 'number') return false;
+
+    AppState.palettePanelDrag = {
+        startX: point.clientX,
+        startY: point.clientY,
+        originX: rect.left,
+        originY: rect.top
+    };
+    AppState.palettePanelPosition = { x: rect.left - stageRect.left, y: rect.top - stageRect.top };
+    applyPalettePanelPosition(panel);
+    return true;
+}
+
+export function movePalettePanelDrag(event) {
+    const drag = AppState.palettePanelDrag;
+    if (!drag) return false;
+
+    const panel = document.getElementById('palette-panel');
+    const stage = document.getElementById('workbench-stage');
+    const point = event.touches && event.touches[0] ? event.touches[0] : event;
+    if (!panel || !stage || typeof point.clientX !== 'number') return false;
+
+    const stageRect = stage.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    const padding = 12;
+    const maxX = Math.max(padding, stageRect.width - panelRect.width - padding);
+    const maxY = Math.max(padding, stageRect.height - panelRect.height - padding);
+    const nextX = Math.min(Math.max(drag.originX - stageRect.left + point.clientX - drag.startX, padding), maxX);
+    const nextY = Math.min(Math.max(drag.originY - stageRect.top + point.clientY - drag.startY, padding), maxY);
+
+    AppState.palettePanelPosition = { x: nextX, y: nextY };
+    applyPalettePanelPosition(panel);
+    return true;
+}
+
+export function endPalettePanelDrag() {
+    if (!AppState.palettePanelDrag) return false;
+    AppState.palettePanelDrag = null;
+    return true;
 }
 
 function getDraftTimestampLabel(timestamp) {
@@ -433,13 +529,14 @@ function renderDraftBox() {
                     ${thumbnail}
                 </div>
                 <div class="min-w-0 flex-1">
-                    <input data-draft-action="rename" data-draft-id="${draft.id}" value="${escapeHtml(draft.name)}"
+                    <input id="draft-name-${escapeHtml(draft.id)}" name="draft-name" type="text" autocomplete="off"
+                        data-draft-action="rename" data-draft-id="${draft.id}" value="${escapeHtml(draft.name)}"
                         class="w-full bg-transparent text-sm font-bold text-gray-800 truncate border border-transparent rounded-lg px-1 py-0.5 focus:bg-white focus:border-primary focus:outline-none">
                     <div class="text-xs text-gray-500 mt-1">${buildDraftSummary(draft)}</div>
                     <div class="text-[11px] text-gray-400 mt-1">${getDraftTimestampLabel(draft.updatedAt)}</div>
                     <div class="flex items-center gap-2 mt-2">
-                        <button data-draft-action="restore" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary">恢复</button>
-                        <button data-draft-action="delete" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-500 hover:border-red-300 hover:text-red-500">删除</button>
+                        <button type="button" data-draft-action="restore" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary">恢复</button>
+                        <button type="button" data-draft-action="delete" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-500 hover:border-red-300 hover:text-red-500">删除</button>
                     </div>
                 </div>
             </div>
@@ -535,16 +632,24 @@ export function restoreWorkbenchDraft(draftId) {
     const draft = (AppState.drafts || []).find((item) => item.id === draftId);
     if (!draft) return;
 
-    AppState.gridWidth = draft.gridWidth;
-    AppState.gridHeight = draft.gridHeight;
-    AppState.brand = draft.brand;
-    AppState.mardSet = draft.mardSet;
+    if (!isValidDraftPayload(draft)) {
+        window.alert('恢复失败：草稿数据不完整。');
+        return;
+    }
+
+    AppState.gridWidth = Number(draft.gridWidth);
+    AppState.gridHeight = Number(draft.gridHeight);
+    AppState.brand = draft.brand || 'mard';
+    AppState.mardSet = draft.mardSet || 221;
     AppState.pixelArtData = null;
     AppState.pixelData = deepClonePixels(draft.pixelData);
     AppState.generatedPixelData = deepClonePixels(draft.pixelData);
     AppState.stagedPixelData = null;
     AppState.stagedActions = [];
     AppState.cropRect = draft.cropRect ? { ...draft.cropRect } : AppState.cropRect;
+    AppState.cropInteraction = null;
+    AppState.bgRemovalSelection = null;
+    AppState.isBgRemoving = false;
     AppState.highlightedColorId = null;
     AppState.editMode = 'none';
     AppState.adjustPhase = 'waiting_receiver';
@@ -553,11 +658,17 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.edgeSelectionMode = false;
     AppState.clearBaseMode = false;
     AppState.fillMode = false;
+    AppState.fillSourceMode = 'canvas';
     AppState.fillColor = null;
     AppState.fillColorId = null;
     AppState.fillSourceIndex = null;
+    AppState.fillSourceSample = null;
+    AppState.fillSelection = null;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
+    resetPalettePanelPosition();
+    AppState.qualityIssues = [];
+    AppState.qualityOverlayVisible = false;
     AppState.selectedEdgeBeadsIndices = [];
     AppState.comparePreviewScale = 1;
     AppState.comparePreviewOffsetX = 0;
@@ -569,8 +680,6 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.comparePreviewVisible = false;
     AppState.workbenchSettingsCollapsed = true;
     AppState.workbenchToolbarCollapsed = false;
-    AppState.palettePanelOpen = false;
-    AppState.palettePanelQuery = '';
     resetBatchReplaceState();
 
     const gridSizeSlider = document.getElementById('grid-size-slider');
@@ -597,8 +706,19 @@ export function restoreWorkbenchDraft(draftId) {
                 AppState.history = [sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height)];
                 goToStep(3);
             };
+            restoredImage.onerror = () => {
+                AppState.image = null;
+                AppState.originalImageData = null;
+                AppState.history = [];
+                goToStep(3);
+            };
             restoredImage.src = draft.sourceImageDataUrl;
             return;
+        }
+        if (!draft.sourceImageDataUrl) {
+            AppState.image = null;
+            AppState.originalImageData = null;
+            AppState.history = [];
         }
         goToStep(3);
     };
@@ -1475,6 +1595,7 @@ export function handleGeneratePixelArt() {
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
+    resetPalettePanelPosition();
     AppState.qualityIssues = [];
     AppState.qualityOverlayVisible = false;
     AppState.comparePreviewVisible = false;
@@ -1503,6 +1624,7 @@ export function handleGeneratePatternLegacy() {
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
+    resetPalettePanelPosition();
     AppState.comparePreviewVisible = false;
     goToStep(3);
 }
@@ -1538,6 +1660,7 @@ export function handleGeneratePattern() {
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
+    resetPalettePanelPosition();
     AppState.comparePreviewScale = 1;
     AppState.comparePreviewOffsetX = 0;
     AppState.comparePreviewOffsetY = 0;
@@ -1585,6 +1708,7 @@ export function resetPatternToGenerated() {
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
+    resetPalettePanelPosition();
     AppState.comparePreviewVisible = false;
     AppState.selectedEdgeBeadsIndices = [];
     AppState.receiverIndex = null;
