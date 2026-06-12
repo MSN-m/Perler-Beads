@@ -80,6 +80,36 @@ const WORKBENCH_CURSORS = {
     eraser: 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23111827%22 stroke-width=%222.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M7 15 14 8 20 14 13 21H7L4 18 7 15Z%22 fill=%22white%22/%3E%3Cpath d=%22M7 15 14 8 20 14 13 21H7L4 18 7 15Z%22/%3E%3Cpath d=%22M10 12 16 18%22/%3E%3C/svg%3E") 5 20, crosshair'
 };
 
+const PATTERN_PREVIEW_STYLES = {
+    original: {
+        label: '原图',
+        contrast: 0,
+        sharpen: 0,
+        dominant: 50,
+        precisionMode: 'high',
+        colorMatchMode: 'deltae',
+        dithering: true
+    },
+    cartoon: {
+        label: '卡通',
+        contrast: 18,
+        sharpen: 45,
+        dominant: 72,
+        precisionMode: 'high',
+        colorMatchMode: 'deltae',
+        dithering: false
+    },
+    photo: {
+        label: '照片',
+        contrast: 6,
+        sharpen: 12,
+        dominant: 38,
+        precisionMode: 'high',
+        colorMatchMode: 'deltae',
+        dithering: true
+    }
+};
+
 function setCursor(id, cursor) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -781,6 +811,338 @@ function getDefaultCropRect() {
     };
 }
 
+function colorDistanceSq(a, b) {
+    const dr = a.r - b.r;
+    const dg = a.g - b.g;
+    const db = a.b - b.b;
+    return dr * dr + dg * dg + db * db;
+}
+
+function getImageDataColor(data, width, x, y) {
+    const index = (y * width + x) * 4;
+    return {
+        r: data[index],
+        g: data[index + 1],
+        b: data[index + 2],
+        a: data[index + 3]
+    };
+}
+
+function getPixelLuminance(data, width, x, y) {
+    const index = (y * width + x) * 4;
+    return data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114;
+}
+
+function padCropRect(rect, width, height, ratio = 0.04) {
+    if (!rect) return null;
+    const padding = Math.max(4, Math.round(Math.max(rect.width, rect.height) * ratio));
+    return normalizeCropRect({
+        x: rect.x - padding,
+        y: rect.y - padding,
+        width: rect.width + padding * 2,
+        height: rect.height + padding * 2
+    }, width, height);
+}
+
+function detectEdgeCropRect(data, width, height) {
+    const scores = [];
+    const step = Math.max(1, Math.floor(Math.max(width, height) / 360));
+    let sum = 0;
+    let sumSq = 0;
+
+    for (let y = step; y < height - step; y += step) {
+        for (let x = step; x < width - step; x += step) {
+            const centerIndex = (y * width + x) * 4;
+            if (data[centerIndex + 3] < 24) continue;
+            const lx = Math.abs(getPixelLuminance(data, width, x + step, y) - getPixelLuminance(data, width, x - step, y));
+            const ly = Math.abs(getPixelLuminance(data, width, x, y + step) - getPixelLuminance(data, width, x, y - step));
+            const score = lx + ly;
+            scores.push({ x, y, score });
+            sum += score;
+            sumSq += score * score;
+        }
+    }
+
+    if (scores.length < 16) return null;
+    const mean = sum / scores.length;
+    const variance = Math.max(0, sumSq / scores.length - mean * mean);
+    const threshold = Math.max(42, mean + Math.sqrt(variance) * 2.2);
+
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+    let hitCount = 0;
+
+    for (const point of scores) {
+        if (point.score < threshold) continue;
+        minX = Math.min(minX, point.x);
+        minY = Math.min(minY, point.y);
+        maxX = Math.max(maxX, point.x);
+        maxY = Math.max(maxY, point.y);
+        hitCount++;
+    }
+
+    if (hitCount < Math.max(12, scores.length * 0.002)) return null;
+    const rect = {
+        x: minX,
+        y: minY,
+        width: maxX - minX + 1,
+        height: maxY - minY + 1
+    };
+    if (rect.width < width * 0.08 || rect.height < height * 0.08) return null;
+    if (rect.width >= width * 0.96 && rect.height >= height * 0.96) return null;
+    return padCropRect(rect, width, height, 0.06);
+}
+
+function mixColor(a, b, ratio) {
+    return {
+        r: a.r + (b.r - a.r) * ratio,
+        g: a.g + (b.g - a.g) * ratio,
+        b: a.b + (b.b - a.b) * ratio
+    };
+}
+
+function getBorderAverageColor(data, width, height, side, index, radius) {
+    let sumR = 0;
+    let sumG = 0;
+    let sumB = 0;
+    let count = 0;
+    const half = Math.max(1, Math.floor(radius / 2));
+
+    for (let offset = -half; offset <= half; offset++) {
+        let x = 0;
+        let y = 0;
+        if (side === 'left' || side === 'right') {
+            x = side === 'left' ? 0 : width - 1;
+            y = clamp(index + offset, 0, height - 1);
+        } else {
+            x = clamp(index + offset, 0, width - 1);
+            y = side === 'top' ? 0 : height - 1;
+        }
+        const color = getImageDataColor(data, width, x, y);
+        if (color.a < 24) continue;
+        sumR += color.r;
+        sumG += color.g;
+        sumB += color.b;
+        count++;
+    }
+
+    if (!count) return { r: 0, g: 0, b: 0 };
+    return {
+        r: sumR / count,
+        g: sumG / count,
+        b: sumB / count
+    };
+}
+
+function detectBorderModeledCropRect(data, width, height) {
+    const step = Math.max(1, Math.floor(Math.max(width, height) / 420));
+    const borderRadius = Math.max(3, Math.round(Math.min(width, height) * 0.015));
+    const threshold = 34 * 34;
+    const rowLeft = new Array(height);
+    const rowRight = new Array(height);
+    const colTop = new Array(width);
+    const colBottom = new Array(width);
+    for (let y = 0; y < height; y += step) {
+        rowLeft[y] = getBorderAverageColor(data, width, height, 'left', y, borderRadius);
+        rowRight[y] = getBorderAverageColor(data, width, height, 'right', y, borderRadius);
+    }
+    for (let x = 0; x < width; x += step) {
+        colTop[x] = getBorderAverageColor(data, width, height, 'top', x, borderRadius);
+        colBottom[x] = getBorderAverageColor(data, width, height, 'bottom', x, borderRadius);
+    }
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+    let hitCount = 0;
+
+    for (let y = 0; y < height; y += step) {
+        const left = rowLeft[y];
+        const right = rowRight[y];
+        const yRatio = height > 1 ? y / (height - 1) : 0;
+
+        for (let x = 0; x < width; x += step) {
+            const index = (y * width + x) * 4;
+            if (data[index + 3] < 24) continue;
+            const top = colTop[x];
+            const bottom = colBottom[x];
+            const xRatio = width > 1 ? x / (width - 1) : 0;
+            const horizontalBg = mixColor(left, right, xRatio);
+            const verticalBg = mixColor(top, bottom, yRatio);
+            const background = {
+                r: (horizontalBg.r + verticalBg.r) / 2,
+                g: (horizontalBg.g + verticalBg.g) / 2,
+                b: (horizontalBg.b + verticalBg.b) / 2
+            };
+            const distance = colorDistanceSq({
+                r: data[index],
+                g: data[index + 1],
+                b: data[index + 2]
+            }, background);
+            if (distance < threshold) continue;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+            hitCount++;
+        }
+    }
+
+    if (hitCount < Math.max(16, (width / step) * (height / step) * 0.003)) return null;
+    const rect = {
+        x: minX,
+        y: minY,
+        width: maxX - minX + step,
+        height: maxY - minY + step
+    };
+    if (rect.width < width * 0.08 || rect.height < height * 0.08) return null;
+    if (rect.width >= width * 0.96 && rect.height >= height * 0.96) return null;
+    return padCropRect(rect, width, height, 0.05);
+}
+
+function detectInsetCropRect(data, width, height) {
+    const step = Math.max(1, Math.floor(Math.max(width, height) / 420));
+    const edgeBand = Math.max(2, Math.round(Math.min(width, height) * 0.025));
+    const threshold = 38 * 38;
+    const minRowHits = Math.max(3, Math.round((width / step) * 0.045));
+    const minColHits = Math.max(3, Math.round((height / step) * 0.045));
+
+    const rowHits = new Array(height).fill(0);
+    const colHits = new Array(width).fill(0);
+
+    for (let y = 0; y < height; y += step) {
+        const left = getBorderAverageColor(data, width, height, 'left', y, edgeBand);
+        const right = getBorderAverageColor(data, width, height, 'right', y, edgeBand);
+        for (let x = 0; x < width; x += step) {
+            const index = (y * width + x) * 4;
+            if (data[index + 3] < 24) continue;
+            const background = mixColor(left, right, width > 1 ? x / (width - 1) : 0);
+            const distance = colorDistanceSq({
+                r: data[index],
+                g: data[index + 1],
+                b: data[index + 2]
+            }, background);
+            if (distance > threshold) {
+                rowHits[y]++;
+            }
+        }
+    }
+
+    for (let x = 0; x < width; x += step) {
+        const top = getBorderAverageColor(data, width, height, 'top', x, edgeBand);
+        const bottom = getBorderAverageColor(data, width, height, 'bottom', x, edgeBand);
+        for (let y = 0; y < height; y += step) {
+            const index = (y * width + x) * 4;
+            if (data[index + 3] < 24) continue;
+            const background = mixColor(top, bottom, height > 1 ? y / (height - 1) : 0);
+            const distance = colorDistanceSq({
+                r: data[index],
+                g: data[index + 1],
+                b: data[index + 2]
+            }, background);
+            if (distance > threshold) {
+                colHits[x]++;
+            }
+        }
+    }
+
+    const findStart = (hits, minHits) => {
+        for (let i = 0; i < hits.length; i += step) {
+            if (hits[i] >= minHits) return i;
+        }
+        return -1;
+    };
+    const findEnd = (hits, minHits) => {
+        for (let i = hits.length - 1; i >= 0; i -= step) {
+            if (hits[i] >= minHits) return i;
+        }
+        return -1;
+    };
+
+    const top = findStart(rowHits, minRowHits);
+    const bottom = findEnd(rowHits, minRowHits);
+    const left = findStart(colHits, minColHits);
+    const right = findEnd(colHits, minColHits);
+    if (top < 0 || bottom < 0 || left < 0 || right < 0) return null;
+
+    const rect = {
+        x: left,
+        y: top,
+        width: right - left + step,
+        height: bottom - top + step
+    };
+    if (rect.width < width * 0.08 || rect.height < height * 0.08) return null;
+    if (rect.width >= width * 0.96 && rect.height >= height * 0.96) return null;
+    return padCropRect(rect, width, height, 0.05);
+}
+
+function detectContentCropRect() {
+    const sourceCanvas = document.getElementById('source-canvas');
+    if (!sourceCanvas || !AppState.image) return null;
+    const width = sourceCanvas.width;
+    const height = sourceCanvas.height;
+    if (!width || !height) return null;
+
+    const ctx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const corners = [
+        getImageDataColor(data, width, 0, 0),
+        getImageDataColor(data, width, width - 1, 0),
+        getImageDataColor(data, width, 0, height - 1),
+        getImageDataColor(data, width, width - 1, height - 1)
+    ];
+    const background = {
+        r: Math.round(corners.reduce((sum, color) => sum + color.r, 0) / corners.length),
+        g: Math.round(corners.reduce((sum, color) => sum + color.g, 0) / corners.length),
+        b: Math.round(corners.reduce((sum, color) => sum + color.b, 0) / corners.length)
+    };
+    const backgroundAlpha = corners.reduce((sum, color) => sum + color.a, 0) / corners.length;
+    const hasTransparentBackground = backgroundAlpha < 32;
+    const cornerVariance = corners.reduce((sum, color) => sum + colorDistanceSq(color, background), 0) / corners.length;
+    const backgroundThreshold = Math.max(28 * 28, cornerVariance * 3.5);
+
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+    let hitCount = 0;
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const index = (y * width + x) * 4;
+            const alpha = data[index + 3];
+            const visibleByAlpha = hasTransparentBackground ? alpha > 24 : (alpha > 24 && alpha < 245);
+            const visibleOpaque = alpha >= 245 && colorDistanceSq({
+                r: data[index],
+                g: data[index + 1],
+                b: data[index + 2]
+            }, background) > backgroundThreshold;
+            if (!visibleByAlpha && !visibleOpaque) continue;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+            hitCount++;
+        }
+    }
+
+    const fallbackRect = () => detectInsetCropRect(data, width, height) || detectBorderModeledCropRect(data, width, height) || detectEdgeCropRect(data, width, height);
+    if (hitCount < Math.max(32, width * height * 0.002)) return fallbackRect();
+    const detectedWidth = maxX - minX + 1;
+    const detectedHeight = maxY - minY + 1;
+    if (detectedWidth * detectedHeight >= width * height * 0.72 || detectedWidth >= width * 0.92 || detectedHeight >= height * 0.92) return fallbackRect();
+
+    return padCropRect({
+        x: minX,
+        y: minY,
+        width: detectedWidth,
+        height: detectedHeight
+    }, width, height);
+}
+
 function ensureCropRect() {
     if (!AppState.image) return null;
     AppState.cropRect = normalizeCropRect(AppState.cropRect || getDefaultCropRect(), AppState.image.width, AppState.image.height);
@@ -903,8 +1265,17 @@ function stopCropInteraction() {
 
 export function resetWorkbenchCropRect() {
     if (!AppState.image) return;
-    AppState.cropRect = getDefaultCropRect();
+    AppState.cropRect = detectContentCropRect() || getDefaultCropRect();
     updateGridDimensions();
+}
+
+export function autoFitWorkbenchCropRect() {
+    if (!AppState.image) return false;
+    const detected = detectContentCropRect();
+    AppState.cropRect = detected || getDefaultCropRect();
+    AppState.cropInteraction = null;
+    updateGridDimensions();
+    return Boolean(detected);
 }
 
 export function startWorkbenchCropInteraction(event) {
@@ -1035,6 +1406,93 @@ function renderPixelArtPreview() {
     renderWorkbenchCropOverlay();
 }
 
+function getWorkbenchGenerationSummary() {
+    const brandLabel = AppState.brand === 'mard' ? `MARD ${AppState.mardSet}色` : AppState.brand.toUpperCase();
+    const colorLimitToggle = document.getElementById('color-limit-toggle');
+    const maxColorsSlider = document.getElementById('max-colors-slider');
+    const colorText = colorLimitToggle?.checked ? `最多 ${maxColorsSlider?.value || 36} 色` : '不限颜色';
+    return `${AppState.gridWidth} x ${AppState.gridHeight} · ${brandLabel} · ${colorText}`;
+}
+
+function renderPatternPreviewCanvas() {
+    const canvas = document.getElementById('pattern-preview-canvas');
+    const data = AppState.patternPreviewPixelData;
+    if (!canvas || !Array.isArray(data) || !data.length) return;
+
+    canvas.width = AppState.gridWidth;
+    canvas.height = AppState.gridHeight;
+    const layer = document.getElementById('pattern-preview-layer');
+    const availableWidth = Math.max(240, (layer?.clientWidth || window.innerWidth) - 420);
+    const availableHeight = Math.max(240, (layer?.clientHeight || window.innerHeight) - 64);
+    const isNarrow = window.innerWidth < 1024;
+    const maxWidth = isNarrow ? Math.max(240, window.innerWidth - 24) : availableWidth;
+    const maxHeight = isNarrow ? Math.max(220, Math.floor(window.innerHeight * 0.55)) : availableHeight;
+    const scale = Math.max(1, Math.floor(Math.min(maxWidth / AppState.gridWidth, maxHeight / AppState.gridHeight)));
+    canvas.style.width = `${AppState.gridWidth * scale}px`;
+    canvas.style.height = `${AppState.gridHeight * scale}px`;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = false;
+    data.forEach((pixel, index) => {
+        if (!pixel || pixel.id === 'NONE' || pixel.a === 0) return;
+        const x = index % AppState.gridWidth;
+        const y = Math.floor(index / AppState.gridWidth);
+        ctx.fillStyle = `rgb(${pixel.r},${pixel.g},${pixel.b})`;
+        ctx.fillRect(x, y, 1, 1);
+    });
+}
+
+function renderPatternPreviewLayer() {
+    const visible = AppState.patternPreviewVisible && Array.isArray(AppState.patternPreviewPixelData);
+    setHidden('pattern-preview-layer', !visible);
+    if (!visible) return;
+
+    setText('pattern-preview-summary', `${PATTERN_PREVIEW_STYLES[AppState.patternPreviewStyle]?.label || '预览'} · ${getWorkbenchGenerationSummary()}`);
+    document.querySelectorAll('.pattern-preview-style-btn').forEach((btn) => {
+        const active = btn.dataset.previewStyle === AppState.patternPreviewStyle;
+        btn.classList.toggle('bg-primary', active);
+        btn.classList.toggle('text-white', active);
+        btn.classList.toggle('border-primary', active);
+        btn.classList.toggle('shadow-sm', active);
+    });
+    renderPatternPreviewCanvas();
+}
+
+function buildPatternPreview(style = 'photo') {
+    const config = PATTERN_PREVIEW_STYLES[style] || PATTERN_PREVIEW_STYLES.photo;
+    const sourceImageData = getSourceImageDataForGeneration();
+    const pixelArtData = generatePixelArtData({
+        sourceImageData,
+        gridWidth: AppState.gridWidth,
+        gridHeight: AppState.gridHeight,
+        precisionMode: config.precisionMode,
+        contrast: config.contrast,
+        sharpen: config.sharpen,
+        dominant: config.dominant
+    });
+    const pixelData = mapPixelArtToBeads({
+        sourceImageData: config.precisionMode === 'high' ? sourceImageData : null,
+        pixelArtData,
+        gridWidth: AppState.gridWidth,
+        gridHeight: AppState.gridHeight,
+        brand: AppState.brand,
+        mardSet: AppState.mardSet,
+        isColorLimitEnabled: document.getElementById('color-limit-toggle').checked,
+        maxColors: parseInt(document.getElementById('max-colors-slider').value),
+        isDitheringEnabled: config.dithering,
+        precisionMode: config.precisionMode,
+        colorMatchMode: config.colorMatchMode,
+        palettes: PALETTES
+    });
+
+    AppState.patternPreviewStyle = style;
+    AppState.patternPreviewPixelArtData = pixelArtData;
+    AppState.patternPreviewPixelData = pixelData;
+    AppState.patternPreviewVisible = true;
+    renderPatternPreviewLayer();
+}
+
 function updateWorkbenchComparePreview(resetScale = false) {
     if (!isWorkbenchLayout() || !AppState.image) return;
     const previewCanvas = document.getElementById('compare-source-preview');
@@ -1107,6 +1565,9 @@ export function zoomWorkbenchComparePreview(deltaY) {
 
 export function updateWorkbenchUI() {
     if (!isWorkbenchLayout()) return;
+    document.getElementById('precision-mode-select')?.closest('div')?.classList.add('hidden');
+    document.getElementById('color-match-mode-select')?.closest('div')?.classList.add('hidden');
+    document.getElementById('dithering-toggle')?.closest('label')?.classList.add('hidden');
     const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
     const hasPixelArt = Boolean(AppState.pixelArtData) && !hasPattern;
@@ -1129,7 +1590,7 @@ export function updateWorkbenchUI() {
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
     setHidden('workbench-settings-content', settingsCollapsed);
-    setText('generate-pattern-label', hasPattern ? '更新拼豆图纸' : '生成拼豆图纸');
+    setText('generate-pattern-label', isWorkbenchLayout() ? '生成预览' : (hasPattern ? '更新拼豆图纸' : '生成拼豆图纸'));
     setText('pixel-art-status', hasPixelArt ? '预览已生成' : '未生成预览');
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
@@ -1139,14 +1600,15 @@ export function updateWorkbenchUI() {
     renderPalettePanel();
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
-        generateBtn.disabled = !hasImage || !AppState.pixelArtData;
-        generateBtn.classList.toggle('opacity-40', !hasImage || !AppState.pixelArtData);
-        generateBtn.classList.toggle('cursor-not-allowed', !hasImage || !AppState.pixelArtData);
+        generateBtn.disabled = !hasImage;
+        generateBtn.classList.toggle('opacity-40', !hasImage);
+        generateBtn.classList.toggle('cursor-not-allowed', !hasImage);
     }
     const pixelArtBtn = document.getElementById('generate-pixel-art-btn');
     if (pixelArtBtn) {
         pixelArtBtn.disabled = !hasImage;
         pixelArtBtn.textContent = hasPixelArt ? '重新生成像素预览' : '生成像素预览';
+        pixelArtBtn.classList.toggle('hidden', isWorkbenchLayout());
         pixelArtBtn.classList.toggle('opacity-40', !hasImage);
         pixelArtBtn.classList.toggle('cursor-not-allowed', !hasImage);
     }
@@ -1205,6 +1667,7 @@ export function updateWorkbenchUI() {
     if (hasImage && compareVisible) {
         updateWorkbenchComparePreview(false);
     }
+    renderPatternPreviewLayer();
     renderDraftBox();
 }
 
@@ -1233,7 +1696,7 @@ function initSettingsView() {
     if (!AppState.image) return;
     
     const sourceCanvas = document.getElementById('source-canvas');
-    const ctxSource = sourceCanvas.getContext('2d');
+    const ctxSource = sourceCanvas.getContext('2d', { willReadFrequently: true });
     const container = document.getElementById('canvas-container');
     const img = AppState.image;
 
@@ -1590,6 +2053,9 @@ export function handleGeneratePixelArt() {
     });
     AppState.pixelData = [];
     AppState.generatedPixelData = null;
+    AppState.patternPreviewVisible = false;
+    AppState.patternPreviewPixelData = null;
+    AppState.patternPreviewPixelArtData = null;
     AppState.highlightedColorId = null;
     AppState.workbenchSettingsCollapsed = false;
     AppState.workbenchToolbarCollapsed = false;
@@ -1609,6 +2075,9 @@ export function handleGeneratePatternLegacy() {
 
     AppState.highlightedColorId = null;
     AppState.pixelArtData = null;
+    AppState.patternPreviewVisible = false;
+    AppState.patternPreviewPixelData = null;
+    AppState.patternPreviewPixelArtData = null;
     AppState.pixelData = generatePatternDataOriginal({
         sourceImageData,
         gridWidth: AppState.gridWidth,
@@ -1631,7 +2100,12 @@ export function handleGeneratePatternLegacy() {
 
 export function handleGeneratePattern() {
     if (!AppState.image) return;
-    if (!isWorkbenchLayout() || !AppState.pixelArtData) {
+    if (isWorkbenchLayout()) {
+        buildPatternPreview(AppState.patternPreviewStyle || 'photo');
+        updateWorkbenchUI();
+        return;
+    }
+    if (!AppState.pixelArtData) {
         handleGeneratePatternLegacy();
         return;
     }
@@ -1656,6 +2130,63 @@ export function handleGeneratePattern() {
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
+    AppState.workbenchToolbarCollapsed = false;
+    AppState.palettePanelOpen = false;
+    AppState.palettePanelQuery = '';
+    resetPalettePanelPosition();
+    AppState.comparePreviewScale = 1;
+    AppState.comparePreviewOffsetX = 0;
+    AppState.comparePreviewOffsetY = 0;
+    AppState.comparePreviewDragging = false;
+    AppState.comparePreviewDidDrag = false;
+    AppState.comparePreviewLastX = 0;
+    AppState.comparePreviewLastY = 0;
+    AppState.comparePreviewVisible = false;
+
+    goToStep(3);
+}
+
+export function handlePatternPreviewStyle(style) {
+    if (!AppState.image || !PATTERN_PREVIEW_STYLES[style]) return;
+    buildPatternPreview(style);
+    updateWorkbenchUI();
+}
+
+export function cancelPatternPreview() {
+    AppState.patternPreviewVisible = false;
+    AppState.patternPreviewPixelData = null;
+    AppState.patternPreviewPixelArtData = null;
+    updateWorkbenchUI();
+}
+
+export function confirmPatternPreview() {
+    if (!Array.isArray(AppState.patternPreviewPixelData)) return;
+
+    AppState.highlightedColorId = null;
+    AppState.pixelArtData = AppState.patternPreviewPixelArtData;
+    AppState.pixelData = deepClonePixels(AppState.patternPreviewPixelData);
+    AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.stagedPixelData = null;
+    AppState.stagedActions = [];
+    AppState.editMode = 'none';
+    AppState.deleteMode = false;
+    AppState.edgeSelectionMode = false;
+    AppState.clearBaseMode = false;
+    AppState.fillMode = false;
+    AppState.fillColor = null;
+    AppState.fillColorId = null;
+    AppState.fillSourceIndex = null;
+    AppState.fillSelection = null;
+    AppState.selectedEdgeBeadsIndices = [];
+    AppState.receiverIndex = null;
+    AppState.adjustPhase = 'waiting_receiver';
+    resetBatchReplaceState();
+    AppState.qualityIssues = [];
+    AppState.qualityOverlayVisible = false;
+    AppState.patternPreviewVisible = false;
+    AppState.patternPreviewPixelData = null;
+    AppState.patternPreviewPixelArtData = null;
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;

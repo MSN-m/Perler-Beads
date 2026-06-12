@@ -5,12 +5,16 @@ import { AppState } from './state.js';
 import {
     goToStep,
     updateGridDimensions,
+    autoFitWorkbenchCropRect,
     toggleBgRemovalMode,
     undoBgRemoval,
     handleCleanFragments,
     handleGeneratePixelArt,
     handleGeneratePattern,
     handleGeneratePatternLegacy,
+    handlePatternPreviewStyle,
+    cancelPatternPreview,
+    confirmPatternPreview,
     handleCanvasClick,
     startBgRemovalSelection,
     moveBgRemovalSelection,
@@ -73,6 +77,10 @@ const resetProjectForNewImage = () => {
     AppState.pixelData = [];
     AppState.pixelArtData = null;
     AppState.pixelArtSettings = { contrast: 0, sharpen: 0, dominant: 50 };
+    AppState.patternPreviewVisible = false;
+    AppState.patternPreviewStyle = 'photo';
+    AppState.patternPreviewPixelData = null;
+    AppState.patternPreviewPixelArtData = null;
     AppState.generatedPixelData = null;
     AppState.originalImageData = null;
     AppState.history = [];
@@ -212,6 +220,22 @@ document.addEventListener('DOMContentLoaded', () => {
         gridSizeSlider.addEventListener('input', updateGridDimensions);
     }
 
+    const autoFitCropBtn = document.getElementById('auto-fit-crop-btn');
+    if (autoFitCropBtn) {
+        autoFitCropBtn.addEventListener('click', () => {
+            autoFitWorkbenchCropRect();
+            updateWorkbenchUI();
+        });
+    }
+
+    const resetCropBtn = document.getElementById('reset-crop-btn');
+    if (resetCropBtn) {
+        resetCropBtn.addEventListener('click', () => {
+            resetWorkbenchCropRect();
+            updateWorkbenchUI();
+        });
+    }
+
     const brandSelect = document.getElementById('brand-select');
     if (brandSelect) {
         brandSelect.addEventListener('change', (e) => {
@@ -274,6 +298,22 @@ document.addEventListener('DOMContentLoaded', () => {
             handleGeneratePatternLegacy();
             updateWorkbenchUI();
         });
+    }
+
+    document.querySelectorAll('.pattern-preview-style-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            handlePatternPreviewStyle(btn.dataset.previewStyle);
+        });
+    });
+
+    const patternPreviewCancelBtn = document.getElementById('pattern-preview-cancel-btn');
+    if (patternPreviewCancelBtn) {
+        patternPreviewCancelBtn.addEventListener('click', cancelPatternPreview);
+    }
+
+    const patternPreviewConfirmBtn = document.getElementById('pattern-preview-confirm-btn');
+    if (patternPreviewConfirmBtn) {
+        patternPreviewConfirmBtn.addEventListener('click', confirmPatternPreview);
     }
 
     const toggleWorkbenchSettingsBtn = document.getElementById('toggle-workbench-settings-btn');

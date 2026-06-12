@@ -19,6 +19,10 @@ export const AppState = {
         sharpen: 0,
         dominant: 50
     },
+    patternPreviewVisible: false,
+    patternPreviewStyle: 'photo',
+    patternPreviewPixelData: null,
+    patternPreviewPixelArtData: null,
     generatedPixelData: null,
     isBgRemoving: false,
     bgRemovalSelection: null,
