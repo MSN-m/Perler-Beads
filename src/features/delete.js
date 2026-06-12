@@ -2,13 +2,13 @@
 
  * 删除色块功能模块
 
- * 依赖：AppState, renderResult, updateResultTransform, calculateStats, deepClonePixels
+ * 依赖：AppState, renderResult, calculateStats, deepClonePixels
 
  */
 
 import { AppState } from '../state.js';
 
-import { renderResult, updateResultTransform } from '../renderer.js';
+import { renderResult } from '../renderer.js';
 
 
 
@@ -125,7 +125,7 @@ export function toggleDeleteMode() {
 
         AppState.fillSourceIndex = null;
 
-        AppState.preAdjustZoomState = { ...AppState.zoomState };
+        AppState.preAdjustZoomState = null;
 
 
 
@@ -205,13 +205,7 @@ export function toggleDeleteMode() {
 
         }
 
-        if (AppState.preAdjustZoomState) {
-
-            AppState.zoomState = { ...AppState.preAdjustZoomState };
-
-            updateResultTransform(resultCanvas, AppState.zoomState, document.getElementById('zoom-reset-btn'));
-
-        }
+        AppState.preAdjustZoomState = null;
 
     }
 

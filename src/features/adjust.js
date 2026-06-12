@@ -6,7 +6,7 @@
 
 import { AppState } from '../state.js';
 
-import { renderResult, updateResultTransform } from '../renderer.js';
+import { renderResult } from '../renderer.js';
 
 import { handleDeleteClick } from './delete.js';
 
@@ -395,13 +395,7 @@ function exitAdjustLikeMode(applyChanges) {
 
 
 
-    if (AppState.preAdjustZoomState) {
-
-        AppState.zoomState = { ...AppState.preAdjustZoomState };
-
-        updateResultTransform(canvas, AppState.zoomState, document.getElementById('zoom-reset-btn'));
-
-    }
+    AppState.preAdjustZoomState = null;
 
 }
 
@@ -455,7 +449,7 @@ export function enterEditSession() {
 
     resetBatchReplaceState();
 
-    AppState.preAdjustZoomState = { ...AppState.zoomState };
+    AppState.preAdjustZoomState = null;
 
     edgeBtn && edgeBtn.classList.remove('bg-primary', 'text-white');
 
