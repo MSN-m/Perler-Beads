@@ -6,7 +6,7 @@ const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 8080;
 
 // 从命令行参数获取默认首页文件名，如果没有参数则使用 'index.html'
-const DEFAULT_INDEX = process.argv[2] || 'workbench.html';
+const DEFAULT_INDEX = process.argv[2] || 'index.html';
 
 const MIME = {
   '.html': 'text/html',
