@@ -5,7 +5,6 @@ import { AppState } from './state.js';
 import {
     goToStep,
     updateGridDimensions,
-    autoFitWorkbenchCropRect,
     toggleBgRemovalMode,
     undoBgRemoval,
     handleCleanFragments,
@@ -22,7 +21,6 @@ import {
     updateTolerance,
     toggleColorLimit,
     updateMaxColorsDisplay,
-    resetWorkbenchCropRect,
     resetWorkbenchComparePreview,
     toggleWorkbenchComparePreview,
     zoomWorkbenchComparePreview,
@@ -218,22 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridSizeSlider = document.getElementById('grid-size-slider');
     if (gridSizeSlider) {
         gridSizeSlider.addEventListener('input', updateGridDimensions);
-    }
-
-    const autoFitCropBtn = document.getElementById('auto-fit-crop-btn');
-    if (autoFitCropBtn) {
-        autoFitCropBtn.addEventListener('click', () => {
-            autoFitWorkbenchCropRect();
-            updateWorkbenchUI();
-        });
-    }
-
-    const resetCropBtn = document.getElementById('reset-crop-btn');
-    if (resetCropBtn) {
-        resetCropBtn.addEventListener('click', () => {
-            resetWorkbenchCropRect();
-            updateWorkbenchUI();
-        });
     }
 
     const brandSelect = document.getElementById('brand-select');
@@ -576,6 +558,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveDraftBtn = document.getElementById('save-draft-btn');
     if (saveDraftBtn) {
         saveDraftBtn.addEventListener('click', async () => {
+            if (!AppState.pixelData || !AppState.pixelData.length) {
+                toggleDraftDrawer();
+                return;
+            }
             await saveWorkbenchDraft();
             AppState.draftDrawerOpen = true;
             updateWorkbenchUI();

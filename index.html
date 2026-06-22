@@ -39,13 +39,14 @@
             <canvas id="source-canvas"></canvas>
         </div>
 
-        <div class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
+        <div id="workbench-layout" class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
             <main id="workbench-stage" class="min-w-0 relative bg-[#f8fafc] overflow-hidden rounded-2xl border border-white shadow-sm">
-                <div id="workbench-upload-empty" class="absolute inset-0 flex items-center justify-center z-20">
+                <div id="workbench-upload-empty" class="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20">
                     <label for="file-upload"
                         class="bg-white px-16 py-7 text-xl font-bold rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:text-primary hover:shadow-md transition">
                         上传图片
                     </label>
+                    <div id="workbench-setup-draft-slot"></div>
                 </div>
 
                 <div id="workbench-preview-empty" class="absolute inset-0 hidden items-center justify-center z-10 pointer-events-none">
@@ -149,7 +150,7 @@
                 </div>
             </main>
 
-            <aside class="min-h-0 flex flex-col gap-4">
+            <aside id="workbench-side-panel" class="min-h-0 flex flex-col gap-4">
                 <section id="workbench-settings-panel" class="bg-white p-5 rounded-2xl border border-white shadow-sm">
                     <button id="toggle-workbench-settings-btn" type="button"
                         class="w-full flex items-center justify-between gap-3 text-left">
@@ -176,19 +177,6 @@
                         </div>
                         <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="32"
                             class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
-                    </div>
-
-                    <div class="rounded-xl border border-gray-100 bg-gray-50 p-3 space-y-3">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <p class="text-sm font-bold text-gray-800">截取生成范围</p>
-                                <p id="crop-summary" class="mt-1 text-xs text-gray-500">当前使用整张图片</p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button id="auto-fit-crop-btn" type="button" class="px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary active:scale-95 transition">自动贴合主体</button>
-                            <button id="reset-crop-btn" type="button" class="px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary active:scale-95 transition">使用整图</button>
-                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -309,7 +297,7 @@
                     </div>
                 </section>
 
-                <section class="flex-1 min-h-0 bg-white p-5 rounded-2xl border border-white shadow-sm overflow-y-auto no-scrollbar">
+                <section id="workbench-color-list-panel" class="flex-1 min-h-0 bg-white p-5 rounded-2xl border border-white shadow-sm overflow-y-auto no-scrollbar">
                     <h3 class="text-sm font-bold mb-4 flex items-center justify-between">
                         <span>颜色清单</span>
                         <span class="flex items-center gap-2">
@@ -323,7 +311,8 @@
                     <div id="color-stats" class="grid grid-cols-2 gap-2"></div>
                 </section>
 
-                <div class="relative grid grid-cols-[minmax(0,1fr)_116px] gap-3">
+                <div id="workbench-side-draft-slot">
+                <div id="workbench-draft-actions" class="relative grid grid-cols-[minmax(0,1fr)_116px] gap-3">
                     <div id="draft-drawer" class="hidden absolute left-0 right-[128px] bottom-full mb-3 z-40 bg-white rounded-2xl border border-gray-100 shadow-2xl p-3">
                         <div class="flex items-center gap-2 mb-3">
                             <button id="export-drafts-btn" class="flex-1 px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 active:scale-95 transition">
@@ -339,7 +328,7 @@
                         </div>
                         <div id="draft-box-list" class="hidden space-y-2 max-h-80 overflow-y-auto no-scrollbar"></div>
                     </div>
-                    <div class="grid grid-cols-[minmax(0,1fr)_48px] rounded-2xl overflow-hidden shadow-sm">
+                    <div id="draft-primary-control" class="grid grid-cols-[minmax(0,1fr)_48px] rounded-2xl overflow-hidden shadow-sm">
                         <button id="save-draft-btn" class="py-4 bg-white text-gray-900 text-sm font-bold border border-gray-200 border-r-0 active:scale-[0.99] transition">
                             保存为草稿（0）
                         </button>
@@ -350,6 +339,7 @@
                     <button id="next-to-step-4" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">
                         导出
                     </button>
+                </div>
                 </div>
             </aside>
         </div>
