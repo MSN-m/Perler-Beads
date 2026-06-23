@@ -249,17 +249,31 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             ctx.fillRect(drawX, drawY, drawW, drawH);
 
             if (issue.suspectIndices && issue.suspectIndices.length) {
-                ctx.fillStyle = 'rgba(255, 127, 80, 0.12)';
-                ctx.strokeStyle = 'rgba(255, 127, 80, 0.42)';
-                ctx.lineWidth = 1.5;
                 for (const idx of issue.suspectIndices) {
                     const sx = idx % gridWidth;
                     const sy = Math.floor(idx / gridWidth);
                     if (sx < bounds.minX || sx > bounds.maxX || sy < bounds.minY || sy > bounds.maxY) continue;
                     const cellX = gridOffset + (sx - minX) * scale;
                     const cellY = gridOffset + (sy - minY) * scale;
-                    ctx.fillRect(cellX + 3, cellY + 3, scale - 6, scale - 6);
-                    ctx.strokeRect(cellX + 3, cellY + 3, scale - 6, scale - 6);
+                    const inset = 3;
+                    const centerX = cellX + scale / 2;
+                    const centerY = cellY + scale / 2;
+
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.24)';
+                    ctx.fillRect(cellX + inset, cellY + inset, scale - inset * 2, scale - inset * 2);
+
+                    ctx.strokeStyle = 'rgba(220, 38, 38, 0.95)';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([]);
+                    ctx.strokeRect(cellX + 2, cellY + 2, scale - 4, scale - 4);
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 4.5, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(220, 38, 38, 0.95)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
                 }
             }
 

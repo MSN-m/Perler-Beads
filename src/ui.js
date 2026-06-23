@@ -92,18 +92,18 @@ const PATTERN_PREVIEW_STYLES = {
     },
     cartoon: {
         label: '卡通',
-        contrast: 18,
-        sharpen: 45,
-        dominant: 72,
+        contrast: 32,
+        sharpen: 80,
+        dominant: 88,
         precisionMode: 'high',
         colorMatchMode: 'deltae',
         dithering: false
     },
     photo: {
         label: '照片',
-        contrast: 6,
-        sharpen: 12,
-        dominant: 38,
+        contrast: 4,
+        sharpen: 8,
+        dominant: 22,
         precisionMode: 'high',
         colorMatchMode: 'deltae',
         dithering: true
@@ -529,17 +529,17 @@ function renderDraftBox() {
     const toggleBtn = document.getElementById('toggle-draft-drawer-btn');
     if (!empty || !list || !saveBtn || !drawer || !toggleBtn) return;
 
-    const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
-    saveBtn.disabled = !hasImage || !hasPattern;
-    saveBtn.classList.toggle('opacity-40', !hasImage || !hasPattern);
-    saveBtn.classList.toggle('cursor-not-allowed', !hasImage || !hasPattern);
+    saveBtn.disabled = false;
+    saveBtn.classList.toggle('opacity-40', false);
+    saveBtn.classList.toggle('cursor-not-allowed', false);
 
     const drafts = Array.isArray(AppState.drafts) ? AppState.drafts : [];
-    saveBtn.textContent = `保存为草稿（${drafts.length}）`;
+    saveBtn.textContent = hasPattern ? `保存为草稿（${drafts.length}）` : `草稿箱（${drafts.length}）`;
     drawer.classList.toggle('hidden', !AppState.draftDrawerOpen);
     toggleBtn.textContent = AppState.draftDrawerOpen ? '↓' : '↑';
     toggleBtn.setAttribute('aria-label', AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表');
+    toggleBtn.classList.toggle('hidden', !hasPattern);
     empty.classList.toggle('hidden', drafts.length > 0);
     list.classList.toggle('hidden', drafts.length === 0);
 
@@ -566,6 +566,7 @@ function renderDraftBox() {
                     <div class="text-[11px] text-gray-400 mt-1">${getDraftTimestampLabel(draft.updatedAt)}</div>
                     <div class="flex items-center gap-2 mt-2">
                         <button type="button" data-draft-action="restore" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary">恢复</button>
+                        <button type="button" data-draft-action="export" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary">导出</button>
                         <button type="button" data-draft-action="delete" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-500 hover:border-red-300 hover:text-red-500">删除</button>
                     </div>
                 </div>
@@ -608,6 +609,17 @@ export async function saveWorkbenchDraft() {
     await upsertWorkbenchDraft(draft);
     AppState.drafts = [draft, ...(AppState.drafts || [])].slice(0, 12);
     renderDraftBox();
+}
+
+export function exportWorkbenchDraft(draftId) {
+    const draft = (AppState.drafts || []).find((item) => item.id === draftId);
+    if (!draft) return;
+    downloadJsonFile({
+        type: 'perler-beads-workbench-draft',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        ...draft
+    }, makeDraftFileName(draft.name || 'perler-beads-draft', 'draft'));
 }
 
 export function exportWorkbenchDrafts() {
@@ -1078,6 +1090,42 @@ function detectInsetCropRect(data, width, height) {
     return padCropRect(rect, width, height, 0.05);
 }
 
+function detectTransparentCropRect(data, width, height) {
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+    let transparentCount = 0;
+    let opaqueCount = 0;
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const alpha = data[(y * width + x) * 4 + 3];
+            if (alpha <= 24) {
+                transparentCount++;
+                continue;
+            }
+            if (alpha < 245) transparentCount++;
+            opaqueCount++;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+        }
+    }
+
+    if (opaqueCount < Math.max(32, width * height * 0.002)) return null;
+    if (transparentCount < width * height * 0.01) return null;
+    const rect = {
+        x: minX,
+        y: minY,
+        width: maxX - minX + 1,
+        height: maxY - minY + 1
+    };
+    if (rect.width >= width * 0.98 && rect.height >= height * 0.98) return null;
+    return padCropRect(rect, width, height, 0.035);
+}
+
 function detectContentCropRect() {
     const sourceCanvas = document.getElementById('source-canvas');
     if (!sourceCanvas || !AppState.image) return null;
@@ -1088,6 +1136,9 @@ function detectContentCropRect() {
     const ctx = sourceCanvas.getContext('2d', { willReadFrequently: true });
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
+    const transparentRect = detectTransparentCropRect(data, width, height);
+    if (transparentRect) return transparentRect;
+
     const corners = [
         getImageDataColor(data, width, 0, 0),
         getImageDataColor(data, width, width - 1, 0),
@@ -1472,7 +1523,7 @@ function buildPatternPreview(style = 'photo') {
         dominant: config.dominant
     });
     const pixelData = mapPixelArtToBeads({
-        sourceImageData: config.precisionMode === 'high' ? sourceImageData : null,
+        sourceImageData: null,
         pixelArtData,
         gridWidth: AppState.gridWidth,
         gridHeight: AppState.gridHeight,
@@ -1481,7 +1532,7 @@ function buildPatternPreview(style = 'photo') {
         isColorLimitEnabled: document.getElementById('color-limit-toggle').checked,
         maxColors: parseInt(document.getElementById('max-colors-slider').value),
         isDitheringEnabled: config.dithering,
-        precisionMode: config.precisionMode,
+        precisionMode: 'standard',
         colorMatchMode: config.colorMatchMode,
         palettes: PALETTES
     });
@@ -1556,6 +1607,85 @@ export function toggleWorkbenchSettingsPanel() {
     updateWorkbenchUI();
 }
 
+function applyWorkbenchLayoutMode(hasPattern) {
+    const layout = document.getElementById('workbench-layout');
+    const sidePanel = document.getElementById('workbench-side-panel');
+    const settingsPanel = document.getElementById('workbench-settings-panel');
+    const settingsContent = document.getElementById('workbench-settings-content');
+    const setupDraftSlot = document.getElementById('workbench-setup-draft-slot');
+    const sideDraftSlot = document.getElementById('workbench-side-draft-slot');
+    const draftActions = document.getElementById('workbench-draft-actions');
+    const draftPrimaryControl = document.getElementById('draft-primary-control');
+    const draftDrawer = document.getElementById('draft-drawer');
+    if (!layout || !sidePanel || !setupDraftSlot || !sideDraftSlot || !draftActions) return;
+
+    layout.dataset.mode = hasPattern ? 'editor' : 'setup';
+    if (hasPattern) {
+        if (draftActions.parentElement !== sideDraftSlot) sideDraftSlot.appendChild(draftActions);
+        layout.style.gridTemplateColumns = 'minmax(0, 1fr) 380px';
+        layout.style.gridTemplateRows = '';
+        sidePanel.style.display = '';
+        sidePanel.style.gridTemplateColumns = '';
+        sidePanel.style.alignItems = '';
+        sidePanel.style.minHeight = '';
+        if (settingsPanel) {
+            settingsPanel.style.maxHeight = '';
+            settingsPanel.style.overflowY = '';
+        }
+        if (settingsContent) {
+            settingsContent.style.display = '';
+            settingsContent.style.gridTemplateColumns = '';
+            settingsContent.style.alignItems = '';
+            settingsContent.style.gap = '';
+        }
+        draftActions.style.width = '';
+        draftActions.style.margin = '';
+        draftActions.style.gridTemplateColumns = 'minmax(0, 1fr) 116px';
+        if (draftPrimaryControl) draftPrimaryControl.style.gridTemplateColumns = 'minmax(0, 1fr) 48px';
+        if (draftDrawer) {
+            draftDrawer.style.top = '';
+            draftDrawer.style.bottom = '';
+            draftDrawer.style.left = '';
+            draftDrawer.style.right = '128px';
+            draftDrawer.style.width = '';
+            draftDrawer.style.transform = '';
+        }
+        return;
+    }
+
+    const hasImage = Boolean(AppState.image);
+    const setupDraftParent = hasImage ? sideDraftSlot : setupDraftSlot;
+    if (draftActions.parentElement !== setupDraftParent) setupDraftParent.appendChild(draftActions);
+    layout.style.gridTemplateColumns = 'minmax(0, 1fr) 380px';
+    layout.style.gridTemplateRows = '';
+    sidePanel.style.display = '';
+    sidePanel.style.gridTemplateColumns = '';
+    sidePanel.style.alignItems = '';
+    sidePanel.style.minHeight = '';
+    if (settingsPanel) {
+        settingsPanel.style.maxHeight = '';
+        settingsPanel.style.overflowY = '';
+    }
+    if (settingsContent) {
+        settingsContent.style.display = '';
+        settingsContent.style.gridTemplateColumns = '';
+        settingsContent.style.alignItems = '';
+        settingsContent.style.gap = '';
+    }
+    draftActions.style.width = hasImage ? '' : '280px';
+    draftActions.style.margin = hasImage ? '' : '0 auto';
+    draftActions.style.gridTemplateColumns = 'minmax(0, 1fr)';
+    if (draftPrimaryControl) draftPrimaryControl.style.gridTemplateColumns = 'minmax(0, 1fr)';
+    if (draftDrawer) {
+        draftDrawer.style.top = 'calc(100% + 12px)';
+        draftDrawer.style.bottom = 'auto';
+        draftDrawer.style.left = '50%';
+        draftDrawer.style.right = 'auto';
+        draftDrawer.style.width = 'min(420px, calc(100vw - 48px))';
+        draftDrawer.style.transform = 'translateX(-50%)';
+    }
+}
+
 export function zoomWorkbenchComparePreview(deltaY) {
     if (!isWorkbenchLayout() || !AppState.image || !hasWorkbenchPattern() || !AppState.comparePreviewVisible) return;
     const nextScale = clamp((AppState.comparePreviewScale || 1) * (deltaY < 0 ? 1.1 : 0.9), 0.1, 8);
@@ -1571,6 +1701,7 @@ export function updateWorkbenchUI() {
     const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
     const hasPixelArt = Boolean(AppState.pixelArtData) && !hasPattern;
+    applyWorkbenchLayoutMode(hasPattern);
     const toolbarCollapsed = false;
     const settingsCollapsed = hasPattern && Boolean(AppState.workbenchSettingsCollapsed);
     const compareVisible = hasPattern && AppState.comparePreviewVisible;
@@ -1589,6 +1720,8 @@ export function updateWorkbenchUI() {
     setHidden('workbench-active-toolbar', AppState.editMode === 'none');
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
+    setHidden('workbench-color-list-panel', !hasPattern);
+    setHidden('next-to-step-4', !hasPattern);
     setHidden('workbench-settings-content', settingsCollapsed);
     setText('generate-pattern-label', isWorkbenchLayout() ? '生成预览' : (hasPattern ? '更新拼豆图纸' : '生成拼豆图纸'));
     setText('pixel-art-status', hasPixelArt ? '预览已生成' : '未生成预览');
@@ -1726,7 +1859,7 @@ function initSettingsView() {
     // 保存初始图像数据
     AppState.originalImageData = ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
     AppState.history = [ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height)];
-    AppState.cropRect = getDefaultCropRect();
+    AppState.cropRect = detectContentCropRect() || getDefaultCropRect();
     AppState.cropInteraction = null;
     AppState.comparePreviewVisible = false;
     updateUndoButton();

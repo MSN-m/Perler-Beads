@@ -5,7 +5,6 @@ import { AppState } from './state.js';
 import {
     goToStep,
     updateGridDimensions,
-    autoFitWorkbenchCropRect,
     toggleBgRemovalMode,
     undoBgRemoval,
     handleCleanFragments,
@@ -22,7 +21,6 @@ import {
     updateTolerance,
     toggleColorLimit,
     updateMaxColorsDisplay,
-    resetWorkbenchCropRect,
     resetWorkbenchComparePreview,
     toggleWorkbenchComparePreview,
     zoomWorkbenchComparePreview,
@@ -44,6 +42,7 @@ import {
     adjustApply,
     saveWorkbenchDraft,
     exportWorkbenchDrafts,
+    exportWorkbenchDraft,
     importWorkbenchDraftFile,
     restoreWorkbenchDraft,
     deleteWorkbenchDraft,
@@ -218,22 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridSizeSlider = document.getElementById('grid-size-slider');
     if (gridSizeSlider) {
         gridSizeSlider.addEventListener('input', updateGridDimensions);
-    }
-
-    const autoFitCropBtn = document.getElementById('auto-fit-crop-btn');
-    if (autoFitCropBtn) {
-        autoFitCropBtn.addEventListener('click', () => {
-            autoFitWorkbenchCropRect();
-            updateWorkbenchUI();
-        });
-    }
-
-    const resetCropBtn = document.getElementById('reset-crop-btn');
-    if (resetCropBtn) {
-        resetCropBtn.addEventListener('click', () => {
-            resetWorkbenchCropRect();
-            updateWorkbenchUI();
-        });
     }
 
     const brandSelect = document.getElementById('brand-select');
@@ -576,6 +559,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveDraftBtn = document.getElementById('save-draft-btn');
     if (saveDraftBtn) {
         saveDraftBtn.addEventListener('click', async () => {
+            if (!AppState.pixelData || !AppState.pixelData.length) {
+                toggleDraftDrawer();
+                return;
+            }
             await saveWorkbenchDraft();
             AppState.draftDrawerOpen = true;
             updateWorkbenchUI();
@@ -591,6 +578,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (exportDraftsBtn) {
         exportDraftsBtn.addEventListener('click', exportWorkbenchDrafts);
     }
+
+    document.addEventListener('pointerdown', (event) => {
+        if (!AppState.draftDrawerOpen) return;
+        const draftDrawer = document.getElementById('draft-drawer');
+        const saveDraftBtn = document.getElementById('save-draft-btn');
+        const toggleDraftDrawerBtn = document.getElementById('toggle-draft-drawer-btn');
+        const target = event.target;
+        if (draftDrawer?.contains(target) || saveDraftBtn?.contains(target) || toggleDraftDrawerBtn?.contains(target)) return;
+        AppState.draftDrawerOpen = false;
+        updateWorkbenchUI();
+    });
 
     const importDraftsFile = document.getElementById('import-drafts-file');
     if (importDraftsFile) {
@@ -609,6 +607,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!draftId) return;
             if (action === 'restore') {
                 restoreWorkbenchDraft(draftId);
+                return;
+            }
+            if (action === 'export') {
+                exportWorkbenchDraft(draftId);
                 return;
             }
             if (action === 'delete') {
