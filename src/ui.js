@@ -1642,21 +1642,21 @@ function applyWorkbenchLayoutMode(hasPattern) {
     }
 
     if (draftActions.parentElement !== setupDraftSlot) setupDraftSlot.appendChild(draftActions);
-    layout.style.gridTemplateColumns = 'minmax(0, 1fr)';
-    layout.style.gridTemplateRows = 'minmax(320px, 1fr) minmax(0, 42vh)';
-    sidePanel.style.display = 'grid';
-    sidePanel.style.gridTemplateColumns = 'minmax(0, 1fr)';
-    sidePanel.style.alignItems = 'stretch';
-    sidePanel.style.minHeight = '0';
+    layout.style.gridTemplateColumns = 'minmax(0, 1fr) 380px';
+    layout.style.gridTemplateRows = '';
+    sidePanel.style.display = '';
+    sidePanel.style.gridTemplateColumns = '';
+    sidePanel.style.alignItems = '';
+    sidePanel.style.minHeight = '';
     if (settingsPanel) {
-        settingsPanel.style.maxHeight = '42vh';
-        settingsPanel.style.overflowY = 'auto';
+        settingsPanel.style.maxHeight = '';
+        settingsPanel.style.overflowY = '';
     }
     if (settingsContent) {
-        settingsContent.style.display = 'grid';
-        settingsContent.style.gridTemplateColumns = 'minmax(220px, 0.75fr) minmax(320px, 1fr) minmax(280px, 1fr) minmax(180px, 0.55fr)';
-        settingsContent.style.alignItems = 'center';
-        settingsContent.style.gap = '16px';
+        settingsContent.style.display = '';
+        settingsContent.style.gridTemplateColumns = '';
+        settingsContent.style.alignItems = '';
+        settingsContent.style.gap = '';
     }
     draftActions.style.width = '280px';
     draftActions.style.margin = '0 auto';
