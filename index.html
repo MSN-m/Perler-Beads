@@ -40,6 +40,21 @@
         </div>
 
         <div id="workbench-layout" class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
+            <div id="workbench-top-actions" class="hidden bg-white rounded-2xl border border-white shadow-sm p-3 items-center gap-3">
+                <div class="flex-1"></div>
+                <div id="workbench-tablet-panel-tabs" class="hidden items-center gap-2">
+                    <button id="show-workbench-settings-panel-btn" type="button"
+                        class="px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
+                        生成设置
+                    </button>
+                    <button id="show-workbench-colors-panel-btn" type="button"
+                        class="px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
+                        颜色清单
+                    </button>
+                </div>
+                <div id="workbench-top-draft-slot" class="min-w-0"></div>
+            </div>
+
             <main id="workbench-stage" class="min-w-0 relative bg-[#f8fafc] overflow-hidden rounded-2xl border border-white shadow-sm">
                 <div id="workbench-upload-empty" class="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20">
                     <label for="file-upload"

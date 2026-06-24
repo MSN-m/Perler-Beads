@@ -35,3 +35,229 @@
     background: #ff7f50;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
 }
+
+#workbench-top-actions {
+    display: none;
+    min-height: 52px;
+    position: relative;
+    z-index: 80;
+}
+
+#workbench-top-draft-slot {
+    width: 100%;
+    max-width: 320px;
+}
+
+#workbench-top-draft-slot #workbench-draft-actions {
+    width: 100%;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) 96px !important;
+}
+
+#workbench-top-actions #workbench-tablet-panel-tabs {
+    gap: 8px;
+}
+
+#workbench-top-actions #workbench-tablet-panel-tabs button {
+    min-height: 36px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+#workbench-top-actions #draft-primary-control {
+    border-radius: 12px;
+}
+
+#workbench-top-actions #save-draft-btn,
+#workbench-top-actions #toggle-draft-drawer-btn,
+#workbench-top-actions #next-to-step-4 {
+    min-height: 38px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-radius: 12px;
+    font-size: 13px;
+}
+
+#workbench-top-actions #toggle-draft-drawer-btn {
+    width: 40px;
+}
+
+#workbench-top-actions #draft-drawer {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#workbench-layout[data-mode="editor"] #workbench-side-panel {
+    filter: drop-shadow(0 24px 44px rgba(15, 23, 42, 0.18));
+}
+
+#workbench-layout[data-mode="editor"] #workbench-settings-panel,
+#workbench-layout[data-mode="editor"] #workbench-color-list-panel {
+    max-height: 100%;
+}
+
+@media (min-width: 768px) and (max-width: 1023px),
+    (min-width: 768px) and (max-width: 1180px) and (pointer: coarse) {
+    #workbench-layout {
+        height: 100dvh;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    #workbench-side-panel {
+        overflow: hidden;
+    }
+
+    #workbench-tablet-panel-tabs {
+        min-width: 0;
+        flex: 0 0 auto;
+    }
+
+    #workbench-tablet-panel-tabs button {
+        min-height: 44px;
+        white-space: nowrap;
+    }
+
+    #workbench-top-draft-slot {
+        flex: 0 1 300px;
+        max-width: 42vw;
+    }
+
+    #workbench-settings-panel,
+    #workbench-color-list-panel {
+        border-radius: 14px;
+        padding: 16px;
+    }
+
+    #workbench-edit-toolbar,
+    #workbench-active-toolbar {
+        width: min(680px, calc(100vw - 48px));
+        max-height: 132px;
+        overflow-y: auto;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    #workbench-edit-toolbar button,
+    #workbench-active-toolbar button {
+        min-height: 40px;
+        white-space: nowrap;
+    }
+
+    #palette-panel {
+        right: 16px;
+        bottom: 88px;
+        width: min(360px, calc(100vw - 32px));
+        max-height: 58vh;
+    }
+
+    #draft-drawer {
+        max-height: 44vh;
+        overflow-y: auto;
+    }
+}
+
+@media (max-width: 767px) {
+    #workbench-layout {
+        height: 100dvh;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    #workbench-top-actions {
+        min-height: 48px;
+        gap: 6px;
+        padding: 8px;
+        overflow-x: visible;
+        overflow-y: visible;
+    }
+
+    #workbench-top-actions > .flex-1 {
+        display: none;
+    }
+
+    #workbench-tablet-panel-tabs {
+        flex: 0 0 auto;
+        gap: 6px;
+    }
+
+    #workbench-top-actions #workbench-tablet-panel-tabs button {
+        min-height: 34px;
+        padding: 7px 10px;
+        font-size: 12px;
+        border-radius: 9px;
+    }
+
+    #workbench-top-draft-slot {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: none;
+    }
+
+    #workbench-top-draft-slot #workbench-draft-actions {
+        width: auto;
+        min-width: 180px;
+        grid-template-columns: minmax(92px, 1fr) 68px !important;
+        gap: 6px;
+    }
+
+    #workbench-top-actions #save-draft-btn,
+    #workbench-top-actions #toggle-draft-drawer-btn,
+    #workbench-top-actions #next-to-step-4 {
+        min-height: 34px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+        border-radius: 10px;
+        font-size: 12px;
+    }
+
+    #workbench-top-actions #toggle-draft-drawer-btn {
+        width: 36px;
+    }
+
+    #workbench-top-actions #draft-drawer {
+        max-width: calc(100vw - 16px);
+    }
+
+    #workbench-stage {
+        border-radius: 14px;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-side-panel {
+        padding: 0;
+        filter: drop-shadow(0 -18px 36px rgba(15, 23, 42, 0.2));
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-settings-panel,
+    #workbench-layout[data-mode="editor"] #workbench-color-list-panel {
+        height: 100%;
+        max-height: 100%;
+        border-radius: 18px 18px 0 0;
+        padding: 16px;
+        overflow-y: auto;
+    }
+
+    #workbench-settings-content {
+        gap: 14px;
+    }
+
+    #color-stats {
+        grid-template-columns: 1fr;
+    }
+
+    #workbench-edit-toolbar,
+    #workbench-active-toolbar {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+        transform: none;
+        max-height: 128px;
+        overflow-x: auto;
+        overflow-y: auto;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+    }
+}

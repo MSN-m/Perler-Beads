@@ -58,6 +58,7 @@ export const AppState = {
     qualityIssues: [],
     qualityOverlayVisible: false,
     workbenchSettingsCollapsed: false,
+    workbenchTabletPanel: null,
     workbenchToolbarCollapsed: false,
     cropRect: null,
     cropInteraction: null,

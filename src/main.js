@@ -52,6 +52,7 @@ import {
     collapseWorkbenchEditToolbar,
     expandWorkbenchEditToolbar,
     toggleWorkbenchSettingsPanel,
+    selectWorkbenchTabletPanel,
     togglePalettePanel,
     closePalettePanel,
     updatePalettePanelQuery,
@@ -103,6 +104,7 @@ const resetProjectForNewImage = () => {
     AppState.qualityIssues = [];
     AppState.qualityOverlayVisible = false;
     AppState.workbenchSettingsCollapsed = false;
+    AppState.workbenchTabletPanel = null;
     AppState.workbenchToolbarCollapsed = false;
     AppState.cropRect = null;
     AppState.cropInteraction = null;
@@ -302,6 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleWorkbenchSettingsBtn = document.getElementById('toggle-workbench-settings-btn');
     if (toggleWorkbenchSettingsBtn) {
         toggleWorkbenchSettingsBtn.addEventListener('click', toggleWorkbenchSettingsPanel);
+    }
+
+    const showWorkbenchSettingsPanelBtn = document.getElementById('show-workbench-settings-panel-btn');
+    if (showWorkbenchSettingsPanelBtn) {
+        showWorkbenchSettingsPanelBtn.addEventListener('click', () => selectWorkbenchTabletPanel('settings'));
+    }
+
+    const showWorkbenchColorsPanelBtn = document.getElementById('show-workbench-colors-panel-btn');
+    if (showWorkbenchColorsPanelBtn) {
+        showWorkbenchColorsPanelBtn.addEventListener('click', () => selectWorkbenchTabletPanel('colors'));
     }
 
     const togglePalettePanelBtn = document.getElementById('toggle-palette-panel-btn');
@@ -739,6 +751,10 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWorkbenchUI();
         });
     }
+
+    window.addEventListener('resize', () => {
+        updateWorkbenchUI();
+    });
 
     updateWorkbenchUI();
 });

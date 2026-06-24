@@ -62,6 +62,16 @@ function isWorkbenchLayout() {
     return document.body.dataset.layout === 'workbench';
 }
 
+function isWorkbenchTabletLayout() {
+    const width = window.innerWidth;
+    const isTouchTablet = width <= 1180 && window.matchMedia?.('(pointer: coarse)').matches;
+    return width >= 768 && (width < 1024 || isTouchTablet);
+}
+
+function isWorkbenchMobileLayout() {
+    return window.innerWidth < 768;
+}
+
 function setHidden(id, hidden) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -721,7 +731,9 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.comparePreviewLastY = 0;
     AppState.comparePreviewVisible = false;
     AppState.workbenchSettingsCollapsed = true;
+    AppState.workbenchTabletPanel = null;
     AppState.workbenchToolbarCollapsed = false;
+    AppState.draftDrawerOpen = false;
     resetBatchReplaceState();
 
     const gridSizeSlider = document.getElementById('grid-size-slider');
@@ -1603,15 +1615,25 @@ export function toggleWorkbenchComparePreview() {
 
 export function toggleWorkbenchSettingsPanel() {
     if (!isWorkbenchLayout() || !hasWorkbenchPattern()) return;
-    AppState.workbenchSettingsCollapsed = !AppState.workbenchSettingsCollapsed;
+    AppState.workbenchTabletPanel = AppState.workbenchTabletPanel === 'settings' ? null : 'settings';
+    updateWorkbenchUI();
+}
+
+export function selectWorkbenchTabletPanel(panel) {
+    if (!['settings', 'colors'].includes(panel)) return;
+    AppState.workbenchTabletPanel = AppState.workbenchTabletPanel === panel ? null : panel;
     updateWorkbenchUI();
 }
 
 function applyWorkbenchLayoutMode(hasPattern) {
     const layout = document.getElementById('workbench-layout');
     const sidePanel = document.getElementById('workbench-side-panel');
+    const topActions = document.getElementById('workbench-top-actions');
+    const tabletTabs = document.getElementById('workbench-tablet-panel-tabs');
+    const topDraftSlot = document.getElementById('workbench-top-draft-slot');
     const settingsPanel = document.getElementById('workbench-settings-panel');
     const settingsContent = document.getElementById('workbench-settings-content');
+    const colorListPanel = document.getElementById('workbench-color-list-panel');
     const setupDraftSlot = document.getElementById('workbench-setup-draft-slot');
     const sideDraftSlot = document.getElementById('workbench-side-draft-slot');
     const draftActions = document.getElementById('workbench-draft-actions');
@@ -1619,36 +1641,67 @@ function applyWorkbenchLayoutMode(hasPattern) {
     const draftDrawer = document.getElementById('draft-drawer');
     if (!layout || !sidePanel || !setupDraftSlot || !sideDraftSlot || !draftActions) return;
 
+    const isMobile = isWorkbenchMobileLayout();
+    const isTablet = !isMobile && isWorkbenchTabletLayout();
     layout.dataset.mode = hasPattern ? 'editor' : 'setup';
+    layout.dataset.viewport = isMobile ? 'mobile' : (isTablet ? 'tablet' : 'desktop');
     if (hasPattern) {
-        if (draftActions.parentElement !== sideDraftSlot) sideDraftSlot.appendChild(draftActions);
-        layout.style.gridTemplateColumns = 'minmax(0, 1fr) 380px';
-        layout.style.gridTemplateRows = '';
-        sidePanel.style.display = '';
+        const editorDraftParent = topDraftSlot || sideDraftSlot;
+        if (draftActions.parentElement !== editorDraftParent) editorDraftParent.appendChild(draftActions);
+        layout.style.gridTemplateColumns = 'minmax(0, 1fr)';
+        layout.style.gridTemplateRows = 'auto minmax(0, 1fr)';
+        sidePanel.style.display = 'block';
         sidePanel.style.gridTemplateColumns = '';
+        sidePanel.style.gridTemplateRows = '';
         sidePanel.style.alignItems = '';
         sidePanel.style.minHeight = '';
+        sidePanel.style.position = 'fixed';
+        sidePanel.style.top = isMobile ? 'auto' : (isTablet ? '76px' : '84px');
+        sidePanel.style.left = isMobile ? '0' : '';
+        sidePanel.style.right = isMobile ? '0' : (isTablet ? '16px' : '24px');
+        sidePanel.style.bottom = isMobile ? '0' : (isTablet ? '16px' : '24px');
+        sidePanel.style.width = isMobile ? 'auto' : (isTablet ? 'min(720px, calc(100vw - 32px))' : '420px');
+        sidePanel.style.height = isMobile ? 'min(72dvh, 620px)' : '';
+        sidePanel.style.zIndex = '60';
+        sidePanel.style.pointerEvents = 'auto';
+        if (topActions) {
+            topActions.style.display = 'flex';
+            topActions.style.gridColumn = '1 / -1';
+            topActions.style.margin = isMobile ? '-12px -12px 0' : (isTablet ? '-16px -16px 0' : '-20px -20px 0');
+            topActions.style.borderRadius = '0';
+            topActions.style.position = 'relative';
+            topActions.style.zIndex = '80';
+        }
+        if (tabletTabs) tabletTabs.style.display = 'flex';
         if (settingsPanel) {
-            settingsPanel.style.maxHeight = '';
-            settingsPanel.style.overflowY = '';
+            settingsPanel.style.maxHeight = '100%';
+            settingsPanel.style.overflowY = 'auto';
         }
         if (settingsContent) {
-            settingsContent.style.display = '';
-            settingsContent.style.gridTemplateColumns = '';
-            settingsContent.style.alignItems = '';
-            settingsContent.style.gap = '';
+            settingsContent.style.display = isTablet ? 'grid' : '';
+            settingsContent.style.gridTemplateColumns = isTablet ? 'minmax(220px, 1fr) minmax(240px, 1fr)' : '';
+            settingsContent.style.alignItems = isTablet ? 'start' : '';
+            settingsContent.style.gap = isTablet ? '16px' : '';
         }
-        draftActions.style.width = '';
+        if (colorListPanel) {
+            colorListPanel.style.maxHeight = '100%';
+            colorListPanel.style.overflowY = 'auto';
+        }
+        draftActions.style.width = isMobile ? 'auto' : (isTablet ? 'min(300px, 42vw)' : '100%');
         draftActions.style.margin = '';
-        draftActions.style.gridTemplateColumns = 'minmax(0, 1fr) 116px';
+        draftActions.style.gridColumn = '';
+        draftActions.style.gridTemplateColumns = isMobile ? 'minmax(0, 1fr) 72px' : 'minmax(0, 1fr) 96px';
         if (draftPrimaryControl) draftPrimaryControl.style.gridTemplateColumns = 'minmax(0, 1fr) 48px';
         if (draftDrawer) {
-            draftDrawer.style.top = '';
-            draftDrawer.style.bottom = '';
-            draftDrawer.style.left = '';
-            draftDrawer.style.right = '128px';
-            draftDrawer.style.width = '';
+            draftDrawer.style.top = 'calc(100% + 12px)';
+            draftDrawer.style.bottom = 'auto';
+            draftDrawer.style.left = 'auto';
+            draftDrawer.style.right = isMobile ? '0' : '104px';
+            draftDrawer.style.width = isMobile ? 'min(360px, calc(100vw - 16px))' : 'min(420px, calc(100vw - 48px))';
             draftDrawer.style.transform = '';
+            draftDrawer.style.maxHeight = '';
+            draftDrawer.style.overflowY = '';
+            draftDrawer.style.overscrollBehavior = '';
         }
         return;
     }
@@ -1656,24 +1709,49 @@ function applyWorkbenchLayoutMode(hasPattern) {
     const hasImage = Boolean(AppState.image);
     const setupDraftParent = hasImage ? sideDraftSlot : setupDraftSlot;
     if (draftActions.parentElement !== setupDraftParent) setupDraftParent.appendChild(draftActions);
-    layout.style.gridTemplateColumns = 'minmax(0, 1fr) 380px';
-    layout.style.gridTemplateRows = '';
-    sidePanel.style.display = '';
-    sidePanel.style.gridTemplateColumns = '';
-    sidePanel.style.alignItems = '';
-    sidePanel.style.minHeight = '';
+    const isCompactSetup = isMobile || isTablet;
+    layout.style.gridTemplateColumns = isCompactSetup ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 380px';
+    layout.style.gridTemplateRows = isCompactSetup ? 'minmax(360px, 1fr) auto' : '';
+    sidePanel.style.display = isCompactSetup ? 'grid' : '';
+    sidePanel.style.gridTemplateColumns = isTablet && hasImage ? 'minmax(0, 1fr) 280px' : '';
+    sidePanel.style.gridTemplateRows = '';
+    sidePanel.style.alignItems = isCompactSetup ? 'start' : '';
+    sidePanel.style.minHeight = isCompactSetup ? '0' : '';
+    sidePanel.style.position = '';
+    sidePanel.style.top = '';
+    sidePanel.style.left = '';
+    sidePanel.style.right = '';
+    sidePanel.style.bottom = '';
+    sidePanel.style.width = '';
+    sidePanel.style.height = '';
+    sidePanel.style.zIndex = '';
+    sidePanel.style.pointerEvents = '';
+    if (topActions) {
+        topActions.style.display = 'none';
+        topActions.style.gridColumn = '';
+        topActions.style.margin = '';
+        topActions.style.borderRadius = '';
+        topActions.style.position = '';
+        topActions.style.zIndex = '';
+    }
+    if (tabletTabs) tabletTabs.style.display = 'none';
     if (settingsPanel) {
-        settingsPanel.style.maxHeight = '';
-        settingsPanel.style.overflowY = '';
+        settingsPanel.style.maxHeight = isMobile ? '52vh' : (isTablet ? '47vh' : '');
+        settingsPanel.style.overflowY = isCompactSetup ? 'auto' : '';
     }
     if (settingsContent) {
-        settingsContent.style.display = '';
-        settingsContent.style.gridTemplateColumns = '';
-        settingsContent.style.alignItems = '';
-        settingsContent.style.gap = '';
+        settingsContent.style.display = isTablet ? 'grid' : '';
+        settingsContent.style.gridTemplateColumns = isTablet ? 'minmax(220px, 1fr) minmax(240px, 1fr)' : '';
+        settingsContent.style.alignItems = isTablet ? 'start' : '';
+        settingsContent.style.gap = isTablet ? '16px' : '';
+    }
+    if (colorListPanel) {
+        colorListPanel.style.maxHeight = '';
+        colorListPanel.style.overflowY = '';
     }
     draftActions.style.width = hasImage ? '' : '280px';
     draftActions.style.margin = hasImage ? '' : '0 auto';
+    draftActions.style.gridColumn = '';
     draftActions.style.gridTemplateColumns = 'minmax(0, 1fr)';
     if (draftPrimaryControl) draftPrimaryControl.style.gridTemplateColumns = 'minmax(0, 1fr)';
     if (draftDrawer) {
@@ -1683,6 +1761,9 @@ function applyWorkbenchLayoutMode(hasPattern) {
         draftDrawer.style.right = 'auto';
         draftDrawer.style.width = 'min(420px, calc(100vw - 48px))';
         draftDrawer.style.transform = 'translateX(-50%)';
+        draftDrawer.style.maxHeight = '';
+        draftDrawer.style.overflowY = '';
+        draftDrawer.style.overscrollBehavior = '';
     }
 }
 
@@ -1702,8 +1783,14 @@ export function updateWorkbenchUI() {
     const hasPattern = hasWorkbenchPattern();
     const hasPixelArt = Boolean(AppState.pixelArtData) && !hasPattern;
     applyWorkbenchLayoutMode(hasPattern);
+    const isTablet = isWorkbenchTabletLayout();
     const toolbarCollapsed = false;
-    const settingsCollapsed = hasPattern && Boolean(AppState.workbenchSettingsCollapsed);
+    const tabletPanel = ['settings', 'colors'].includes(AppState.workbenchTabletPanel)
+        ? AppState.workbenchTabletPanel
+        : null;
+    const settingsCollapsed = false;
+    const showSettingsPanel = hasPattern ? tabletPanel === 'settings' : true;
+    const showColorListPanel = hasPattern && tabletPanel === 'colors';
     const compareVisible = hasPattern && AppState.comparePreviewVisible;
     setHidden('workbench-upload-empty', hasImage || hasPattern);
     setHidden('workbench-change-image', !hasImage && !hasPattern);
@@ -1720,13 +1807,37 @@ export function updateWorkbenchUI() {
     setHidden('workbench-active-toolbar', AppState.editMode === 'none');
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
-    setHidden('workbench-color-list-panel', !hasPattern);
+    setHidden('workbench-side-panel', hasPattern && !tabletPanel);
+    setHidden('workbench-top-actions', !hasPattern);
+    const sidePanel = document.getElementById('workbench-side-panel');
+    if (sidePanel && hasPattern) {
+        sidePanel.style.display = tabletPanel ? 'block' : 'none';
+        sidePanel.style.pointerEvents = tabletPanel ? 'auto' : 'none';
+    }
+    setHidden('workbench-settings-panel', !showSettingsPanel);
+    setHidden('workbench-color-list-panel', !showColorListPanel);
     setHidden('next-to-step-4', !hasPattern);
     setHidden('workbench-settings-content', settingsCollapsed);
     setText('generate-pattern-label', isWorkbenchLayout() ? '生成预览' : (hasPattern ? '更新拼豆图纸' : '生成拼豆图纸'));
     setText('pixel-art-status', hasPixelArt ? '预览已生成' : '未生成预览');
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
+    const settingsTab = document.getElementById('show-workbench-settings-panel-btn');
+    const colorsTab = document.getElementById('show-workbench-colors-panel-btn');
+    if (settingsTab) {
+        const active = tabletPanel === 'settings';
+        settingsTab.classList.toggle('bg-gray-900', active);
+        settingsTab.classList.toggle('text-white', active);
+        settingsTab.classList.toggle('bg-gray-100', !active);
+        settingsTab.classList.toggle('text-gray-700', !active);
+    }
+    if (colorsTab) {
+        const active = tabletPanel === 'colors';
+        colorsTab.classList.toggle('bg-gray-900', active);
+        colorsTab.classList.toggle('text-white', active);
+        colorsTab.classList.toggle('bg-gray-100', !active);
+        colorsTab.classList.toggle('text-gray-700', !active);
+    }
     if (hasPattern) refreshQualityIssues();
     else AppState.qualityIssues = [];
     setText('quality-check-btn', AppState.qualityOverlayVisible ? '\u5173\u95ed\u68c0\u67e5' : `\u8d28\u91cf\u68c0\u67e5\uff08${AppState.qualityIssues.length}\uff09`);
@@ -2223,6 +2334,7 @@ export function handleGeneratePatternLegacy() {
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
+    AppState.workbenchTabletPanel = null;
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
@@ -2264,6 +2376,7 @@ export function handleGeneratePattern() {
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
+    AppState.workbenchTabletPanel = null;
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
@@ -2321,6 +2434,7 @@ export function confirmPatternPreview() {
     AppState.patternPreviewPixelData = null;
     AppState.patternPreviewPixelArtData = null;
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
+    AppState.workbenchTabletPanel = null;
     AppState.workbenchToolbarCollapsed = false;
     AppState.palettePanelOpen = false;
     AppState.palettePanelQuery = '';
