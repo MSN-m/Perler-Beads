@@ -72,6 +72,43 @@ function isWorkbenchMobileLayout() {
     return window.innerWidth < 768;
 }
 
+function getWorkbenchViewportMode() {
+    if (isWorkbenchMobileLayout()) return 'mobile';
+    if (isWorkbenchTabletLayout()) return 'tablet';
+    return 'desktop';
+}
+
+function ensureWorkbenchShell(layout, viewportMode) {
+    if (!layout) return null;
+    const shellModes = ['desktop', 'tablet', 'mobile'];
+    for (const mode of shellModes) {
+        if (document.getElementById(`workbench-${mode}-shell`)) continue;
+        const shell = document.createElement('div');
+        shell.id = `workbench-${mode}-shell`;
+        shell.className = 'workbench-shell';
+        shell.dataset.workbenchShell = mode;
+        layout.appendChild(shell);
+    }
+
+    const activeShell = document.getElementById(`workbench-${viewportMode}-shell`);
+    for (const mode of shellModes) {
+        const shell = document.getElementById(`workbench-${mode}-shell`);
+        if (!shell) continue;
+        const active = mode === viewportMode;
+        shell.classList.toggle('is-active', active);
+        shell.hidden = !active;
+    }
+    return activeShell;
+}
+
+function mountWorkbenchSharedNodes(activeShell) {
+    if (!activeShell) return;
+    ['workbench-top-actions', 'workbench-stage', 'workbench-side-panel'].forEach((id) => {
+        const node = document.getElementById(id);
+        if (node && node.parentElement !== activeShell) activeShell.appendChild(node);
+    });
+}
+
 function setHidden(id, hidden) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1627,6 +1664,10 @@ export function selectWorkbenchTabletPanel(panel) {
 
 function applyWorkbenchLayoutMode(hasPattern) {
     const layout = document.getElementById('workbench-layout');
+    if (!layout) return;
+    const viewportMode = getWorkbenchViewportMode();
+    const activeShell = ensureWorkbenchShell(layout, viewportMode);
+    mountWorkbenchSharedNodes(activeShell);
     const sidePanel = document.getElementById('workbench-side-panel');
     const topActions = document.getElementById('workbench-top-actions');
     const tabletTabs = document.getElementById('workbench-tablet-panel-tabs');
@@ -1639,17 +1680,28 @@ function applyWorkbenchLayoutMode(hasPattern) {
     const draftActions = document.getElementById('workbench-draft-actions');
     const draftPrimaryControl = document.getElementById('draft-primary-control');
     const draftDrawer = document.getElementById('draft-drawer');
-    if (!layout || !sidePanel || !setupDraftSlot || !sideDraftSlot || !draftActions) return;
+    if (!activeShell || !sidePanel || !setupDraftSlot || !sideDraftSlot || !draftActions) return;
 
-    const isMobile = isWorkbenchMobileLayout();
-    const isTablet = !isMobile && isWorkbenchTabletLayout();
+    const isMobile = viewportMode === 'mobile';
+    const isTablet = viewportMode === 'tablet';
+    if (AppState.workbenchViewportMode !== viewportMode) {
+        AppState.workbenchViewportMode = viewportMode;
+        AppState.draftDrawerOpen = false;
+        AppState.workbenchTabletPanel = null;
+        AppState.palettePanelOpen = false;
+        AppState.palettePanelPosition = null;
+        AppState.palettePanelDrag = null;
+        AppState.comparePreviewDragging = false;
+    }
     layout.dataset.mode = hasPattern ? 'editor' : 'setup';
-    layout.dataset.viewport = isMobile ? 'mobile' : (isTablet ? 'tablet' : 'desktop');
+    layout.dataset.viewport = viewportMode;
+    activeShell.dataset.mode = hasPattern ? 'editor' : 'setup';
     if (hasPattern) {
         const editorDraftParent = topDraftSlot || sideDraftSlot;
         if (draftActions.parentElement !== editorDraftParent) editorDraftParent.appendChild(draftActions);
-        layout.style.gridTemplateColumns = 'minmax(0, 1fr)';
-        layout.style.gridTemplateRows = 'auto minmax(0, 1fr)';
+        activeShell.style.gridTemplateColumns = 'minmax(0, 1fr)';
+        activeShell.style.gridTemplateRows = 'auto minmax(0, 1fr)';
+        activeShell.style.gap = isMobile ? '12px' : (isTablet ? '16px' : '20px');
         sidePanel.style.display = 'block';
         sidePanel.style.gridTemplateColumns = '';
         sidePanel.style.gridTemplateRows = '';
@@ -1710,8 +1762,9 @@ function applyWorkbenchLayoutMode(hasPattern) {
     const setupDraftParent = hasImage ? sideDraftSlot : setupDraftSlot;
     if (draftActions.parentElement !== setupDraftParent) setupDraftParent.appendChild(draftActions);
     const isCompactSetup = isMobile || isTablet;
-    layout.style.gridTemplateColumns = isCompactSetup ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 380px';
-    layout.style.gridTemplateRows = isCompactSetup ? 'minmax(360px, 1fr) auto' : '';
+    activeShell.style.gridTemplateColumns = isCompactSetup ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 380px';
+    activeShell.style.gridTemplateRows = isCompactSetup ? 'minmax(360px, 1fr) auto' : '';
+    activeShell.style.gap = isMobile ? '12px' : (isTablet ? '16px' : '20px');
     sidePanel.style.display = isCompactSetup ? 'grid' : '';
     sidePanel.style.gridTemplateColumns = isTablet && hasImage ? 'minmax(0, 1fr) 280px' : '';
     sidePanel.style.gridTemplateRows = '';

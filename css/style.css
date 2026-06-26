@@ -36,6 +36,44 @@
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
 }
 
+#workbench-layout {
+    display: grid;
+}
+
+.workbench-shell {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.workbench-shell.is-active {
+    display: grid;
+}
+
+.workbench-shell:not(.is-active) {
+    display: none;
+}
+
+#workbench-desktop-shell {
+    --workbench-shell-name: desktop;
+}
+
+#workbench-tablet-shell {
+    --workbench-shell-name: tablet;
+}
+
+#workbench-mobile-shell {
+    --workbench-shell-name: mobile;
+}
+
+#workbench-tablet-shell.is-active,
+#workbench-mobile-shell.is-active {
+    min-height: 0;
+}
+
 #workbench-top-actions {
     display: none;
     min-height: 52px;

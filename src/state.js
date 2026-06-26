@@ -60,6 +60,7 @@ export const AppState = {
     workbenchSettingsCollapsed: false,
     workbenchTabletPanel: null,
     workbenchToolbarCollapsed: false,
+    workbenchViewportMode: 'desktop',
     cropRect: null,
     cropInteraction: null,
     comparePreviewScale: 1,
