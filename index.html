@@ -41,12 +41,14 @@
 
         <div id="workbench-layout" class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
             <div id="workbench-top-actions" class="hidden bg-white rounded-2xl border border-white shadow-sm p-3 items-center gap-3">
-                <div class="flex-1"></div>
-                <div id="workbench-tablet-panel-tabs" class="hidden items-center gap-2">
+                <div id="workbench-top-title" class="min-w-0 flex-1 flex items-center gap-2">
+                    <span id="workbench-pattern-title" class="min-w-0 truncate text-sm font-black text-gray-900">未命名图纸</span>
                     <button id="show-workbench-settings-panel-btn" type="button"
-                        class="px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
-                        生成设置
+                        class="shrink-0 px-3 py-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
+                        设置
                     </button>
+                </div>
+                <div id="workbench-tablet-panel-tabs" class="hidden items-center gap-2">
                     <button id="show-workbench-colors-panel-btn" type="button"
                         class="px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
                         颜色清单
@@ -206,18 +208,10 @@
                         更换图片
                     </label>
                     <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="text-sm font-bold text-gray-800">像素密度</label>
-                            <span id="grid-size-display"
-                                class="text-xs font-mono bg-gray-100 px-2 py-1 rounded-lg text-primary font-bold">32x32</span>
-                        </div>
-                        <div class="flex items-center gap-2 mb-2">
-                            <span id="board-size-display" class="text-[10px] px-1.5 py-0.5 rounded-md font-bold"></span>
-                        </div>
-                        <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="32"
-                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                        <label class="text-sm font-bold text-gray-800 mb-2 block">图纸名称</label>
+                        <input id="pattern-name-input" type="text" maxlength="40" placeholder="未命名图纸"
+                            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary">
                     </div>
-
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                                 <label class="text-sm font-bold text-gray-800 mb-2 block">拼豆品牌</label>
@@ -244,6 +238,19 @@
                                 <option value="24">24色</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-bold text-gray-800">像素密度</label>
+                            <span id="grid-size-display"
+                                class="text-xs font-mono bg-gray-100 px-2 py-1 rounded-lg text-primary font-bold">32x32</span>
+                        </div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span id="board-size-display" class="text-[10px] px-1.5 py-0.5 rounded-md font-bold"></span>
+                        </div>
+                        <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="32"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
                     </div>
 
                     <div class="bg-gray-50 p-4 space-y-4 rounded-xl border border-gray-100">
@@ -321,7 +328,7 @@
 
                     </div>
 
-                    <div class="grid grid-cols-1 gap-3">
+                    <div id="workbench-generate-actions" class="grid grid-cols-1 gap-3">
                         <button id="generate-pixel-art-btn"
                             class="hidden w-full py-4 bg-primary text-white text-sm font-bold rounded-xl active:scale-95 transition justify-center items-center shadow-sm">
                             生成像素风
@@ -334,6 +341,10 @@
                     <button id="legacy-generate-pattern-btn"
                         class="hidden w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition flex justify-center items-center shadow-sm">
                         原始算法生成（对比）
+                    </button>
+                    <button id="apply-workbench-settings-btn"
+                        class="hidden w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition">
+                        应用设置
                     </button>
                 </section>
 

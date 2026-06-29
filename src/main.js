@@ -11,6 +11,7 @@ import {
     handleGeneratePixelArt,
     handleGeneratePattern,
     handleGeneratePatternLegacy,
+    applyWorkbenchSettings,
     handlePatternPreviewStyle,
     cancelPatternPreview,
     confirmPatternPreview,
@@ -76,6 +77,9 @@ import { initZoomEvents, resetZoom } from './features/zoom.js';
  * 处理图片上传
  */
 const resetProjectForNewImage = () => {
+    AppState.patternName = '';
+    AppState.pendingGridWidth = null;
+    AppState.pendingGridHeight = null;
     AppState.pixelData = [];
     AppState.pixelArtData = null;
     AppState.pixelArtSettings = { contrast: 0, sharpen: 0, dominant: 50 };
@@ -224,6 +228,14 @@ document.addEventListener('DOMContentLoaded', () => {
         gridSizeSlider.addEventListener('input', updateGridDimensions);
     }
 
+    const patternNameInput = document.getElementById('pattern-name-input');
+    if (patternNameInput) {
+        patternNameInput.addEventListener('input', (event) => {
+            AppState.patternName = event.target.value;
+            updateWorkbenchUI();
+        });
+    }
+
     const brandSelect = document.getElementById('brand-select');
     if (brandSelect) {
         brandSelect.addEventListener('change', (e) => {
@@ -294,6 +306,11 @@ document.addEventListener('DOMContentLoaded', () => {
             handleGeneratePatternLegacy();
             updateWorkbenchUI();
         });
+    }
+
+    const applyWorkbenchSettingsBtn = document.getElementById('apply-workbench-settings-btn');
+    if (applyWorkbenchSettingsBtn) {
+        applyWorkbenchSettingsBtn.addEventListener('click', applyWorkbenchSettings);
     }
 
     document.querySelectorAll('.pattern-preview-style-btn').forEach((btn) => {

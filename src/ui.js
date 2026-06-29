@@ -202,7 +202,9 @@ function getWorkbenchSettingsSummary() {
     const colorLimitText = colorLimitToggle && colorLimitToggle.checked
         ? `最多${maxColorsSlider ? maxColorsSlider.value : 24}色`
         : '不限颜色';
-    return `${AppState.gridWidth}x${AppState.gridHeight} · ${brand}${setText} · ${colorLimitText}`;
+    const gridWidth = AppState.pendingGridWidth || AppState.gridWidth;
+    const gridHeight = AppState.pendingGridHeight || AppState.gridHeight;
+    return `${gridWidth}x${gridHeight} · ${brand}${setText} · ${colorLimitText}`;
 }
 
 function getPaletteTitle() {
@@ -259,7 +261,9 @@ const WORKBENCH_DRAFTS_DB = 'perler_beads_workbench_drafts_db';
 const WORKBENCH_DRAFTS_STORE = 'drafts';
 
 function hasWorkbenchPattern() {
-    return Array.isArray(AppState.pixelData) && AppState.pixelData.length > 0;
+    return Array.isArray(AppState.pixelData)
+        && AppState.pixelData.length === AppState.gridWidth * AppState.gridHeight
+        && AppState.pixelData.length > 0;
 }
 
 function renderPalettePanel() {
@@ -496,6 +500,7 @@ function normalizeImportedDraft(draft, index = 0) {
     return {
         id: `draft_import_${importedAt}_${index}`,
         name: `${draft.name || '导入草稿'}（导入）`,
+        patternName: draft.patternName || draft.name || '',
         updatedAt: new Date(importedAt + index).toISOString(),
         gridWidth,
         gridHeight,
@@ -577,12 +582,15 @@ function renderDraftBox() {
     if (!empty || !list || !saveBtn || !drawer || !toggleBtn) return;
 
     const hasPattern = hasWorkbenchPattern();
+    const isMobileTopBar = AppState.workbenchViewportMode === 'mobile' && hasPattern;
     saveBtn.disabled = false;
     saveBtn.classList.toggle('opacity-40', false);
     saveBtn.classList.toggle('cursor-not-allowed', false);
 
     const drafts = Array.isArray(AppState.drafts) ? AppState.drafts : [];
-    saveBtn.textContent = hasPattern ? `保存为草稿（${drafts.length}）` : `草稿箱（${drafts.length}）`;
+    saveBtn.textContent = hasPattern
+        ? (isMobileTopBar ? `草稿（${drafts.length}）` : `保存为草稿（${drafts.length}）`)
+        : `草稿箱（${drafts.length}）`;
     drawer.classList.toggle('hidden', !AppState.draftDrawerOpen);
     toggleBtn.textContent = AppState.draftDrawerOpen ? '↓' : '↑';
     toggleBtn.setAttribute('aria-label', AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表');
@@ -639,9 +647,11 @@ export async function saveWorkbenchDraft() {
     if (!AppState.image || !hasWorkbenchPattern()) return;
     const pixels = getCurrentDraftSourcePixels();
     const colorIds = new Set(pixels.filter((item) => item && item.id !== 'NONE').map((item) => item.id));
+    const patternName = String(AppState.patternName || '').trim();
     const draft = {
         id: `draft_${Date.now()}`,
-        name: getNextDraftName(),
+        name: patternName || getNextDraftName(),
+        patternName,
         updatedAt: new Date().toISOString(),
         gridWidth: AppState.gridWidth,
         gridHeight: AppState.gridHeight,
@@ -728,6 +738,9 @@ export function restoreWorkbenchDraft(draftId) {
 
     AppState.gridWidth = Number(draft.gridWidth);
     AppState.gridHeight = Number(draft.gridHeight);
+    AppState.pendingGridWidth = null;
+    AppState.pendingGridHeight = null;
+    AppState.patternName = draft.patternName || draft.name || '';
     AppState.brand = draft.brand || 'mard';
     AppState.mardSet = draft.mardSet || 221;
     AppState.pixelArtData = null;
@@ -781,6 +794,8 @@ export function restoreWorkbenchDraft(draftId) {
     if (brandSelect) brandSelect.value = AppState.brand;
     const mardSetSelect = document.getElementById('mard-set-select');
     if (mardSetSelect) mardSetSelect.value = String(AppState.mardSet);
+    const patternNameInput = document.getElementById('pattern-name-input');
+    if (patternNameInput) patternNameInput.value = AppState.patternName;
 
     const finishRestore = () => {
         const sourceCanvas = document.getElementById('source-canvas');
@@ -832,6 +847,7 @@ export async function renameWorkbenchDraft(draftId, nextName) {
         return;
     }
     draft.name = trimmedName;
+    draft.patternName = trimmedName;
     draft.updatedAt = new Date().toISOString();
     await upsertWorkbenchDraft(draft);
     AppState.drafts = [...(AppState.drafts || [])].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
@@ -1685,6 +1701,9 @@ export function recropMobileWorkbenchImage() {
 
 export function removeWorkbenchImage() {
     if (!isWorkbenchLayout()) return;
+    AppState.patternName = '';
+    AppState.pendingGridWidth = null;
+    AppState.pendingGridHeight = null;
     AppState.image = null;
     AppState.originalImageData = null;
     AppState.history = [];
@@ -1933,12 +1952,20 @@ export function updateWorkbenchUI() {
     setHidden('mobile-crop-actions', !isMobileSettingsStep);
     setHidden('mobile-crop-confirm-actions', !isMobileCropStep);
     setHidden('next-to-step-4', !hasPattern);
+    setHidden('workbench-generate-actions', hasPattern);
+    setHidden('legacy-generate-pattern-btn', true);
+    setHidden('apply-workbench-settings-btn', !hasPattern);
     setHidden('toggle-workbench-settings-btn', isMobileCropStep);
     setHidden('workbench-settings-content', settingsCollapsed || isMobileCropStep);
     setText('generate-pattern-label', isWorkbenchLayout() ? '生成预览' : (hasPattern ? '更新拼豆图纸' : '生成拼豆图纸'));
     setText('pixel-art-status', hasPixelArt ? '预览已生成' : '未生成预览');
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
+    setText('workbench-pattern-title', String(AppState.patternName || '').trim() || '未命名图纸');
+    const patternNameInput = document.getElementById('pattern-name-input');
+    if (patternNameInput && document.activeElement !== patternNameInput) {
+        patternNameInput.value = AppState.patternName || '';
+    }
     const settingsTab = document.getElementById('show-workbench-settings-panel-btn');
     const colorsTab = document.getElementById('show-workbench-colors-panel-btn');
     if (settingsTab) {
@@ -1965,6 +1992,7 @@ export function updateWorkbenchUI() {
         if (generateLabel && isWorkbenchLayout()) {
             generateLabel.textContent = isMobileCropStep ? '确认范围' : '生成预览';
         }
+        generateBtn.classList.toggle('hidden', AppState.patternPreviewVisible);
         generateBtn.disabled = !hasImage;
         generateBtn.classList.toggle('opacity-40', !hasImage);
         generateBtn.classList.toggle('cursor-not-allowed', !hasImage);
@@ -2107,19 +2135,43 @@ function initSettingsView() {
 export function updateGridDimensions() {
     const slider = document.getElementById('grid-size-slider');
     const sizeDisplay = document.getElementById('grid-size-display');
+    const hadPattern = hasWorkbenchPattern();
     const val = parseInt(slider.value);
     const ratio = getActiveSourceRatio();
+    let nextGridWidth;
+    let nextGridHeight;
     
     if (ratio >= 1) {
-        AppState.gridWidth = val;
-        AppState.gridHeight = Math.round(val / ratio);
+        nextGridWidth = val;
+        nextGridHeight = Math.round(val / ratio);
     } else {
-        AppState.gridHeight = val;
-        AppState.gridWidth = Math.round(val * ratio);
+        nextGridHeight = val;
+        nextGridWidth = Math.round(val * ratio);
     }
     
-    sizeDisplay.innerText = `${AppState.gridWidth}x${AppState.gridHeight}`;
+    sizeDisplay.innerText = `${nextGridWidth}x${nextGridHeight}`;
+    if (hadPattern) {
+        AppState.pendingGridWidth = nextGridWidth;
+        AppState.pendingGridHeight = nextGridHeight;
+        updateBoardSizeUI(nextGridWidth, nextGridHeight);
+        updateWorkbenchUI();
+        return;
+    }
+
+    AppState.gridWidth = nextGridWidth;
+    AppState.gridHeight = nextGridHeight;
+    AppState.pendingGridWidth = null;
+    AppState.pendingGridHeight = null;
     if (!hasWorkbenchPattern()) {
+        AppState.pixelData = [];
+        AppState.generatedPixelData = null;
+        AppState.patternPreviewVisible = false;
+        AppState.patternPreviewPixelData = null;
+        AppState.patternPreviewPixelArtData = null;
+        AppState.stagedPixelData = null;
+        AppState.stagedActions = [];
+        AppState.qualityIssues = [];
+        AppState.qualityOverlayVisible = false;
         AppState.pixelArtData = null;
     }
     updateBoardSizeUI();
@@ -2129,9 +2181,9 @@ export function updateGridDimensions() {
 /**
  * 更新板子尺寸 UI
  */
-function updateBoardSizeUI() {
+function updateBoardSizeUI(gridWidth = AppState.gridWidth, gridHeight = AppState.gridHeight) {
     const boardSizeDisplay = document.getElementById('board-size-display');
-    const maxDim = Math.max(AppState.gridWidth, AppState.gridHeight);
+    const maxDim = Math.max(gridWidth, gridHeight);
     if (maxDim <= 52) {
         boardSizeDisplay.innerText = '52板';
         boardSizeDisplay.className = 'text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-blue-100 text-blue-600';
@@ -2520,6 +2572,20 @@ export function handleGeneratePattern() {
     AppState.comparePreviewVisible = false;
 
     goToStep(3);
+}
+
+export function applyWorkbenchSettings() {
+    if (!isWorkbenchLayout() || !AppState.image || !hasWorkbenchPattern()) return;
+    const confirmed = window.confirm('重新生成图纸？\n\n应用新的生成设置后，当前图纸结果会被重新计算，已有的颜色调整、删除色块和生成效果选择可能会被覆盖。');
+    if (!confirmed) return;
+    if (AppState.pendingGridWidth && AppState.pendingGridHeight) {
+        AppState.gridWidth = AppState.pendingGridWidth;
+        AppState.gridHeight = AppState.pendingGridHeight;
+        AppState.pendingGridWidth = null;
+        AppState.pendingGridHeight = null;
+    }
+    buildPatternPreview(AppState.patternPreviewStyle || 'photo');
+    updateWorkbenchUI();
 }
 
 export function handlePatternPreviewStyle(style) {

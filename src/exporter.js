@@ -3,6 +3,18 @@
  */
 import { AppState } from './state.js';
 
+function getPatternTitle() {
+    return String(AppState.patternName || '').trim() || '未命名图纸';
+}
+
+function makeSafeFileBase(value, fallback = 'perler-pattern') {
+    return String(value || fallback)
+        .trim()
+        .replace(/[\\/:*?"<>|]+/g, '-')
+        .replace(/\s+/g, '-')
+        .slice(0, 48) || fallback;
+}
+
 /**
  * 下载 PNG 图片
  */
@@ -19,6 +31,8 @@ export function downloadImage() {
     const margin = boardSize === 52 ? 2 : 4;
     const exportScale = 60;
     const gridOffset = exportScale;
+    const titleHeight = 130;
+    const boardTop = titleHeight;
     
     // 1. 计算非透明色块的最小包围盒
     let minX = AppState.gridWidth, minY = AppState.gridHeight, maxX = -1, maxY = -1;
@@ -69,10 +83,16 @@ export function downloadImage() {
     const exportCtx = exportCanvas.getContext('2d');
     
     exportCanvas.width = finalCanvasWidth;
-    exportCanvas.height = boardPxSizeY + statsHeight;
+    exportCanvas.height = titleHeight + boardPxSizeY + statsHeight;
     
     exportCtx.fillStyle = '#ffffff';
     exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    exportCtx.textAlign = 'left';
+    exportCtx.textBaseline = 'middle';
+    exportCtx.fillStyle = '#111827';
+    exportCtx.font = 'bold 52px Arial';
+    exportCtx.fillText(getPatternTitle(), padding, titleHeight / 2);
 
     exportCtx.textAlign = 'center';
     exportCtx.textBaseline = 'middle';
@@ -84,7 +104,7 @@ export function downloadImage() {
             const color = AppState.pixelData[i];
             if (color.id === 'NONE') continue;
             const drawX = gridOffset + (x - minX) * exportScale;
-            const drawY = gridOffset + (y - minY) * exportScale;
+            const drawY = boardTop + gridOffset + (y - minY) * exportScale;
 
             exportCtx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
             exportCtx.fillRect(drawX, drawY, exportScale, exportScale);
@@ -102,14 +122,14 @@ export function downloadImage() {
     for (let i = 0; i <= contentWidth; i++) {
         const pos = gridOffset + i * exportScale;
         exportCtx.beginPath();
-        exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSizeY);
+        exportCtx.moveTo(pos, boardTop + gridOffset); exportCtx.lineTo(pos, boardTop + boardPxSizeY);
         exportCtx.stroke();
     }
     // 水平线
     for (let i = 0; i <= contentHeight; i++) {
         const pos = gridOffset + i * exportScale;
         exportCtx.beginPath();
-        exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSizeX, pos);
+        exportCtx.moveTo(gridOffset, boardTop + pos); exportCtx.lineTo(boardPxSizeX, boardTop + pos);
         exportCtx.stroke();
     }
 
@@ -133,7 +153,7 @@ export function downloadImage() {
                 exportCtx.strokeStyle = 'rgba(0,0,0,0.3)';
                 exportCtx.lineWidth = 2;
             }
-            exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSizeY);
+            exportCtx.moveTo(pos, boardTop + gridOffset); exportCtx.lineTo(pos, boardTop + boardPxSizeY);
             exportCtx.stroke();
             exportCtx.setLineDash([]);
         }
@@ -156,7 +176,7 @@ export function downloadImage() {
                 exportCtx.strokeStyle = 'rgba(0,0,0,0.3)';
                 exportCtx.lineWidth = 2;
             }
-            exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSizeX, pos);
+            exportCtx.moveTo(gridOffset, boardTop + pos); exportCtx.lineTo(boardPxSizeX, boardTop + pos);
             exportCtx.stroke();
             exportCtx.setLineDash([]);
         }
@@ -169,17 +189,17 @@ export function downloadImage() {
     for (let i = 0; i < contentWidth; i++) {
         const globalX = minX + i + 1; // 标尺从1开始
         const textPos = gridOffset + i * exportScale + exportScale / 2;
-        exportCtx.fillText(globalX.toString(), textPos, exportScale / 2);
+        exportCtx.fillText(globalX.toString(), textPos, boardTop + exportScale / 2);
     }
     // 纵向标尺
     for (let i = 0; i < contentHeight; i++) {
         const globalY = minY + i + 1; // 标尺从1开始
         const textPos = gridOffset + i * exportScale + exportScale / 2;
-        exportCtx.fillText(globalY.toString(), exportScale / 2, textPos);
+        exportCtx.fillText(globalY.toString(), exportScale / 2, boardTop + textPos);
     }
 
     // 清单标题
-    const statsStartY = boardPxSizeY + padding;
+    const statsStartY = boardTop + boardPxSizeY + padding;
     exportCtx.textAlign = 'left';
     exportCtx.textBaseline = 'top';
     exportCtx.fillStyle = '#333333';
@@ -226,7 +246,7 @@ export function downloadImage() {
     });
 
     const link = document.createElement('a');
-    link.download = `perler-pattern-${AppState.gridWidth}x${AppState.gridHeight}-${Date.now()}.png`;
+    link.download = `${makeSafeFileBase(getPatternTitle())}-${AppState.gridWidth}x${AppState.gridHeight}-${Date.now()}.png`;
     link.href = exportCanvas.toDataURL('image/png');
     link.click();
 }
@@ -258,6 +278,8 @@ export function downloadMirroredImage() {
     const boardSize = Math.max(AppState.gridWidth, AppState.gridHeight) <= 52 ? 52 : 104;
     const exportScale = 60;
     const gridOffset = exportScale;
+    const titleHeight = 130;
+    const boardTop = titleHeight;
     
     // 1. 计算非透明色块的最小包围盒 (基于镜像后的数据)
     let minX = AppState.gridWidth, minY = AppState.gridHeight, maxX = -1, maxY = -1;
@@ -308,10 +330,16 @@ export function downloadMirroredImage() {
     const exportCtx = exportCanvas.getContext('2d');
     
     exportCanvas.width = finalCanvasWidth;
-    exportCanvas.height = boardPxSizeY + statsHeight;
+    exportCanvas.height = titleHeight + boardPxSizeY + statsHeight;
     
     exportCtx.fillStyle = '#ffffff';
     exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    exportCtx.textAlign = 'left';
+    exportCtx.textBaseline = 'middle';
+    exportCtx.fillStyle = '#111827';
+    exportCtx.font = 'bold 52px Arial';
+    exportCtx.fillText(`${getPatternTitle()}（镜像）`, padding, titleHeight / 2);
 
     exportCtx.textAlign = 'center';
     exportCtx.textBaseline = 'middle';
@@ -323,7 +351,7 @@ export function downloadMirroredImage() {
             const color = mirroredPixelData[i]; // 使用镜像后的数据
             if (!color || color.id === 'NONE') continue;
             const drawX = gridOffset + (x - minX) * exportScale;
-            const drawY = gridOffset + (y - minY) * exportScale;
+            const drawY = boardTop + gridOffset + (y - minY) * exportScale;
 
             exportCtx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
             exportCtx.fillRect(drawX, drawY, exportScale, exportScale);
@@ -341,14 +369,14 @@ export function downloadMirroredImage() {
     for (let i = 0; i <= contentWidth; i++) {
         const pos = gridOffset + i * exportScale;
         exportCtx.beginPath();
-        exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSizeY);
+        exportCtx.moveTo(pos, boardTop + gridOffset); exportCtx.lineTo(pos, boardTop + boardPxSizeY);
         exportCtx.stroke();
     }
     // 水平线
     for (let i = 0; i <= contentHeight; i++) {
         const pos = gridOffset + i * exportScale;
         exportCtx.beginPath();
-        exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSizeX, pos);
+        exportCtx.moveTo(gridOffset, boardTop + pos); exportCtx.lineTo(boardPxSizeX, boardTop + pos);
         exportCtx.stroke();
     }
 
@@ -372,7 +400,7 @@ export function downloadMirroredImage() {
                 exportCtx.strokeStyle = 'rgba(0,0,0,0.3)';
                 exportCtx.lineWidth = 2;
             }
-            exportCtx.moveTo(pos, gridOffset); exportCtx.lineTo(pos, boardPxSizeY);
+            exportCtx.moveTo(pos, boardTop + gridOffset); exportCtx.lineTo(pos, boardTop + boardPxSizeY);
             exportCtx.stroke();
             exportCtx.setLineDash([]);
         }
@@ -395,7 +423,7 @@ export function downloadMirroredImage() {
                 exportCtx.strokeStyle = 'rgba(0,0,0,0.3)';
                 exportCtx.lineWidth = 2;
             }
-            exportCtx.moveTo(gridOffset, pos); exportCtx.lineTo(boardPxSizeX, pos);
+            exportCtx.moveTo(gridOffset, boardTop + pos); exportCtx.lineTo(boardPxSizeX, boardTop + pos);
             exportCtx.stroke();
             exportCtx.setLineDash([]);
         }
@@ -408,17 +436,17 @@ export function downloadMirroredImage() {
     for (let i = 0; i < contentWidth; i++) {
         const globalX = minX + i + 1; // 标尺从1开始
         const textPos = gridOffset + i * exportScale + exportScale / 2;
-        exportCtx.fillText(globalX.toString(), textPos, exportScale / 2);
+        exportCtx.fillText(globalX.toString(), textPos, boardTop + exportScale / 2);
     }
     // 纵向标尺
     for (let i = 0; i < contentHeight; i++) {
         const globalY = minY + i + 1; // 标尺从1开始
         const textPos = gridOffset + i * exportScale + exportScale / 2;
-        exportCtx.fillText(globalY.toString(), exportScale / 2, textPos);
+        exportCtx.fillText(globalY.toString(), exportScale / 2, boardTop + textPos);
     }
 
     // 清单标题
-    const statsStartY = boardPxSizeY + padding;
+    const statsStartY = boardTop + boardPxSizeY + padding;
     exportCtx.textAlign = 'left';
     exportCtx.textBaseline = 'top';
     exportCtx.fillStyle = '#333333';
@@ -465,7 +493,7 @@ export function downloadMirroredImage() {
     });
 
     const link = document.createElement('a');
-    link.download = `perler-mirrored-pattern-${AppState.gridWidth}x${AppState.gridHeight}-${Date.now()}.png`;
+    link.download = `${makeSafeFileBase(`${getPatternTitle()}-mirrored`)}-${AppState.gridWidth}x${AppState.gridHeight}-${Date.now()}.png`;
     link.href = exportCanvas.toDataURL('image/png');
     link.click();
 }

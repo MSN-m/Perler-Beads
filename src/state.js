@@ -4,12 +4,15 @@
 
 export const AppState = {
     currentStep: 1,
+    patternName: '',
     image: null,
     originalImageData: null,
     history: [],
     canvasSize: 0,
     gridWidth: 32,
     gridHeight: 32,
+    pendingGridWidth: null,
+    pendingGridHeight: null,
     brand: 'mard',
     mardSet: 221,
     pixelData: [],

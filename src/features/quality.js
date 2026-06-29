@@ -230,6 +230,7 @@ function buildQualityRegions(issues, gridWidth, gridHeight) {
 export function analyzeQualityIssues() {
     const pixels = getActivePixels();
     if (!pixels.length || !AppState.gridWidth || !AppState.gridHeight) return [];
+    if (pixels.length !== AppState.gridWidth * AppState.gridHeight) return [];
 
     const issues = [
         ...findFragmentedRegionIssues(pixels, AppState.gridWidth, AppState.gridHeight),

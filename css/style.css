@@ -97,6 +97,10 @@
     z-index: 80;
 }
 
+#workbench-top-title {
+    overflow: hidden;
+}
+
 #workbench-top-draft-slot {
     width: 100%;
     max-width: 320px;
@@ -110,6 +114,7 @@
 
 #workbench-top-actions #workbench-tablet-panel-tabs {
     gap: 8px;
+    margin-left: auto;
 }
 
 #workbench-top-actions #workbench-tablet-panel-tabs button {
@@ -140,6 +145,10 @@
 #workbench-top-actions #draft-drawer {
     margin-top: 0;
     margin-bottom: 0;
+}
+
+#pattern-preview-layer {
+    z-index: 120;
 }
 
 #workbench-layout[data-mode="editor"] #workbench-side-panel {
@@ -265,8 +274,19 @@
         overflow-y: visible;
     }
 
-    #workbench-top-actions > .flex-1 {
-        display: none;
+    #workbench-top-title {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    #workbench-pattern-title {
+        max-width: 30vw;
+        font-size: 13px;
+    }
+
+    #show-workbench-settings-panel-btn {
+        padding: 7px 9px;
+        font-size: 12px;
     }
 
     #workbench-tablet-panel-tabs {
@@ -289,8 +309,8 @@
 
     #workbench-top-draft-slot #workbench-draft-actions {
         width: auto;
-        min-width: 180px;
-        grid-template-columns: minmax(92px, 1fr) 68px !important;
+        min-width: 132px;
+        grid-template-columns: minmax(72px, 1fr) 52px !important;
         gap: 6px;
     }
 
@@ -305,7 +325,7 @@
     }
 
     #workbench-top-actions #toggle-draft-drawer-btn {
-        width: 36px;
+        width: 32px;
     }
 
     #workbench-top-actions #draft-drawer {
