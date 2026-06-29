@@ -1699,6 +1699,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
     if (hasPattern) {
         const editorDraftParent = topDraftSlot || sideDraftSlot;
         if (draftActions.parentElement !== editorDraftParent) editorDraftParent.appendChild(draftActions);
+        draftActions.classList.remove('hidden');
         activeShell.style.gridTemplateColumns = 'minmax(0, 1fr)';
         activeShell.style.gridTemplateRows = 'auto minmax(0, 1fr)';
         activeShell.style.gap = isMobile ? '12px' : (isTablet ? '16px' : '20px');
@@ -1761,6 +1762,9 @@ function applyWorkbenchLayoutMode(hasPattern) {
     const hasImage = Boolean(AppState.image);
     const setupDraftParent = hasImage ? sideDraftSlot : setupDraftSlot;
     if (draftActions.parentElement !== setupDraftParent) setupDraftParent.appendChild(draftActions);
+    const hideSetupDraftActions = isMobile && hasImage;
+    draftActions.classList.toggle('hidden', hideSetupDraftActions);
+    if (hideSetupDraftActions) AppState.draftDrawerOpen = false;
     const isCompactSetup = isMobile || isTablet;
     activeShell.style.gridTemplateColumns = isCompactSetup ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 380px';
     activeShell.style.gridTemplateRows = isCompactSetup ? 'minmax(360px, 1fr) auto' : '';
