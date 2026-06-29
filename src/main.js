@@ -53,6 +53,8 @@ import {
     expandWorkbenchEditToolbar,
     toggleWorkbenchSettingsPanel,
     selectWorkbenchTabletPanel,
+    recropMobileWorkbenchImage,
+    removeWorkbenchImage,
     togglePalettePanel,
     closePalettePanel,
     updatePalettePanelQuery,
@@ -106,6 +108,7 @@ const resetProjectForNewImage = () => {
     AppState.workbenchSettingsCollapsed = false;
     AppState.workbenchTabletPanel = null;
     AppState.workbenchToolbarCollapsed = false;
+    AppState.mobileSetupStep = 'crop';
     AppState.cropRect = null;
     AppState.cropInteraction = null;
     AppState.comparePreviewScale = 1;
@@ -277,6 +280,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const mobileConfirmRangeBtn = document.getElementById('mobile-confirm-range-btn');
+    if (mobileConfirmRangeBtn) {
+        mobileConfirmRangeBtn.addEventListener('click', () => {
+            handleGeneratePattern();
+            updateWorkbenchUI();
+        });
+    }
+
     const legacyGenerateBtn = document.getElementById('legacy-generate-pattern-btn');
     if (legacyGenerateBtn) {
         legacyGenerateBtn.addEventListener('click', () => {
@@ -299,6 +310,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const patternPreviewConfirmBtn = document.getElementById('pattern-preview-confirm-btn');
     if (patternPreviewConfirmBtn) {
         patternPreviewConfirmBtn.addEventListener('click', confirmPatternPreview);
+    }
+
+    const mobileRecropBtn = document.getElementById('mobile-recrop-btn');
+    if (mobileRecropBtn) {
+        mobileRecropBtn.addEventListener('click', recropMobileWorkbenchImage);
+    }
+
+    const mobileRemoveImageBtn = document.getElementById('mobile-remove-image-btn');
+    if (mobileRemoveImageBtn) {
+        mobileRemoveImageBtn.addEventListener('click', removeWorkbenchImage);
     }
 
     const toggleWorkbenchSettingsBtn = document.getElementById('toggle-workbench-settings-btn');

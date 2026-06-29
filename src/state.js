@@ -61,6 +61,7 @@ export const AppState = {
     workbenchTabletPanel: null,
     workbenchToolbarCollapsed: false,
     workbenchViewportMode: 'desktop',
+    mobileSetupStep: 'crop',
     cropRect: null,
     cropInteraction: null,
     comparePreviewScale: 1,
