@@ -67,6 +67,11 @@ import {
     refreshQualityOverlay,
     updatePixelArtControlDisplays,
     updateWorkbenchUI,
+    openMobileSettingsModal,
+    closeMobileSettingsModal,
+    applyMobilePatternName,
+    selectMobileBrand,
+    selectMobileMardSet,
     toggleEdgeAdjustMode,
     toggleDeleteMode
 } from './ui.js';
@@ -230,6 +235,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const patternNameInput = document.getElementById('pattern-name-input');
     if (patternNameInput) {
+        patternNameInput.closest('div')?.addEventListener('pointerdown', (event) => {
+            if (!openMobileSettingsModal('name')) return;
+            event.preventDefault();
+        });
         patternNameInput.addEventListener('input', (event) => {
             AppState.patternName = event.target.value;
             updateWorkbenchUI();
@@ -238,6 +247,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const brandSelect = document.getElementById('brand-select');
     if (brandSelect) {
+        brandSelect.closest('div.grid')?.addEventListener('pointerdown', (event) => {
+            if (!openMobileSettingsModal('scheme')) return;
+            event.preventDefault();
+        }, true);
         brandSelect.addEventListener('change', (e) => {
             AppState.brand = e.target.value;
             const mardSetContainer = document.getElementById('mard-set-container');
@@ -255,6 +268,50 @@ document.addEventListener('DOMContentLoaded', () => {
         mardSetSelect.addEventListener('change', (e) => {
             AppState.mardSet = e.target.value;
             updateWorkbenchUI();
+        });
+    }
+
+    const mobileSettingsBackdrop = document.getElementById('mobile-settings-backdrop');
+    if (mobileSettingsBackdrop) {
+        mobileSettingsBackdrop.addEventListener('click', closeMobileSettingsModal);
+    }
+
+    const mobileNameCancelBtn = document.getElementById('mobile-name-cancel-btn');
+    if (mobileNameCancelBtn) {
+        mobileNameCancelBtn.addEventListener('click', closeMobileSettingsModal);
+    }
+
+    const mobileNameApplyBtn = document.getElementById('mobile-name-apply-btn');
+    if (mobileNameApplyBtn) {
+        mobileNameApplyBtn.addEventListener('click', applyMobilePatternName);
+    }
+
+    const mobilePatternNameInput = document.getElementById('mobile-pattern-name-input');
+    if (mobilePatternNameInput) {
+        mobilePatternNameInput.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            applyMobilePatternName();
+        });
+    }
+
+    const mobileSchemeCloseBtn = document.getElementById('mobile-scheme-close-btn');
+    if (mobileSchemeCloseBtn) {
+        mobileSchemeCloseBtn.addEventListener('click', closeMobileSettingsModal);
+    }
+
+    const mobileSettingsModal = document.getElementById('mobile-settings-modal');
+    if (mobileSettingsModal) {
+        mobileSettingsModal.addEventListener('click', (event) => {
+            const brandBtn = event.target.closest('button[data-mobile-brand]');
+            if (brandBtn) {
+                selectMobileBrand(brandBtn.getAttribute('data-mobile-brand'));
+                return;
+            }
+            const setBtn = event.target.closest('button[data-mobile-mard-set]');
+            if (setBtn) {
+                selectMobileMardSet(setBtn.getAttribute('data-mobile-mard-set'));
+            }
         });
     }
 

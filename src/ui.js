@@ -121,6 +121,105 @@ function setText(id, text) {
     el.textContent = text;
 }
 
+function getBrandLabel(brand) {
+    return {
+        mard: 'MARD',
+        perler: 'Perler',
+        hama: 'Hama',
+        artkal: 'Artkal'
+    }[brand] || String(brand || '').toUpperCase();
+}
+
+function syncBrandControls() {
+    const brandSelect = document.getElementById('brand-select');
+    const mardSetSelect = document.getElementById('mard-set-select');
+    const mardSetContainer = document.getElementById('mard-set-container');
+    if (brandSelect) brandSelect.value = AppState.brand;
+    if (mardSetSelect) mardSetSelect.value = String(AppState.mardSet);
+    if (mardSetContainer) mardSetContainer.classList.toggle('hidden', AppState.brand !== 'mard');
+}
+
+function syncMobileColorLimitDisplay() {
+    if (!isWorkbenchMobileLayout()) return;
+    const display = document.getElementById('max-colors-display');
+    const toggle = document.getElementById('color-limit-toggle');
+    const header = toggle?.closest('.flex.justify-between.items-center');
+    const title = header?.querySelector('label.text-sm.font-bold');
+    if (!display || !header || !title || display.parentElement === header) return;
+    title.insertAdjacentElement('afterend', display);
+}
+
+function renderMobileSettingsModal() {
+    const modal = document.getElementById('mobile-settings-modal');
+    if (!modal) return;
+    const isOpen = isWorkbenchMobileLayout() && Boolean(AppState.mobileSettingsModal);
+    modal.classList.toggle('hidden', !isOpen);
+    modal.classList.toggle('flex', isOpen);
+    document.getElementById('mobile-name-panel')?.classList.toggle('hidden', AppState.mobileSettingsModal !== 'name');
+    document.getElementById('mobile-scheme-panel')?.classList.toggle('hidden', AppState.mobileSettingsModal !== 'scheme');
+
+    const nameInput = document.getElementById('mobile-pattern-name-input');
+    if (nameInput && document.activeElement !== nameInput) {
+        nameInput.value = AppState.patternName || '';
+    }
+
+    const brandOptions = document.getElementById('mobile-brand-options');
+    if (brandOptions) {
+        const brands = ['mard', 'perler', 'hama', 'artkal'];
+        brandOptions.innerHTML = brands.map((brand) => {
+            const active = AppState.brand === brand;
+            return `<button type="button" data-mobile-brand="${brand}" class="py-3 rounded-2xl text-sm font-bold border ${active ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-50 text-gray-700 border-gray-100'}">${getBrandLabel(brand)}</button>`;
+        }).join('');
+    }
+
+    const setWrap = document.getElementById('mobile-mard-set-options-wrap');
+    if (setWrap) setWrap.classList.toggle('hidden', AppState.brand !== 'mard');
+    const setOptions = document.getElementById('mobile-mard-set-options');
+    if (setOptions) {
+        const sets = [264, 221, 216, 144, 120, 96, 72, 48, 24];
+        setOptions.innerHTML = sets.map((set) => {
+            const active = Number(AppState.mardSet) === set;
+            return `<button type="button" data-mobile-mard-set="${set}" class="py-3 rounded-2xl text-sm font-bold border ${active ? 'bg-primary text-white border-primary' : 'bg-gray-50 text-gray-700 border-gray-100'}">${set}色</button>`;
+        }).join('');
+    }
+}
+
+export function openMobileSettingsModal(type) {
+    if (!isWorkbenchMobileLayout() || !['name', 'scheme'].includes(type)) return false;
+    AppState.mobileSettingsModal = type;
+    updateWorkbenchUI();
+    if (type === 'name') {
+        window.setTimeout(() => document.getElementById('mobile-pattern-name-input')?.focus(), 30);
+    }
+    return true;
+}
+
+export function closeMobileSettingsModal() {
+    AppState.mobileSettingsModal = null;
+    updateWorkbenchUI();
+}
+
+export function applyMobilePatternName() {
+    const input = document.getElementById('mobile-pattern-name-input');
+    AppState.patternName = input?.value || '';
+    closeMobileSettingsModal();
+}
+
+export function selectMobileBrand(brand) {
+    if (!['mard', 'perler', 'hama', 'artkal'].includes(brand)) return;
+    AppState.brand = brand;
+    syncBrandControls();
+    updateWorkbenchUI();
+}
+
+export function selectMobileMardSet(value) {
+    const nextValue = Number(value);
+    if (!Number.isFinite(nextValue)) return;
+    AppState.mardSet = nextValue;
+    syncBrandControls();
+    updateWorkbenchUI();
+}
+
 const WORKBENCH_CURSORS = {
     eyedropper: 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23111827%22 stroke-width=%222.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M14.5 4.5 19.5 9.5%22 stroke=%22white%22 stroke-width=%224.8%22/%3E%3Cpath d=%22M14.5 4.5 19.5 9.5%22/%3E%3Cpath d=%22M13 6 18 11 9.5 19.5 5 21 6.5 16.5 15 8%22 fill=%22white%22/%3E%3Cpath d=%22M13 6 18 11 9.5 19.5 5 21 6.5 16.5 15 8%22/%3E%3C/svg%3E") 5 20, crosshair',
     brush: 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23111827%22 stroke-width=%222.4%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M15 4 20 9%22 stroke=%22white%22 stroke-width=%224.8%22/%3E%3Cpath d=%22M15 4 20 9 12 17 7 12 15 4Z%22 fill=%22white%22/%3E%3Cpath d=%22M15 4 20 9 12 17 7 12 15 4Z%22/%3E%3Cpath d=%22M7 12C4.8 12.6 3.8 14.2 4 17.2 5.7 16.2 7.1 16.1 8.5 16.9%22 fill=%22white%22/%3E%3Cpath d=%22M7 12C4.8 12.6 3.8 14.2 4 17.2 5.7 16.2 7.1 16.1 8.5 16.9%22/%3E%3C/svg%3E") 5 20, crosshair',
@@ -856,7 +955,7 @@ export async function renameWorkbenchDraft(draftId, nextName) {
 
 export function toggleDraftDrawer() {
     AppState.draftDrawerOpen = !AppState.draftDrawerOpen;
-    renderDraftBox();
+    updateWorkbenchUI();
 }
 
 function clamp(value, min, max) {
@@ -1762,6 +1861,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
     layout.dataset.mode = hasPattern ? 'editor' : 'setup';
     layout.dataset.viewport = viewportMode;
     layout.dataset.mobileStep = isMobile && hasImage && !hasPattern ? AppState.mobileSetupStep : '';
+    layout.classList.toggle('draft-modal-open', isMobile && AppState.draftDrawerOpen);
     activeShell.dataset.mode = hasPattern ? 'editor' : 'setup';
     if (hasPattern) {
         const editorDraftParent = topDraftSlot || sideDraftSlot;
@@ -1790,7 +1890,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
             topActions.style.margin = isMobile ? '-12px -12px 0' : (isTablet ? '-16px -16px 0' : '-20px -20px 0');
             topActions.style.borderRadius = '0';
             topActions.style.position = 'relative';
-            topActions.style.zIndex = '80';
+            topActions.style.zIndex = isMobile && AppState.draftDrawerOpen ? '240' : '80';
         }
         if (tabletTabs) tabletTabs.style.display = 'flex';
         if (settingsPanel) {
@@ -1813,15 +1913,17 @@ function applyWorkbenchLayoutMode(hasPattern) {
         draftActions.style.gridTemplateColumns = isMobile ? 'minmax(0, 1fr) 72px' : 'minmax(0, 1fr) 96px';
         if (draftPrimaryControl) draftPrimaryControl.style.gridTemplateColumns = 'minmax(0, 1fr) 48px';
         if (draftDrawer) {
-            draftDrawer.style.top = 'calc(100% + 12px)';
-            draftDrawer.style.bottom = 'auto';
-            draftDrawer.style.left = 'auto';
-            draftDrawer.style.right = isMobile ? '0' : '104px';
-            draftDrawer.style.width = isMobile ? 'min(360px, calc(100vw - 16px))' : 'min(420px, calc(100vw - 48px))';
+            draftDrawer.style.position = isMobile ? 'fixed' : '';
+            draftDrawer.style.top = isMobile ? 'auto' : 'calc(100% + 12px)';
+            draftDrawer.style.bottom = isMobile ? '76px' : 'auto';
+            draftDrawer.style.left = isMobile ? '12px' : 'auto';
+            draftDrawer.style.right = isMobile ? '12px' : '104px';
+            draftDrawer.style.width = isMobile ? 'auto' : 'min(420px, calc(100vw - 48px))';
             draftDrawer.style.transform = '';
-            draftDrawer.style.maxHeight = '';
-            draftDrawer.style.overflowY = '';
-            draftDrawer.style.overscrollBehavior = '';
+            draftDrawer.style.maxHeight = isMobile ? 'calc(100dvh - 132px)' : '';
+            draftDrawer.style.overflowY = isMobile ? 'auto' : '';
+            draftDrawer.style.overscrollBehavior = isMobile ? 'contain' : '';
+            draftDrawer.style.zIndex = isMobile ? '240' : '';
         }
         return;
     }
@@ -1881,15 +1983,17 @@ function applyWorkbenchLayoutMode(hasPattern) {
     draftActions.style.gridTemplateColumns = 'minmax(0, 1fr)';
     if (draftPrimaryControl) draftPrimaryControl.style.gridTemplateColumns = 'minmax(0, 1fr)';
     if (draftDrawer) {
-        draftDrawer.style.top = 'calc(100% + 12px)';
-        draftDrawer.style.bottom = 'auto';
-        draftDrawer.style.left = '50%';
-        draftDrawer.style.right = 'auto';
-        draftDrawer.style.width = 'min(420px, calc(100vw - 48px))';
-        draftDrawer.style.transform = 'translateX(-50%)';
-        draftDrawer.style.maxHeight = '';
-        draftDrawer.style.overflowY = '';
-        draftDrawer.style.overscrollBehavior = '';
+        draftDrawer.style.position = isMobile ? 'fixed' : '';
+        draftDrawer.style.top = isMobile ? 'auto' : 'calc(100% + 12px)';
+        draftDrawer.style.bottom = isMobile ? '24px' : 'auto';
+        draftDrawer.style.left = isMobile ? '12px' : '50%';
+        draftDrawer.style.right = isMobile ? '12px' : 'auto';
+        draftDrawer.style.width = isMobile ? 'auto' : 'min(420px, calc(100vw - 48px))';
+        draftDrawer.style.transform = isMobile ? '' : 'translateX(-50%)';
+        draftDrawer.style.maxHeight = isMobile ? 'calc(100dvh - 72px)' : '';
+        draftDrawer.style.overflowY = isMobile ? 'auto' : '';
+        draftDrawer.style.overscrollBehavior = isMobile ? 'contain' : '';
+        draftDrawer.style.zIndex = isMobile ? '240' : '';
     }
 }
 
@@ -1966,6 +2070,9 @@ export function updateWorkbenchUI() {
     if (patternNameInput && document.activeElement !== patternNameInput) {
         patternNameInput.value = AppState.patternName || '';
     }
+    syncBrandControls();
+    syncMobileColorLimitDisplay();
+    renderMobileSettingsModal();
     const settingsTab = document.getElementById('show-workbench-settings-panel-btn');
     const colorsTab = document.getElementById('show-workbench-colors-panel-btn');
     if (settingsTab) {
