@@ -391,9 +391,19 @@ document.addEventListener('DOMContentLoaded', () => {
         mobileRecropBtn.addEventListener('click', recropMobileWorkbenchImage);
     }
 
+    const mobileSettingsRecropBtn = document.getElementById('mobile-settings-recrop-btn');
+    if (mobileSettingsRecropBtn) {
+        mobileSettingsRecropBtn.addEventListener('click', recropMobileWorkbenchImage);
+    }
+
     const mobileRemoveImageBtn = document.getElementById('mobile-remove-image-btn');
     if (mobileRemoveImageBtn) {
         mobileRemoveImageBtn.addEventListener('click', removeWorkbenchImage);
+    }
+
+    const mobileSettingsRemoveImageBtn = document.getElementById('mobile-settings-remove-image-btn');
+    if (mobileSettingsRemoveImageBtn) {
+        mobileSettingsRemoveImageBtn.addEventListener('click', removeWorkbenchImage);
     }
 
     const toggleWorkbenchSettingsBtn = document.getElementById('toggle-workbench-settings-btn');

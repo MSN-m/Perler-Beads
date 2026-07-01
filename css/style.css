@@ -356,6 +356,15 @@
         border-radius: 14px;
     }
 
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"]:not([data-mobile-step]) #workbench-stage,
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step=""] #workbench-stage {
+        min-height: calc(100dvh - 132px);
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-upload-empty {
+        justify-content: center;
+    }
+
     #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="crop"] #workbench-stage {
         align-self: center;
         width: 100%;
@@ -365,6 +374,26 @@
         border-radius: 24px;
         box-shadow: 0 18px 44px rgba(15, 23, 42, 0.1);
         overflow: hidden;
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="settings"] #workbench-stage {
+        width: 100%;
+        min-height: 0;
+        height: min(30dvh, 220px);
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="settings"] #result-container-single {
+        inset: 10px;
+        border-radius: 14px;
+        background: #f8fafc;
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="settings"] #workbench-source-preview {
+        border-radius: 12px;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="crop"] #result-container-single {
@@ -418,7 +447,7 @@
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-settings-panel {
         border-radius: 18px;
-        padding: 14px;
+        padding: 10px 14px 14px;
         background: transparent;
         border: 0;
         box-shadow: none;
@@ -428,6 +457,14 @@
         max-height: none;
         overflow: visible;
         overscroll-behavior: contain;
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="settings"] #workbench-side-panel {
+        align-self: start;
+    }
+
+    #mobile-settings-preview-card {
+        display: none !important;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #toggle-workbench-settings-btn {
@@ -449,6 +486,10 @@
         box-sizing: border-box;
     }
 
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="settings"] #workbench-settings-content {
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-settings-content > div {
         min-width: 0;
     }
@@ -458,7 +499,7 @@
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-settings-content > div:has(#brand-select),
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-settings-content > div:has(#color-limit-toggle) {
         margin: 0;
-        padding: 12px 14px;
+        padding: 11px 14px;
         border-radius: 0;
         border: 0;
         border-bottom: 1px solid rgba(226, 232, 240, 0.78);
@@ -581,7 +622,7 @@
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #color-limit-controls {
-        margin-top: 10px;
+        margin-top: 8px;
         padding-top: 0;
         border-top: 0;
         display: grid;

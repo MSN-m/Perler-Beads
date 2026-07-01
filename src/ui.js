@@ -1575,9 +1575,10 @@ function updateWorkbenchSourcePreview() {
     const sourceHeight = crop ? crop.height : img.height;
     const containerWidth = resultContainer.clientWidth || window.innerWidth;
     const containerHeight = resultContainer.clientHeight || window.innerHeight;
-    const padding = 96;
-    const maxWidth = Math.max(240, containerWidth - padding);
-    const maxHeight = Math.max(240, containerHeight - padding);
+    const padding = isMobileSettingsPreview ? 24 : 96;
+    const minPreviewSize = isMobileSettingsPreview ? 72 : 240;
+    const maxWidth = Math.max(minPreviewSize, containerWidth - padding);
+    const maxHeight = Math.max(minPreviewSize, containerHeight - padding);
     const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
     const displayWidth = Math.max(1, Math.round(sourceWidth * scale));
     const displayHeight = Math.max(1, Math.round(sourceHeight * scale));
@@ -1597,6 +1598,36 @@ function updateWorkbenchSourcePreview() {
         ctx.drawImage(img, 0, 0);
     }
     renderWorkbenchCropOverlay();
+}
+
+function renderMobileSettingsThumbnail() {
+    const card = document.getElementById('mobile-settings-preview-card');
+    const canvas = document.getElementById('mobile-settings-thumbnail');
+    const summary = document.getElementById('mobile-settings-thumbnail-summary');
+    const shouldShow = isWorkbenchMobileLayout()
+        && AppState.image
+        && !hasWorkbenchPattern()
+        && AppState.mobileSetupStep === 'settings';
+    if (card) card.classList.toggle('hidden', !shouldShow);
+    if (!shouldShow || !canvas || !AppState.image) return;
+
+    const crop = ensureCropRect();
+    const maxSize = 120;
+    const scale = Math.min(maxSize / crop.width, maxSize / crop.height, 1);
+    const width = Math.max(1, Math.round(crop.width * scale));
+    const height = Math.max(1, Math.round(crop.height * scale));
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(AppState.image, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
+    if (summary) {
+        const gridWidth = AppState.pendingGridWidth || AppState.gridWidth;
+        const gridHeight = AppState.pendingGridHeight || AppState.gridHeight;
+        summary.textContent = `${gridWidth}x${gridHeight} · 裁剪范围已确认`;
+    }
 }
 
 function renderPixelArtPreview() {
@@ -1935,13 +1966,16 @@ function applyWorkbenchLayoutMode(hasPattern) {
     if (hideSetupDraftActions) AppState.draftDrawerOpen = false;
     const isCompactSetup = isMobile || isTablet;
     const isMobileCropStep = isMobile && hasImage && AppState.mobileSetupStep === 'crop';
+    const isMobileSettingsStep = isMobile && hasImage && AppState.mobileSetupStep === 'settings';
     activeShell.style.gridTemplateColumns = isCompactSetup ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 380px';
-    activeShell.style.gridTemplateRows = isMobileCropStep ? 'minmax(360px, 1fr)' : (isCompactSetup ? 'minmax(360px, 42dvh) auto' : '');
+    activeShell.style.gridTemplateRows = isMobileCropStep
+        ? 'minmax(360px, 1fr)'
+        : (isMobileSettingsStep ? 'minmax(180px, 30dvh) auto' : (isCompactSetup ? 'minmax(360px, 42dvh) auto' : ''));
     activeShell.style.gap = isMobile ? '12px' : (isTablet ? '16px' : '20px');
     sidePanel.style.display = isMobileCropStep ? 'none' : (isCompactSetup ? 'grid' : '');
     sidePanel.style.gridTemplateColumns = isTablet && hasImage ? 'minmax(0, 1fr) 280px' : '';
     sidePanel.style.gridTemplateRows = '';
-    sidePanel.style.alignItems = isCompactSetup ? 'start' : '';
+    sidePanel.style.alignItems = isMobileSettingsStep ? 'stretch' : (isCompactSetup ? 'start' : '');
     sidePanel.style.minHeight = isCompactSetup ? '0' : '';
     sidePanel.style.position = '';
     sidePanel.style.top = '';
@@ -2022,12 +2056,13 @@ export function updateWorkbenchUI() {
         ? AppState.workbenchTabletPanel
         : null;
     const settingsCollapsed = false;
-    const showSettingsPanel = hasPattern ? tabletPanel === 'settings' : !isMobileCropStep;
+    const showSettingsPanel = hasPattern ? tabletPanel === 'settings' : !(isMobileCropStep || (isMobile && !hasImage));
     const showColorListPanel = hasPattern && tabletPanel === 'colors';
     const compareVisible = hasPattern && AppState.comparePreviewVisible;
     setHidden('workbench-upload-empty', hasImage || hasPattern);
     setHidden('workbench-change-image', isMobile || (!hasImage && !hasPattern));
     setHidden('workbench-preview-empty', !hasImage || hasPattern || hasPixelArt || isMobile);
+    setHidden('workbench-stage', false);
     setHidden('workbench-source-preview', !hasImage || hasPattern);
     setHidden('result-canvas', !hasPattern);
     setHidden('workbench-single-stage', hasPattern);
@@ -2056,7 +2091,7 @@ export function updateWorkbenchUI() {
     setHidden('mobile-crop-actions', !isMobileSettingsStep);
     setHidden('mobile-crop-confirm-actions', !isMobileCropStep);
     setHidden('next-to-step-4', !hasPattern);
-    setHidden('workbench-generate-actions', hasPattern);
+    setHidden('workbench-generate-actions', hasPattern || (isMobile && (!hasImage || isMobileCropStep)));
     setHidden('legacy-generate-pattern-btn', true);
     setHidden('apply-workbench-settings-btn', !hasPattern);
     setHidden('toggle-workbench-settings-btn', isMobileCropStep);

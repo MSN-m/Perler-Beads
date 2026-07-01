@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑功能思维导图</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#ff7f50'
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            background: #eef2f6;
+        }
+
+        .map-node {
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+        }
+
+        .map-node [contenteditable="true"]:focus {
+            outline: 2px solid rgba(255, 127, 80, 0.4);
+            border-radius: 10px;
+            background: #fff7ed;
+        }
+
+        .branch {
+            position: relative;
+        }
+
+        .branch::before {
+            content: "";
+            position: absolute;
+            left: 22px;
+            top: -18px;
+            width: 2px;
+            height: 18px;
+            background: #cbd5e1;
+        }
+
+        .child-list > .branch::after {
+            content: "";
+            position: absolute;
+            left: 22px;
+            top: 0;
+            width: 18px;
+            height: 2px;
+            background: #cbd5e1;
+        }
+
+        .node-actions {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+
+        .map-node:hover .node-actions,
+        .map-node:focus-within .node-actions {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="min-h-dvh text-gray-900">
+    <main class="mx-auto max-w-7xl p-4 md:p-6">
+        <header class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+                <p class="text-xs font-black text-primary">Editable Mind Map</p>
+                <h1 class="mt-1 text-2xl font-black">编辑画布功能思维导图</h1>
+                <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
+                    点击任意节点文字可以直接编辑；悬停节点可以新增子节点或删除节点。这个页面只用于整理功能结构，不影响主应用。
+                </p>
+            </div>
+            <div class="flex gap-2">
+                <button id="add-root-btn" class="rounded-2xl bg-white px-4 py-3 text-sm font-black shadow-sm border border-gray-100">新增一级功能</button>
+                <button id="reset-btn" class="rounded-2xl bg-gray-900 px-4 py-3 text-sm font-black text-white shadow-sm">重置</button>
+            </div>
+        </header>
+
+        <section class="rounded-[28px] bg-white/70 p-4 shadow-sm ring-1 ring-white">
+            <div class="map-node mx-auto mb-8 max-w-xl p-5 text-center">
+                <p class="text-xs font-black text-primary">中心目标</p>
+                <h2 class="mt-1 text-xl font-black" contenteditable="true" data-root-title>编辑图纸：画、擦、选色、清理</h2>
+                <p class="mt-2 text-sm text-gray-500" contenteditable="true" data-root-desc>把工程化功能整理成用户更容易理解的工具心智。</p>
+            </div>
+
+            <div id="mindmap" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+        </section>
+    </main>
+
+    <template id="node-template">
+        <div class="branch">
+            <article class="map-node p-4">
+                <div class="flex items-start gap-3">
+                    <span data-color-dot class="mt-1 h-4 w-4 shrink-0 rounded-full bg-primary"></span>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-base font-black" contenteditable="true" data-title></h3>
+                        <p class="mt-1 text-sm leading-5 text-gray-500" contenteditable="true" data-desc></p>
+                    </div>
+                    <div class="node-actions flex shrink-0 gap-1">
+                        <button data-add class="rounded-xl bg-gray-100 px-2 py-1 text-xs font-black text-gray-600">+</button>
+                        <button data-remove class="rounded-xl bg-red-50 px-2 py-1 text-xs font-black text-red-500">删</button>
+                    </div>
+                </div>
+                <div data-children class="child-list mt-4 grid gap-3 pl-4"></div>
+            </article>
+        </div>
+    </template>
+
+    <script>
+        const defaultData = [
+            {
+                title: '画笔',
+                desc: '把指定位置改成当前颜色，是最核心的编辑工具。',
+                color: '#ff7f50',
+                children: [
+                    { title: '单格填色', desc: '点击一个豆子修改颜色。' },
+                    { title: '拖动涂抹', desc: '长按或按住后连续涂抹。' },
+                    { title: '从图纸取色', desc: '吸取已有豆子的颜色作为当前色。' },
+                    { title: '从原图取色', desc: '从原图采样，匹配到拼豆颜色。' }
+                ]
+            },
+            {
+                title: '橡皮',
+                desc: '擦掉不需要的豆子，比“删除色块”更直观。',
+                color: '#64748b',
+                children: [
+                    { title: '单格擦除', desc: '点一下删除一个豆子。' },
+                    { title: '拖动擦除', desc: '连续擦除一片区域。' },
+                    { title: '恢复误擦', desc: '通过撤回找回误删内容。' }
+                ]
+            },
+            {
+                title: '色板',
+                desc: '管理当前颜色，是画笔和替换的颜色来源。',
+                color: '#22c55e',
+                children: [
+                    { title: '当前颜色', desc: '显示正在使用的拼豆色号。' },
+                    { title: '搜索颜色', desc: '按色号或颜色名称查找。' },
+                    { title: '相近色', desc: '展示可替代颜色。' },
+                    { title: '选择颜色', desc: '选中后交给画笔使用。' }
+                ]
+            },
+            {
+                title: '清理',
+                desc: '处理不好拼、边缘脏、多余底色等辅助问题。',
+                color: '#0ea5e9',
+                children: [
+                    { title: '移除底色', desc: '处理背景残留或不需要的底色。' },
+                    { title: '边缘清理', desc: '优化轮廓边缘颜色。' },
+                    { title: '小碎块检查', desc: '发现零散、难拼的小块。' },
+                    { title: '处理建议', desc: '给出可执行的修正方向。' }
+                ]
+            },
+            {
+                title: '替换',
+                desc: '高级批量操作，不一定作为一级入口。',
+                color: '#a855f7',
+                children: [
+                    { title: '替换同色', desc: '把同一色号整体替换。' },
+                    { title: '替换相近色', desc: '把相近颜色合并或调整。' },
+                    { title: '从颜色清单发起', desc: '在色号统计里直接操作。' },
+                    { title: '确认 / 取消', desc: '批量操作必须有明确确认。' }
+                ]
+            },
+            {
+                title: '编辑中操作栏',
+                desc: '只在进入具体编辑模式后出现，不常驻。',
+                color: '#111827',
+                children: [
+                    { title: '撤回', desc: '回退本轮操作。' },
+                    { title: '取消', desc: '放弃当前编辑。' },
+                    { title: '完成', desc: '确认应用修改。' }
+                ]
+            }
+        ];
+
+        const template = document.getElementById('node-template');
+        const mindmap = document.getElementById('mindmap');
+
+        function cloneData(data) {
+            return JSON.parse(JSON.stringify(data));
+        }
+
+        let data = cloneData(defaultData);
+
+        function createNode(item, parentArray, index, depth = 0) {
+            const fragment = template.content.cloneNode(true);
+            const wrapper = fragment.querySelector('.branch');
+            const title = fragment.querySelector('[data-title]');
+            const desc = fragment.querySelector('[data-desc]');
+            const dot = fragment.querySelector('[data-color-dot]');
+            const children = fragment.querySelector('[data-children]');
+            title.textContent = item.title || '新节点';
+            desc.textContent = item.desc || '补充说明';
+            dot.style.background = item.color || (depth === 0 ? '#ff7f50' : '#cbd5e1');
+
+            title.addEventListener('input', () => {
+                item.title = title.textContent.trim();
+            });
+            desc.addEventListener('input', () => {
+                item.desc = desc.textContent.trim();
+            });
+            fragment.querySelector('[data-add]').addEventListener('click', () => {
+                item.children = item.children || [];
+                item.children.push({ title: '新子功能', desc: '说明这个功能的作用。' });
+                render();
+            });
+            fragment.querySelector('[data-remove]').addEventListener('click', () => {
+                parentArray.splice(index, 1);
+                render();
+            });
+
+            (item.children || []).forEach((child, childIndex) => {
+                children.appendChild(createNode(child, item.children, childIndex, depth + 1));
+            });
+            return wrapper;
+        }
+
+        function render() {
+            mindmap.innerHTML = '';
+            data.forEach((item, index) => {
+                mindmap.appendChild(createNode(item, data, index));
+            });
+        }
+
+        document.getElementById('add-root-btn').addEventListener('click', () => {
+            data.push({
+                title: '新一级功能',
+                desc: '说明它解决什么用户问题。',
+                color: '#f59e0b',
+                children: []
+            });
+            render();
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            data = cloneData(defaultData);
+            render();
+        });
+
+        render();
+    </script>
+</body>
+</html>
