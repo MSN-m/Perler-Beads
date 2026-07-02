@@ -3,273 +3,681 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>编辑功能区结构对比</title>
+    <title>编辑工具栏原型</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#ff7f50'
-                    }
-                }
-            }
-        };
-    </script>
     <style>
+        :root {
+            --page-bg: #eef2f6;
+            --panel: #ffffff;
+            --border: #dbe4ee;
+            --text: #0f172a;
+            --muted: #64748b;
+            --brand: #0f2d4f;
+            --accent: #ff7f50;
+            --accent-soft: #fff0ea;
+        }
+
         body {
-            background: #eef2f6;
+            margin: 0;
+            min-height: 100vh;
+            background: var(--page-bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
         }
 
-        .tag {
-            display: inline-flex;
+        button {
+            border: 0;
+            cursor: pointer;
+            transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .topbar {
+            height: 56px;
+            display: flex;
             align-items: center;
-            border-radius: 999px;
-            padding: 2px 8px;
-            font-size: 11px;
+            justify-content: space-between;
+            padding: 0 22px;
+            background: rgba(255, 255, 255, 0.96);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 8px 26px rgba(15, 23, 42, 0.05);
+        }
+
+        .title {
+            font-size: 16px;
+            font-weight: 900;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .soft-btn {
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 13px;
             font-weight: 800;
-            white-space: nowrap;
         }
 
-        .tag-primary {
-            background: #111827;
-            color: white;
+        .primary-btn {
+            height: 34px;
+            padding: 0 18px;
+            border-radius: 12px;
+            background: #0f172a;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 900;
         }
 
-        .tag-secondary {
-            background: #f3f4f6;
-            color: #4b5563;
+        .workspace {
+            height: calc(100vh - 56px);
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 16px;
+            min-height: 0;
         }
 
-        .tag-state {
-            background: #fff1eb;
-            color: #ff6b3d;
-        }
-
-        .node-card {
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            background: white;
+        .canvas-card,
+        .side-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
             border-radius: 18px;
-            padding: 14px;
-            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
         }
 
-        .before-line {
-            border-left: 3px solid #cbd5e1;
+        .canvas-card {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
-        .after-line {
-            border-left: 3px solid #ff7f50;
+        .canvas-head {
+            height: 56px;
+            padding: 0 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .pattern-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pattern-title strong {
+            font-size: 17px;
+            font-weight: 900;
+        }
+
+        .pill {
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .tool-strip {
+            position: absolute;
+            left: 50%;
+            top: 72px;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid var(--border);
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.14);
+            z-index: 5;
+        }
+
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding-right: 6px;
+            border-right: 1px solid var(--border);
+        }
+
+        .tool-group:last-child {
+            border-right: 0;
+            padding-right: 0;
+        }
+
+        .tool-btn {
+            min-width: 42px;
+            height: 40px;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text);
+            display: grid;
+            place-items: center;
+            font-size: 16px;
+            font-weight: 900;
+            position: relative;
+        }
+
+        .tool-btn.wide {
+            min-width: 72px;
+            padding: 0 10px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .tool-btn.active {
+            background: #1087ff;
+            color: #fff;
+            box-shadow: 0 10px 18px rgba(16, 135, 255, 0.22);
+        }
+
+        .tool-btn:hover:not(.active) {
+            background: #f1f5f9;
+        }
+
+        .tool-caret {
+            font-size: 11px;
+            opacity: 0.68;
+        }
+
+        .color-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 8px;
+            background: #ff6b55;
+            border: 3px solid #fff;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 126px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 226px;
+            padding: 8px;
+            border-radius: 16px;
+            background: #202020;
+            color: #fff;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.26);
+            z-index: 8;
+        }
+
+        .dropdown.hidden {
+            display: none;
+        }
+
+        .menu-item {
+            width: 100%;
+            height: 38px;
+            border-radius: 10px;
+            background: transparent;
+            color: #fff;
+            display: grid;
+            grid-template-columns: 24px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 0 10px;
+            font-size: 13px;
+            font-weight: 800;
+            text-align: left;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .shortcut {
+            color: rgba(255, 255, 255, 0.68);
+            font-size: 12px;
+        }
+
+        .mock-canvas {
+            flex: 1;
+            margin: 84px 48px 42px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background-image:
+                linear-gradient(#e9eef5 1px, transparent 1px),
+                linear-gradient(90deg, #e9eef5 1px, transparent 1px);
+            background-size: 20px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bead {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            display: grid;
+            place-items: center;
+            color: rgba(15, 23, 42, 0.62);
+            font-size: 7px;
+            font-weight: 900;
+            user-select: none;
+        }
+
+        .original-btn {
+            position: absolute;
+            left: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 38px;
+            padding: 0 13px;
+            border-radius: 12px;
+            background: #fff;
+            color: var(--accent);
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .side-card {
+            padding: 18px;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .side-head {
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .side-head h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .side-head p {
+            margin: 7px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.55;
+            font-weight: 700;
+        }
+
+        .section {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section:last-child {
+            border-bottom: 0;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .color-card {
+            padding: 12px;
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .swatch-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+        }
+
+        .swatch {
+            width: 42px;
+            height: 34px;
+            border-radius: 12px;
+            border: 2px solid #fff;
+            box-shadow: 0 5px 12px rgba(15, 23, 42, 0.13);
+        }
+
+        .option-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .option-btn {
+            height: 44px;
+            border-radius: 14px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .option-btn.hot {
+            background: var(--accent-soft);
+            border-color: #ffd2c2;
+            color: #f05f33;
+        }
+
+        .color-list {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .color-row {
+            display: grid;
+            grid-template-columns: 42px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 9px;
+            border-radius: 14px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+        }
+
+        .color-row strong,
+        .color-card strong {
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .color-row span,
+        .color-card span {
+            display: block;
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .mini-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 11px;
+            background: #fff;
+            border: 1px solid var(--border);
+            font-weight: 900;
         }
     </style>
 </head>
-<body class="min-h-dvh text-gray-900">
-    <main class="mx-auto max-w-7xl p-4 md:p-6">
-        <header class="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-                <p class="text-xs font-black text-primary">Toolbar IA Prototype</p>
-                <h1 class="mt-1 text-2xl font-black tracking-normal">编辑画布功能区：优化前后结构对比</h1>
-                <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
-                    这个页面只整理功能层级和属性，不接真实图纸逻辑。重点看：一级入口数量、功能归属、编辑状态出现时机。
-                </p>
+<body>
+    <header class="topbar">
+        <div class="title">PC 编辑工具栏原型</div>
+        <div class="top-actions">
+            <button class="soft-btn" type="button">生成设置</button>
+            <button class="soft-btn" type="button">保存为草稿（9）</button>
+            <button class="primary-btn" type="button">导出</button>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <section class="canvas-card">
+            <div class="canvas-head">
+                <div class="pattern-title">
+                    <strong>未命名图纸</strong>
+                    <span class="pill">43x68 · MARD · 14 色</span>
+                </div>
+                <span class="pill" id="status-text">画笔：点击或拖动上色</span>
             </div>
-            <div class="flex flex-wrap gap-2 text-xs">
-                <span class="tag tag-primary">一级入口</span>
-                <span class="tag tag-secondary">二级功能</span>
-                <span class="tag tag-state">状态动作</span>
+
+            <div class="tool-strip" aria-label="编辑工具栏">
+                <div class="tool-group">
+                    <button class="tool-btn active" type="button" data-tool="select" title="选择 / 拖动画布">⌖</button>
+                    <button class="tool-btn" type="button" data-tool="brush" data-menu="brush" title="画笔">笔 <span class="tool-caret">⌄</span></button>
+                    <button class="tool-btn" type="button" data-tool="eraser" data-menu="eraser" title="橡皮">擦 <span class="tool-caret">⌄</span></button>
+                </div>
+                <div class="tool-group">
+                    <button class="tool-btn" type="button" data-tool="eyedropper" title="吸色">吸</button>
+                    <button class="tool-btn wide" type="button" data-tool="color" title="当前颜色">
+                        <span class="color-dot" id="current-dot"></span>
+                        <span>F2</span>
+                    </button>
+                    <button class="tool-btn wide" type="button" data-tool="colors" title="颜色清单">颜色</button>
+                </div>
+                <div class="tool-group">
+                    <button class="tool-btn" type="button" id="undo-btn" title="撤销">↶</button>
+                    <button class="tool-btn" type="button" id="redo-btn" title="重做">↷</button>
+                    <button class="tool-btn" type="button" data-tool="more" data-menu="more" title="更多">⋯</button>
+                </div>
             </div>
-        </header>
 
-        <section class="grid gap-4 lg:grid-cols-2">
-            <article class="rounded-[26px] bg-white/70 p-3 shadow-sm ring-1 ring-white">
-                <div class="mb-3 rounded-3xl bg-white p-4">
-                    <div class="flex items-center justify-between gap-3">
-                        <div>
-                            <h2 class="text-lg font-black">优化前：功能按钮集合</h2>
-                            <p class="mt-1 text-sm text-gray-500">优点是功能直达；问题是入口多、模式多，新用户难判断先点哪个。</p>
-                        </div>
-                        <span class="tag tag-secondary">当前结构</span>
-                    </div>
-                </div>
+            <div class="dropdown hidden" id="dropdown">
+                <button class="menu-item active" type="button" data-menu-action="brush">
+                    <span>✓</span><span>画笔</span><span class="shortcut">B</span>
+                </button>
+                <button class="menu-item" type="button" data-menu-action="edge">
+                    <span></span><span>边框上色</span><span class="shortcut">E</span>
+                </button>
+                <button class="menu-item" type="button" data-menu-action="remove-color">
+                    <span></span><span>按颜色移除</span><span class="shortcut"></span>
+                </button>
+            </div>
 
-                <div class="space-y-3">
-                    <div class="node-card before-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">查看与对照</h3>
-                            <span class="tag tag-primary">一级</span>
-                        </div>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-2">
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">原图对照</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">缩放重置</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：偏查看，不改变图纸数据。</p>
-                    </div>
-
-                    <div class="node-card before-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">取色填色</h3>
-                            <span class="tag tag-primary">一级</span>
-                        </div>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-2">
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">从图纸取色</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">从原图取色</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">单格替换</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">批量替换</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：核心编辑，但目前和色盘、填色模式分散。</p>
-                    </div>
-
-                    <div class="node-card before-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">色盘</h3>
-                            <span class="tag tag-primary">一级</span>
-                        </div>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-2">
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">打开色盘</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">搜索颜色</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">选择颜色</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">替换为选中色</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：其实是画笔的一部分，但目前像独立工具。</p>
-                    </div>
-
-                    <div class="node-card before-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">修正类工具</h3>
-                            <span class="tag tag-primary">一级过多</span>
-                        </div>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-3">
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">移除底色</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">边缘调整</p>
-                            <p class="rounded-2xl bg-red-50 p-3 text-sm font-bold text-red-500">删除色块</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：低频、高风险，作为一级按钮会增加压力。</p>
-                    </div>
-
-                    <div class="node-card before-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">质量检查</h3>
-                            <span class="tag tag-primary">一级</span>
-                        </div>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-2">
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">显示问题数量</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">打开检查面板</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：诊断型功能，适合独立但不应混入编辑动作。</p>
-                    </div>
-
-                    <div class="node-card before-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">撤回 / 取消 / 确认</h3>
-                            <span class="tag tag-state">常驻或半常驻</span>
-                        </div>
-                        <p class="mt-3 text-sm text-gray-600">问题：如果一直占据主工具区，会让用户误以为正在编辑中。</p>
-                    </div>
-                </div>
-            </article>
-
-            <article class="rounded-[26px] bg-white/70 p-3 shadow-sm ring-1 ring-white">
-                <div class="mb-3 rounded-3xl bg-white p-4">
-                    <div class="flex items-center justify-between gap-3">
-                        <div>
-                            <h2 class="text-lg font-black">优化后：按工作流整合</h2>
-                            <p class="mt-1 text-sm text-gray-500">一级入口减少，核心编辑集中到画笔；低频风险工具进入修正菜单。</p>
-                        </div>
-                        <span class="tag tag-primary">建议结构</span>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <div class="node-card after-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">一级工具栏</h3>
-                            <span class="tag tag-primary">5 个入口</span>
-                        </div>
-                        <div class="mt-3 grid grid-cols-5 gap-2">
-                            <p class="rounded-2xl bg-gray-900 p-3 text-center text-xs font-black text-white">原图</p>
-                            <p class="rounded-2xl bg-gray-900 p-3 text-center text-xs font-black text-white">画笔</p>
-                            <p class="rounded-2xl bg-gray-900 p-3 text-center text-xs font-black text-white">修正</p>
-                            <p class="rounded-2xl bg-gray-900 p-3 text-center text-xs font-black text-white">检查</p>
-                            <p class="rounded-2xl bg-gray-900 p-3 text-center text-xs font-black text-white">重置</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：一级只保留方向明确的入口，用户先选择任务类型。</p>
-                    </div>
-
-                    <div class="node-card after-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">画笔</h3>
-                            <span class="tag tag-primary">核心编辑</span>
-                        </div>
-                        <div class="mt-3 flex items-center gap-3 rounded-2xl bg-gray-50 p-3">
-                            <span class="h-9 w-9 rounded-2xl bg-primary shadow"></span>
-                            <div>
-                                <p class="text-sm font-black">当前颜色 F2</p>
-                                <p class="text-xs text-gray-500">色盘、取色、涂抹都围绕当前颜色</p>
-                            </div>
-                        </div>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-4">
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">取色</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">色盘</p>
-                            <p class="rounded-2xl bg-primary/10 p-3 text-sm font-bold text-primary">涂抹</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">同色替换</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：把取色填色、色盘、批量替换整合成一个心智模型。</p>
-                    </div>
-
-                    <div class="node-card after-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">修正</h3>
-                            <span class="tag tag-secondary">二级菜单</span>
-                        </div>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-3">
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">移除底色</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">边缘调整</p>
-                            <p class="rounded-2xl bg-red-50 p-3 text-sm font-bold text-red-500">删除色块</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：低频工具被收纳，减少默认界面的危险按钮。</p>
-                    </div>
-
-                    <div class="node-card after-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">检查</h3>
-                            <span class="tag tag-primary">独立诊断</span>
-                        </div>
-                        <div class="mt-3 grid gap-2 sm:grid-cols-3">
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">问题数量</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">定位问题</p>
-                            <p class="rounded-2xl bg-gray-50 p-3 text-sm font-bold">处理建议</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：保留一级入口，但从编辑动作中分离。</p>
-                    </div>
-
-                    <div class="node-card after-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">编辑中状态</h3>
-                            <span class="tag tag-state">按需出现</span>
-                        </div>
-                        <div class="mt-3 grid grid-cols-3 gap-2 rounded-3xl bg-gray-900 p-2">
-                            <p class="rounded-2xl bg-white/10 p-3 text-center text-sm font-black text-white">撤回</p>
-                            <p class="rounded-2xl bg-white/10 p-3 text-center text-sm font-black text-white">取消</p>
-                            <p class="rounded-2xl bg-primary p-3 text-center text-sm font-black text-white">确认</p>
-                        </div>
-                        <p class="mt-3 text-xs text-gray-500">属性：只有进入画笔、删除、边缘调整等编辑模式后出现。</p>
-                    </div>
-
-                    <div class="node-card after-line">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-black">映射关系</h3>
-                            <span class="tag tag-secondary">迁移规则</span>
-                        </div>
-                        <div class="mt-3 space-y-2 text-sm">
-                            <p><strong>取色填色 + 色盘</strong> → 画笔</p>
-                            <p><strong>删除色块 + 边缘调整 + 移除底色</strong> → 修正</p>
-                            <p><strong>质量检查</strong> → 检查</p>
-                            <p><strong>撤回 / 取消 / 确认</strong> → 编辑中状态栏</p>
-                        </div>
-                    </div>
-                </div>
-            </article>
+            <div class="mock-canvas" id="mock-canvas"></div>
+            <button class="original-btn" type="button">原图对照</button>
         </section>
+
+        <aside class="side-card">
+            <div class="side-head">
+                <h2 id="panel-title">选择 / 拖动画布</h2>
+                <p id="panel-desc">默认状态用于查看图纸、拖动画布，避免误编辑。真正编辑时再切换到画笔、橡皮或吸色。</p>
+            </div>
+
+            <div class="section">
+                <div class="section-title">当前颜色 <span class="pill">F2</span></div>
+                <div class="color-card">
+                    <div class="flex items-center gap-3">
+                        <span class="swatch" id="panel-color" style="background:#ff6b55"></span>
+                        <div>
+                            <strong>F2</strong>
+                            <span>画笔使用色</span>
+                        </div>
+                    </div>
+                    <button class="soft-btn" type="button" data-tool="color">色板</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">吸色历史 <span class="text-xs text-slate-400">最近 5 次</span></div>
+                <div class="swatch-row">
+                    <button class="swatch" type="button" data-color="F2" data-hex="#ff6b55" style="background:#ff6b55"></button>
+                    <button class="swatch" type="button" data-color="A7" data-hex="#ffa047" style="background:#ffa047"></button>
+                    <button class="swatch" type="button" data-color="F13" data-hex="#e25a4f" style="background:#e25a4f"></button>
+                    <button class="swatch" type="button" data-color="B17" data-hex="#bfd65a" style="background:#bfd65a"></button>
+                    <button class="swatch" type="button" data-color="B15" data-hex="#28783b" style="background:#28783b"></button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">常用功能</div>
+                <div class="option-grid">
+                    <button class="option-btn" type="button" data-quick="palette">打开色板</button>
+                    <button class="option-btn" type="button" data-quick="edge">边框上色</button>
+                    <button class="option-btn hot" type="button" data-quick="remove-color">按颜色移除</button>
+                    <button class="option-btn" type="button" data-quick="replace">替换颜色</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">颜色清单</div>
+                <div class="color-list">
+                    <div class="color-row">
+                        <span class="swatch" style="background:#ff6b55"></span>
+                        <div><strong>F2</strong><span>744 颗</span></div>
+                        <button class="mini-btn" type="button">...</button>
+                    </div>
+                    <div class="color-row">
+                        <span class="swatch" style="background:#e25a4f"></span>
+                        <div><strong>F13</strong><span>231 颗</span></div>
+                        <button class="mini-btn" type="button">...</button>
+                    </div>
+                    <div class="color-row">
+                        <span class="swatch" style="background:#ffa047"></span>
+                        <div><strong>A7</strong><span>31 颗</span></div>
+                        <button class="mini-btn" type="button">...</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
     </main>
+
+    <script>
+        const toolCopy = {
+            select: ['选择 / 拖动画布', '默认状态用于查看图纸、拖动画布，避免误编辑。真正编辑时再切换到画笔、橡皮或吸色。', '选择：拖动画布或查看图纸'],
+            brush: ['画笔', '点击就是单格上色，按住拖动就是连续涂抹。下拉里放边框上色等变体。', '画笔：点击或拖动上色'],
+            eraser: ['橡皮', '点击擦一格，拖动擦一片。按颜色移除属于橡皮的批量能力。', '橡皮：点击或拖动擦除'],
+            eyedropper: ['吸色', '从图纸上吸取颜色，并记录到最近 5 次吸色历史，方便快速切换。', '吸色：点击图纸记录颜色'],
+            color: ['当前颜色 / 色板', '这里显示当前画笔色。点击后打开色板，选择新的画笔颜色。', '色板：选择画笔颜色'],
+            colors: ['颜色清单', '从颜色维度管理图纸，适合替换、统计、移除、相近色等操作。', '颜色清单：管理图纸颜色'],
+            more: ['更多', '低频功能放在这里，避免主工具栏变得拥挤。', '更多：质量检查、重置图纸等']
+        };
+        const beadColors = ['#ff6b55', '#ff8a5b', '#f6c744', '#bfd65a', '#2fa85b', '#704934', '#d64d4d'];
+        const canvas = document.getElementById('mock-canvas');
+        const toolButtons = Array.from(document.querySelectorAll('[data-tool]'));
+        const dropdown = document.getElementById('dropdown');
+        const panelTitle = document.getElementById('panel-title');
+        const panelDesc = document.getElementById('panel-desc');
+        const statusText = document.getElementById('status-text');
+        const currentDot = document.getElementById('current-dot');
+        const panelColor = document.getElementById('panel-color');
+        let undoCount = 0;
+        let redoCount = 0;
+        let activeTool = 'select';
+
+        function buildPattern() {
+            const points = [
+                [10, 5], [11, 5], [12, 5], [9, 6], [10, 6], [11, 6], [12, 6], [13, 6],
+                [8, 7], [9, 7], [10, 7], [11, 7], [12, 7], [13, 7], [14, 7],
+                [7, 8], [8, 8], [9, 8], [10, 8], [11, 8], [12, 8], [13, 8], [14, 8], [15, 8],
+                [7, 9], [8, 9], [9, 9], [10, 9], [11, 9], [12, 9], [13, 9], [14, 9], [15, 9], [16, 9],
+                [8, 10], [9, 10], [10, 10], [11, 10], [12, 10], [13, 10], [14, 10], [15, 10],
+                [9, 11], [10, 11], [11, 11], [12, 11], [13, 11], [14, 11],
+                [10, 12], [11, 12], [12, 12], [13, 12],
+                [11, 13], [12, 13], [6, 9], [6, 10], [7, 11], [8, 12], [16, 10], [17, 11], [16, 12]
+            ];
+            points.forEach((point, index) => {
+                const bead = document.createElement('span');
+                const colorIndex = (point[0] + point[1] + index) % beadColors.length;
+                bead.className = 'bead';
+                bead.style.left = `${point[0] * 20}px`;
+                bead.style.top = `${point[1] * 20}px`;
+                bead.style.background = beadColors[colorIndex];
+                bead.textContent = ['F2', 'A7', 'F13', 'B17', 'B15', 'G8', 'F15'][colorIndex];
+                canvas.appendChild(bead);
+            });
+        }
+
+        function setTool(tool, keepMenu = false) {
+            activeTool = tool;
+            toolButtons.forEach((button) => {
+                button.classList.toggle('active', button.dataset.tool === tool);
+            });
+            const copy = toolCopy[tool];
+            panelTitle.textContent = copy[0];
+            panelDesc.textContent = copy[1];
+            statusText.textContent = copy[2];
+            if (!keepMenu) dropdown.classList.add('hidden');
+        }
+
+        function recordAction(label) {
+            undoCount += 1;
+            redoCount = 0;
+            statusText.textContent = `${label}：已进入暂存`;
+            document.getElementById('undo-btn').title = `撤销 ${undoCount}`;
+            document.getElementById('redo-btn').title = `重做 ${redoCount}`;
+        }
+
+        toolButtons.forEach((button) => {
+            button.addEventListener('click', (event) => {
+                const tool = button.dataset.tool;
+                setTool(tool, Boolean(button.dataset.menu));
+                if (button.dataset.menu) {
+                    dropdown.classList.toggle('hidden');
+                    const rect = button.getBoundingClientRect();
+                    dropdown.style.left = `${rect.left + rect.width / 2}px`;
+                    dropdown.style.transform = 'translateX(-50%)';
+                    dropdown.style.top = `${rect.bottom + 10}px`;
+                }
+                event.stopPropagation();
+            });
+        });
+
+        document.addEventListener('click', () => dropdown.classList.add('hidden'));
+        dropdown.addEventListener('click', (event) => {
+            const item = event.target.closest('[data-menu-action]');
+            if (!item) return;
+            const action = item.dataset.menuAction;
+            if (action === 'brush') setTool('brush');
+            if (action === 'edge') recordAction('边框上色');
+            if (action === 'remove-color') recordAction('按颜色移除');
+            dropdown.classList.add('hidden');
+            event.stopPropagation();
+        });
+
+        canvas.addEventListener('click', () => {
+            if (activeTool === 'brush') recordAction('画笔上色');
+            else if (activeTool === 'eraser') recordAction('橡皮擦除');
+            else if (activeTool === 'eyedropper') statusText.textContent = '吸色完成：已记录到最近 5 次';
+            else statusText.textContent = toolCopy[activeTool][2];
+        });
+
+        document.querySelectorAll('[data-color]').forEach((button) => {
+            button.addEventListener('click', () => {
+                currentDot.style.background = button.dataset.hex;
+                panelColor.style.background = button.dataset.hex;
+                statusText.textContent = `已切换到吸色历史：${button.dataset.color}`;
+                setTool('brush');
+            });
+        });
+
+        document.querySelectorAll('[data-quick]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const text = button.textContent.trim();
+                if (['边框上色', '按颜色移除', '替换颜色'].includes(text)) recordAction(text);
+                else statusText.textContent = text;
+            });
+        });
+
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if (!undoCount) return;
+            undoCount -= 1;
+            redoCount += 1;
+            statusText.textContent = '已撤销一步';
+        });
+
+        document.getElementById('redo-btn').addEventListener('click', () => {
+            if (!redoCount) return;
+            redoCount -= 1;
+            undoCount += 1;
+            statusText.textContent = '已重做一步';
+        });
+
+        buildPattern();
+    </script>
 </body>
 </html>
