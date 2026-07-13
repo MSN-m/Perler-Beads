@@ -97,6 +97,37 @@
     z-index: 80;
 }
 
+.workbench-top-action-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 32px;
+    padding: 6px 9px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 700;
+    transition: color .16s ease, background .16s ease, opacity .16s ease;
+}
+
+.workbench-top-action-button:hover:not(:disabled) {
+    color: #de5387;
+    background: #fff5f8;
+}
+
+.workbench-top-action-button.is-muted {
+    color: #6b7280;
+    background: #f9fafb;
+}
+
+.workbench-top-action-button:disabled,
+.workbench-top-action-button.is-disabled {
+    cursor: not-allowed;
+    opacity: .4;
+}
+
 #workbench-top-title {
     overflow: hidden;
 }
@@ -246,7 +277,7 @@
 .workbench-tool-menu {
     position: absolute;
     left: 50%;
-    bottom: calc(100% + 12px);
+    bottom: calc(100% + 5px);
     display: none;
     min-width: 152px;
     padding: 8px;
@@ -257,6 +288,16 @@
     box-shadow: 0 12px 30px rgba(212, 225, 235, .72);
     backdrop-filter: blur(18px) saturate(130%);
     -webkit-backdrop-filter: blur(18px) saturate(130%);
+}
+
+/* Keeps the hover path connected while the pointer travels from the button. */
+.workbench-tool-menu::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -8px;
+    height: 10px;
 }
 
 .workbench-tool-group:focus-within .workbench-tool-menu,

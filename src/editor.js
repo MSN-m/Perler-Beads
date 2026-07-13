@@ -21,11 +21,104 @@ export function deepClonePixels(arr) {
     return arr ? arr.map(p => ({ id: p.id, r: p.r, g: p.g, b: p.b, a: p.a })) : null;
 }
 
+export function beginGlobalEditorSession(pixelData) {
+    AppState.editor.originalPixelData = deepClonePixels(pixelData);
+    AppState.editor.undoStack = [];
+    AppState.editor.redoStack = [];
+    AppState.editor.hasChanges = false;
+}
+
+export function setActiveEditorTool(tool) {
+    AppState.editor.activeTool = tool || 'brush';
+}
+
+function applyPixelAction(pixels, action, useNextColor) {
+    if (!pixels || !action) return;
+    if (Array.isArray(action.indices)) {
+        const colors = useNextColor
+            ? action.indices.map(() => action.nextColor)
+            : action.prevColors;
+        action.indices.forEach((index, i) => {
+            pixels[index] = { ...colors[i] };
+        });
+        return;
+    }
+    pixels[action.index] = { ...(useNextColor ? action.nextColor : action.prevColor) };
+}
+
+function syncCurrentPixelData() {
+    if (AppState.stagedPixelData) AppState.pixelData = deepClonePixels(AppState.stagedPixelData);
+}
+
+// Existing tools apply their pixel change before recording it. The operation
+// therefore applies only on redo and reverts on undo.
+export function recordPixelAction(action) {
+    if (!action) return false;
+    AppState.stagedActions.push(action);
+    AppState.editor.undoStack.push({
+        apply() {
+            applyPixelAction(AppState.stagedPixelData, action, true);
+            syncCurrentPixelData();
+            AppState.stagedActions.push(action);
+        },
+        revert() {
+            applyPixelAction(AppState.stagedPixelData, action, false);
+            syncCurrentPixelData();
+            AppState.stagedActions.pop();
+        }
+    });
+    AppState.editor.redoStack = [];
+    AppState.editor.hasChanges = true;
+    syncCurrentPixelData();
+    return true;
+}
+
+export function applyGlobalEditorOperation(operation) {
+    if (!operation || typeof operation.apply !== 'function' || typeof operation.revert !== 'function') return false;
+    operation.apply();
+    AppState.editor.undoStack.push(operation);
+    AppState.editor.redoStack = [];
+    AppState.editor.hasChanges = true;
+    return true;
+}
+
+export function undoGlobalEditorOperation() {
+    const operation = AppState.editor.undoStack.pop();
+    if (!operation) return false;
+    operation.revert();
+    AppState.editor.redoStack.push(operation);
+    AppState.editor.hasChanges = AppState.editor.undoStack.length > 0;
+    return true;
+}
+
+export function redoGlobalEditorOperation() {
+    const operation = AppState.editor.redoStack.pop();
+    if (!operation) return false;
+    operation.apply();
+    AppState.editor.undoStack.push(operation);
+    AppState.editor.hasChanges = true;
+    return true;
+}
+
+export function resetGlobalEditorSession() {
+    AppState.editor.undoStack = [];
+    AppState.editor.redoStack = [];
+    AppState.editor.originalPixelData = null;
+    AppState.editor.hasChanges = false;
+    AppState.editor.activeTool = 'brush';
+}
+
 export function updateAdjustUndoButton() {
-    const undoBtn = document.getElementById('adjust-undo-btn');
-    if (!undoBtn) return;
-    if (AppState.stagedActions.length > 0) undoBtn.classList.remove('opacity-50', 'pointer-events-none');
-    else undoBtn.classList.add('opacity-50', 'pointer-events-none');
+    const undoBtn = document.getElementById('workbench-top-undo-btn');
+    const redoBtn = document.getElementById('workbench-top-redo-btn');
+    if (undoBtn) {
+        undoBtn.disabled = AppState.editor.undoStack.length === 0;
+        undoBtn.classList.toggle('is-disabled', undoBtn.disabled);
+    }
+    if (redoBtn) {
+        redoBtn.disabled = AppState.editor.redoStack.length === 0;
+        redoBtn.classList.toggle('is-disabled', redoBtn.disabled);
+    }
 }
 
 export function resetBatchReplaceState() {
@@ -63,7 +156,7 @@ export function performBatchReplace(sourceId, target) {
         }
     }
     if (indices.length > 0) {
-        AppState.stagedActions.push({ indices, prevColors, nextColor: { id: target.id, r: target.r, g: target.g, b: target.b } });
+        recordPixelAction({ indices, prevColors, nextColor: { id: target.id, r: target.r, g: target.g, b: target.b } });
     }
     const resultCanvas = document.getElementById('result-canvas');
     renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);

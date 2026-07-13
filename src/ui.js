@@ -6,7 +6,7 @@ import { removeBackground, cleanTinyFragments, generatePatternData, generatePatt
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
 import { calculateStats, configureEditorActions, deepClonePixels, getCurrentPalette, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
-import { toggleDeleteMode as _toggleDeleteMode } from './features/delete.js';
+import { toggleDeleteMode as _toggleDeleteMode, toggleColorEraseMode as _toggleColorEraseMode } from './features/delete.js';
 import { resetZoom as _resetZoom } from './features/zoom.js';
 import { toggleEdgeAdjustMode as _toggleEdgeAdjustMode } from './features/edge.js';
 import {
@@ -21,6 +21,7 @@ import {
     selectPaletteFillColor as _selectPaletteFillColor,
     handleResultCanvasClickForAdjust as _handleResultCanvasClickForAdjust,
     handleOriginalFillPick as _handleOriginalFillPick,
+    activateEyedropper as _activateEyedropper,
     startWorkbenchCompareDrag as _startWorkbenchCompareDrag,
     moveWorkbenchCompareDrag as _moveWorkbenchCompareDrag,
     endWorkbenchCompareDrag as _endWorkbenchCompareDrag,
@@ -28,8 +29,8 @@ import {
     moveFillSelection as _moveFillSelection,
     endFillSelection as _endFillSelection,
     adjustUndo as _adjustUndo,
+    adjustRedo as _adjustRedo,
     adjustCancel as _adjustCancel,
-    adjustApply as _adjustApply
 } from './features/adjust.js';
 configureEditorActions({
     enterColorReplaceMode: _enterEditSession,
@@ -38,6 +39,7 @@ configureEditorActions({
 
 export {
     _toggleDeleteMode as toggleDeleteMode,
+    _toggleColorEraseMode as toggleColorEraseMode,
     _resetZoom as resetZoom,
     _toggleEdgeAdjustMode as toggleEdgeAdjustMode,
     _toggleFillMode as toggleFillMode,
@@ -45,6 +47,7 @@ export {
     _selectPaletteFillColor as selectPaletteFillColor,
     _handleResultCanvasClickForAdjust as handleResultCanvasClickForAdjust,
     _handleOriginalFillPick as handleOriginalFillPick,
+    _activateEyedropper as activateEyedropper,
     _startWorkbenchCompareDrag as startWorkbenchCompareDrag,
     _moveWorkbenchCompareDrag as moveWorkbenchCompareDrag,
     _endWorkbenchCompareDrag as endWorkbenchCompareDrag,
@@ -52,8 +55,8 @@ export {
     _moveFillSelection as moveFillSelection,
     _endFillSelection as endFillSelection,
     _adjustUndo as adjustUndo,
+    _adjustRedo as adjustRedo,
     _adjustCancel as adjustCancel,
-    _adjustApply as adjustApply,
     _openQualityCheckModal as openQualityCheckModal,
     _refreshQualityOverlay as refreshQualityOverlay
 };
@@ -435,6 +438,42 @@ export function handlePaletteColorSelect(colorId) {
     AppState.palettePanelOpen = false;
     updateWorkbenchUI();
     return true;
+}
+
+export function handleRecentColorSelect(index) {
+    const color = AppState.recentColors?.[index];
+    if (!color) return false;
+    _selectPaletteFillColor(color);
+    AppState.palettePanelOpen = false;
+    updateWorkbenchUI();
+    return true;
+}
+
+function syncRecentColorChips() {
+    const colors = Array.isArray(AppState.recentColors) ? AppState.recentColors : [];
+    const currentId = AppState.fillColorId;
+    if (currentId && AppState.lastRecentColorId !== currentId) {
+        const current = getCurrentPalette().find((color) => String(color.id) === String(currentId));
+        if (current) {
+            AppState.recentColors = [current, ...colors.filter((color) => String(color.id) !== String(current.id))].slice(0, 3);
+            AppState.lastRecentColorId = currentId;
+        }
+    }
+
+    document.querySelectorAll('[data-recent-color]').forEach((button) => {
+        const color = AppState.recentColors?.[Number(button.dataset.recentColor)];
+        button.classList.toggle('is-empty', !color);
+        button.classList.toggle('is-current', Boolean(color && String(color.id) === String(currentId)));
+        button.textContent = color?.id || '';
+        button.title = color ? `${color.id} · 选择颜色` : '暂无颜色';
+        if (color) {
+            button.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+            button.style.color = getPaletteTextColor(color);
+        } else {
+            button.style.backgroundColor = '';
+            button.style.color = '';
+        }
+    });
 }
 
 export function startPalettePanelDrag(event) {
@@ -2069,14 +2108,16 @@ export function updateWorkbenchUI() {
     setHidden('workbench-edit-stage', !hasPattern);
     setHidden('toggle-compare-preview-btn', !hasPattern);
     setHidden('compare-source-pane', !compareVisible);
-    setHidden('workbench-edit-toolbar', !hasPattern || AppState.editMode !== 'none' || toolbarCollapsed);
+    // The tool palette stays available while editing; only the active tool changes.
+    setHidden('workbench-edit-toolbar', !hasPattern || toolbarCollapsed);
     setHidden('collapse-edit-toolbar-btn', true);
     setHidden('expand-edit-toolbar-btn', true);
-    setHidden('workbench-active-toolbar', AppState.editMode === 'none');
+    setHidden('workbench-active-toolbar', true);
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
     setHidden('workbench-side-panel', (hasPattern && !tabletPanel) || isMobileCropStep);
     setHidden('workbench-top-actions', !hasPattern);
+    setHidden('workbench-top-edit-actions', !hasPattern);
     const sidePanel = document.getElementById('workbench-side-panel');
     if (sidePanel && hasPattern) {
         sidePanel.style.display = tabletPanel ? 'block' : 'none';
@@ -2128,6 +2169,7 @@ export function updateWorkbenchUI() {
     else AppState.qualityIssues = [];
     setText('quality-check-btn', AppState.qualityOverlayVisible ? '\u5173\u95ed\u68c0\u67e5' : `\u8d28\u91cf\u68c0\u67e5\uff08${AppState.qualityIssues.length}\uff09`);
     renderPalettePanel();
+    syncRecentColorChips();
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
         const generateLabel = document.getElementById('generate-pattern-label');
@@ -2164,19 +2206,38 @@ export function updateWorkbenchUI() {
         exportBtn.classList.toggle('opacity-40', !hasPattern);
         exportBtn.classList.toggle('cursor-not-allowed', !hasPattern);
     }
+    const topUndoBtn = document.getElementById('workbench-top-undo-btn');
+    if (topUndoBtn) {
+        topUndoBtn.disabled = !AppState.editor.undoStack.length;
+        topUndoBtn.classList.toggle('is-disabled', !AppState.editor.undoStack.length);
+    }
+    const topRedoBtn = document.getElementById('workbench-top-redo-btn');
+    if (topRedoBtn) {
+        topRedoBtn.disabled = !AppState.editor.redoStack.length;
+        topRedoBtn.classList.toggle('is-disabled', !AppState.editor.redoStack.length);
+    }
+    const topCancelBtn = document.getElementById('workbench-top-cancel-btn');
+    if (topCancelBtn) {
+        topCancelBtn.disabled = AppState.editMode === 'none';
+        topCancelBtn.classList.toggle('hidden', AppState.editMode === 'none');
+    }
     const modeLabel = AppState.fillMode
         ? (AppState.fillColorId
             ? `填色 ${AppState.fillColorId}`
             : '取色填色')
-        : AppState.clearBaseMode
+        : AppState.eyedropperMode
+            ? '吸色'
+            : AppState.clearBaseMode
             ? '移除底色'
+        : AppState.colorEraseMode
+            ? '按颜色擦除'
             : AppState.deleteMode
             ? '删除色块'
             : AppState.edgeSelectionMode
                 ? '边缘调整'
                 : '编辑';
-    setText('workbench-active-mode-label', modeLabel);
     document.getElementById('toggle-fill-btn')?.classList.toggle('is-active', AppState.fillMode);
+    document.getElementById('eyedropper-tool-btn')?.classList.toggle('is-active', AppState.eyedropperMode);
     document.getElementById('toggle-delete-btn')?.classList.toggle('is-active', AppState.deleteMode);
     document.getElementById('toggle-edge-adjust-btn')?.classList.toggle('is-active', AppState.edgeSelectionMode);
     document.getElementById('toggle-clear-base-btn')?.classList.toggle('is-active', AppState.clearBaseMode);

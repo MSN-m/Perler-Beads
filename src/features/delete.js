@@ -12,7 +12,7 @@ import { renderResult } from '../renderer.js';
 
 
 
-import { calculateStats, deepClonePixels } from '../editor.js';
+import { calculateStats, deepClonePixels, beginGlobalEditorSession, setActiveEditorTool, recordPixelAction, updateAdjustUndoButton } from '../editor.js';
 import { refreshQualityOverlay } from './quality.js';
 
 
@@ -99,6 +99,8 @@ export function toggleDeleteMode() {
 
     if (entering) {
 
+        AppState.colorEraseMode = false;
+
         AppState.editMode = 'delete';
 
         AppState.deleteMode = true;
@@ -107,9 +109,13 @@ export function toggleDeleteMode() {
 
         AppState.receiverIndex = null;
 
-        AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
+        if (!AppState.stagedPixelData) {
+            AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
+            beginGlobalEditorSession(AppState.pixelData);
+        }
+        setActiveEditorTool('eraser');
 
-        AppState.stagedActions = [];
+        if (!AppState.editor.undoStack.length) AppState.stagedActions = [];
 
         AppState.selectedEdgeBeadsIndices = [];
 
@@ -133,11 +139,11 @@ export function toggleDeleteMode() {
 
         edgeBtn && edgeBtn.classList.remove('bg-primary', 'text-white');
 
-        undoBtn && undoBtn.classList.remove('hidden');
+        undoBtn && undoBtn.classList.add('hidden');
 
-        cancelBtn && cancelBtn.classList.remove('hidden');
+        cancelBtn && cancelBtn.classList.add('hidden');
 
-        applyBtn && applyBtn.classList.remove('hidden');
+        applyBtn && applyBtn.classList.add('hidden');
 
 
 
@@ -227,6 +233,32 @@ export function toggleDeleteMode() {
 
  */
 
+export function toggleColorEraseMode() {
+    if (!AppState.deleteMode) toggleDeleteMode();
+    AppState.colorEraseMode = true;
+    AppState.deleteMode = true;
+    AppState.editMode = 'delete';
+    setActiveEditorTool('color-eraser');
+}
+
+export function handleColorDeleteClick(idx, canvas) {
+    const source = AppState.stagedPixelData?.[idx];
+    if (!source || source.id === 'NONE') return;
+    const indices = [];
+    const prevColors = [];
+    AppState.stagedPixelData.forEach((pixel, index) => {
+        if (!pixel || pixel.id !== source.id) return;
+        indices.push(index);
+        prevColors.push({ ...pixel });
+        AppState.stagedPixelData[index] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
+    });
+    recordPixelAction({ indices, prevColors, nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 } });
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    calculateStats();
+    updateAdjustUndoButton();
+    refreshQualityOverlay();
+}
+
 export function handleDeleteClick(idx, canvas) {
 
     const targetPixel = AppState.stagedPixelData[idx];
@@ -235,11 +267,9 @@ export function handleDeleteClick(idx, canvas) {
 
 
 
-    showDeleteConfirmModal((confirmed) => {
+    AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
 
-        if (!confirmed) return;
-
-        AppState.stagedActions.push({
+        recordPixelAction({
 
             index: idx,
 
@@ -249,17 +279,11 @@ export function handleDeleteClick(idx, canvas) {
 
         });
 
-        AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
-
         renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
         refreshQualityOverlay();
 
         calculateStats();
 
-        const undoBtn = document.getElementById('adjust-undo-btn');
-
-        if (undoBtn) undoBtn.classList.remove('opacity-50', 'pointer-events-none');
-
-    });
+        updateAdjustUndoButton();
 
 }

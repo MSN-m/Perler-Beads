@@ -33,14 +33,15 @@ import {
     endWorkbenchCropInteraction,
     toggleFillMode,
     handleOriginalFillPick,
+    activateEyedropper,
     toggleClearBaseMode,
     handleResultCanvasClickForAdjust,
     startFillSelection,
     moveFillSelection,
     endFillSelection,
     adjustUndo,
+    adjustRedo,
     adjustCancel,
-    adjustApply,
     saveWorkbenchDraft,
     exportWorkbenchDrafts,
     exportWorkbenchDraft,
@@ -60,6 +61,7 @@ import {
     closePalettePanel,
     updatePalettePanelQuery,
     handlePaletteColorSelect,
+    handleRecentColorSelect,
     startPalettePanelDrag,
     movePalettePanelDrag,
     endPalettePanelDrag,
@@ -73,7 +75,8 @@ import {
     selectMobileBrand,
     selectMobileMardSet,
     toggleEdgeAdjustMode,
-    toggleDeleteMode
+    toggleDeleteMode,
+    toggleColorEraseMode
 } from './ui.js';
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
@@ -663,10 +666,25 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWorkbenchUI();
         },
         'color-erase': () => {
-            toggleDeleteMode();
+            toggleColorEraseMode();
             updateWorkbenchUI();
         }
     };
+
+    const eyedropperToolBtn = document.getElementById('eyedropper-tool-btn');
+    if (eyedropperToolBtn) {
+        eyedropperToolBtn.addEventListener('click', () => {
+            activateEyedropper();
+            updateWorkbenchUI();
+        });
+    }
+
+    document.querySelectorAll('[data-recent-color]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const index = Number(button.dataset.recentColor);
+            if (Number.isInteger(index)) handleRecentColorSelect(index);
+        });
+    });
     document.querySelectorAll('[data-tool-action]').forEach((button) => {
         button.addEventListener('click', (event) => {
             event.stopPropagation();
@@ -676,28 +694,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const adjustUndoBtn = document.getElementById('adjust-undo-btn');
-    if (adjustUndoBtn) {
-        adjustUndoBtn.addEventListener('click', () => {
+    const topUndoBtn = document.getElementById('workbench-top-undo-btn');
+    if (topUndoBtn) {
+        topUndoBtn.addEventListener('click', () => {
             adjustUndo();
             refreshQualityOverlay();
             updateWorkbenchUI();
         });
     }
 
-    const adjustCancelBtn = document.getElementById('adjust-cancel-btn');
-    if (adjustCancelBtn) {
-        adjustCancelBtn.addEventListener('click', () => {
-            adjustCancel();
+    const topRedoBtn = document.getElementById('workbench-top-redo-btn');
+    if (topRedoBtn) {
+        topRedoBtn.addEventListener('click', () => {
+            adjustRedo();
             refreshQualityOverlay();
             updateWorkbenchUI();
         });
     }
 
-    const adjustApplyBtn = document.getElementById('adjust-apply-btn');
-    if (adjustApplyBtn) {
-        adjustApplyBtn.addEventListener('click', () => {
-            adjustApply();
+    const topCancelBtn = document.getElementById('workbench-top-cancel-btn');
+    if (topCancelBtn) {
+        topCancelBtn.addEventListener('click', () => {
+            adjustCancel();
             refreshQualityOverlay();
             updateWorkbenchUI();
         });

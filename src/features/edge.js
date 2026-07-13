@@ -5,6 +5,7 @@
  */
 
 import { AppState } from '../state.js';
+import { setActiveEditorTool } from '../editor.js';
 
 import { renderResult } from '../renderer.js';
 
@@ -151,6 +152,7 @@ export function toggleEdgeAdjustMode() {
         }
 
         AppState.edgeSelectionMode = true;
+        setActiveEditorTool('edge');
 
         AppState.deleteMode = false;
 

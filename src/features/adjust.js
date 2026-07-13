@@ -8,9 +8,9 @@ import { AppState } from '../state.js';
 
 import { renderResult } from '../renderer.js';
 
-import { handleDeleteClick } from './delete.js';
+import { handleDeleteClick, handleColorDeleteClick } from './delete.js';
 
-import { deepClonePixels, calculateStats, getCurrentPalette, performBatchReplace, updateAdjustUndoButton, resetBatchReplaceState, redmeanDistance } from '../editor.js';
+import { deepClonePixels, calculateStats, getCurrentPalette, performBatchReplace, updateAdjustUndoButton, resetBatchReplaceState, redmeanDistance, beginGlobalEditorSession, setActiveEditorTool, resetGlobalEditorSession, recordPixelAction, undoGlobalEditorOperation, redoGlobalEditorOperation } from '../editor.js';
 
 
 
@@ -126,7 +126,7 @@ function applyFillSelection(canvas) {
     }
 
     if (indices.length > 0) {
-        AppState.stagedActions.push({
+        recordPixelAction({
             indices,
             prevColors,
             nextColor: { ...AppState.fillColor }
@@ -174,7 +174,7 @@ function applyClearSelection(canvas) {
     }
 
     if (indices.length > 0) {
-        AppState.stagedActions.push({
+        recordPixelAction({
             indices,
             prevColors,
             nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }
@@ -295,7 +295,7 @@ function clearConnectedRegion(startIndex, canvas) {
 
     }
 
-    AppState.stagedActions.push({
+    recordPixelAction({
 
         indices,
 
@@ -415,7 +415,11 @@ export function enterEditSession() {
 
     const deleteBtn = document.getElementById('toggle-delete-btn');
 
-    if (AppState.editMode === 'adjust' && AppState.stagedPixelData) return;
+    if (AppState.stagedPixelData) {
+        AppState.editMode = 'adjust';
+        setActiveEditorTool('brush');
+        return;
+    }
 
     AppState.editMode = 'adjust';
 
@@ -424,6 +428,8 @@ export function enterEditSession() {
     AppState.receiverIndex = null;
 
     AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
+
+    beginGlobalEditorSession(AppState.pixelData);
 
     AppState.stagedActions = [];
 
@@ -455,11 +461,11 @@ export function enterEditSession() {
 
     deleteBtn && deleteBtn.classList.remove('bg-primary', 'text-white');
 
-    undoBtn && undoBtn.classList.remove('hidden');
+    undoBtn && undoBtn.classList.add('hidden');
 
-    cancelBtn && cancelBtn.classList.remove('hidden');
+    cancelBtn && cancelBtn.classList.add('hidden');
 
-    applyBtn && applyBtn.classList.remove('hidden');
+    applyBtn && applyBtn.classList.add('hidden');
 
     resultCanvas.classList.remove('cursor-grab', 'cursor-grabbing');
 
@@ -482,6 +488,7 @@ export function toggleClearBaseMode() {
     }
 
     AppState.clearBaseMode = true;
+    setActiveEditorTool('area-erase');
 
     AppState.edgeSelectionMode = false;
 
@@ -520,6 +527,8 @@ export function toggleFillMode() {
     }
 
     AppState.fillMode = !AppState.fillMode;
+    AppState.eyedropperMode = false;
+    setActiveEditorTool(AppState.fillMode ? 'brush' : 'brush');
     AppState.fillSourceMode = 'canvas';
 
     AppState.clearBaseMode = false;
@@ -554,6 +563,7 @@ export function selectPaletteFillColor(color) {
     }
 
     AppState.fillMode = true;
+    setActiveEditorTool('brush');
     AppState.fillSourceMode = 'palette';
     AppState.clearBaseMode = false;
     AppState.edgeSelectionMode = false;
@@ -573,15 +583,33 @@ export function selectPaletteFillColor(color) {
 }
 
 export function handleOriginalFillPick(event) {
-    if (!AppState.fillMode) return false;
+    if (!AppState.fillMode && !AppState.eyedropperMode) return false;
     const sampled = sampleFromOriginalImage(event);
     if (!sampled) return false;
     AppState.fillSourceMode = 'original';
     setFillColorFromSample(sampled);
+    if (AppState.eyedropperMode) {
+        AppState.eyedropperMode = false;
+        AppState.fillMode = true;
+        AppState.fillSourceMode = 'palette';
+        setActiveEditorTool('brush');
+    }
     const canvas = document.getElementById('result-canvas');
     renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
     calculateStats();
     return true;
+}
+
+export function activateEyedropper() {
+    if (AppState.editMode !== 'adjust') enterEditSession();
+    AppState.eyedropperMode = true;
+    AppState.fillMode = false;
+    AppState.deleteMode = false;
+    AppState.clearBaseMode = false;
+    AppState.edgeSelectionMode = false;
+    AppState.fillColor = null;
+    AppState.fillColorId = null;
+    setActiveEditorTool('eyedropper');
 }
 
 export function startWorkbenchCompareDrag(event) {
@@ -688,8 +716,25 @@ export function handleResultCanvasClickForAdjust(e) {
 
     const idx = gy * AppState.gridWidth + gx;
 
+    if (AppState.eyedropperMode) {
+        const pixel = AppState.stagedPixelData[idx];
+        if (!pixel || pixel.id === 'NONE') return;
+        setFillColorFromSample(pixel);
+        AppState.eyedropperMode = false;
+        AppState.fillMode = true;
+        AppState.fillSourceMode = 'palette';
+        setActiveEditorTool('brush');
+        renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+        calculateStats();
+        return;
+    }
 
 
+
+    if (AppState.colorEraseMode) {
+        handleColorDeleteClick(idx, canvas);
+        return;
+    }
     if (AppState.deleteMode) {
 
         handleDeleteClick(idx, canvas);
@@ -725,7 +770,7 @@ export function handleResultCanvasClickForAdjust(e) {
 
         if (pixel.id === AppState.fillColorId) return;
 
-        AppState.stagedActions.push({
+        recordPixelAction({
 
             index: idx,
 
@@ -797,7 +842,7 @@ export function handleResultCanvasClickForAdjust(e) {
 
         if (prevEntries.length > 0) {
 
-            AppState.stagedActions.push({
+            recordPixelAction({
 
                 indices: prevEntries.map(p => p.index),
 
@@ -899,9 +944,9 @@ export function handleResultCanvasClickForAdjust(e) {
 
             const newColor = { id: donor.id, r: donor.r, g: donor.g, b: donor.b };
 
-            AppState.stagedActions.push({ index: AppState.receiverIndex, prevColor, nextColor: newColor });
-
             AppState.stagedPixelData[AppState.receiverIndex] = { ...newColor };
+
+            recordPixelAction({ index: AppState.receiverIndex, prevColor, nextColor: newColor });
 
             AppState.adjustPhase = 'waiting_receiver';
 
@@ -920,108 +965,78 @@ export function handleResultCanvasClickForAdjust(e) {
 }
 
 export function startFillSelection(e) {
-
-    if ((!AppState.fillMode || !AppState.fillColor) && !AppState.clearBaseMode) return false;
-
-    const hit = getGridHitFromEvent(e);
-
-    if (!hit) return false;
-
-    const pixel = AppState.stagedPixelData[hit.idx];
-
-    if (!pixel || pixel.id === 'NONE') return false;
-
-    AppState.fillSelection = {
-        startX: hit.gx,
-        startY: hit.gy,
-        endX: hit.gx,
-        endY: hit.gy,
-        didDrag: false
-    };
-
-    const canvas = document.getElementById('result-canvas');
-    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-    if (AppState.fillSourceIndex !== null) {
-        const fillX = AppState.fillSourceIndex % AppState.gridWidth;
-        const fillY = Math.floor(AppState.fillSourceIndex / AppState.gridWidth);
-        drawReceiverOutline(canvas, fillX, fillY);
+    if (AppState.clearBaseMode) {
+        const hit = getGridHitFromEvent(e);
+        if (!hit) return false;
+        AppState.fillSelection = { startX: hit.gx, startY: hit.gy, endX: hit.gx, endY: hit.gy, didDrag: false };
+        return true;
     }
-
+    if (!AppState.fillMode || !AppState.fillColor) return false;
+    const hit = getGridHitFromEvent(e);
+    if (!hit) return false;
+    AppState.paintStroke = { indices: [], prevColors: [], seen: new Set() };
+    paintStrokeCell(hit.idx);
     return true;
 }
 
-export function moveFillSelection(e) {
-
-    if (((!AppState.fillMode || !AppState.fillColor) && !AppState.clearBaseMode) || !AppState.fillSelection) return false;
-
-    const hit = getGridHitFromEvent(e);
-
-    if (!hit) return false;
-
-    AppState.fillSelection.endX = hit.gx;
-
-    AppState.fillSelection.endY = hit.gy;
-
-    if (hit.gx !== AppState.fillSelection.startX || hit.gy !== AppState.fillSelection.startY) {
-        AppState.fillSelection.didDrag = true;
-    }
-
+function paintStrokeCell(index) {
+    const stroke = AppState.paintStroke;
+    const current = AppState.stagedPixelData?.[index];
+    if (!stroke || !current || stroke.seen.has(index)) return;
+    const nextColor = AppState.fillColor;
+    if (!nextColor || current.id === nextColor.id) return;
+    stroke.seen.add(index);
+    stroke.indices.push(index);
+    stroke.prevColors.push({ ...current });
+    AppState.stagedPixelData[index] = { ...nextColor };
     const canvas = document.getElementById('result-canvas');
     renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-    if (AppState.fillSourceIndex !== null) {
-        const fillX = AppState.fillSourceIndex % AppState.gridWidth;
-        const fillY = Math.floor(AppState.fillSourceIndex / AppState.gridWidth);
-        drawReceiverOutline(canvas, fillX, fillY);
-    }
+}
 
+export function moveFillSelection(e) {
+    if (AppState.clearBaseMode && AppState.fillSelection) {
+        const hit = getGridHitFromEvent(e);
+        if (!hit) return false;
+        AppState.fillSelection.endX = hit.gx;
+        AppState.fillSelection.endY = hit.gy;
+        AppState.fillSelection.didDrag = AppState.fillSelection.didDrag
+            || hit.gx !== AppState.fillSelection.startX
+            || hit.gy !== AppState.fillSelection.startY;
+        return true;
+    }
+    if (!AppState.paintStroke) return false;
+    const hit = getGridHitFromEvent(e);
+    if (!hit) return false;
+    paintStrokeCell(hit.idx);
     return true;
 }
 
 export function endFillSelection() {
-
-    if (((!AppState.fillMode || !AppState.fillColor) && !AppState.clearBaseMode) || !AppState.fillSelection) return false;
-
-    const canvas = document.getElementById('result-canvas');
-
-    if (AppState.clearBaseMode) {
-        if (!AppState.fillSelection.didDrag) {
-            AppState.fillSelection = null;
-            renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-            return false;
-        }
-        applyClearSelection(canvas);
-    } else {
-        applyFillSelection(canvas);
+    if (AppState.clearBaseMode && AppState.fillSelection) {
+        const selection = AppState.fillSelection;
+        if (!selection.didDrag) return false;
+        applyClearSelection(document.getElementById('result-canvas'));
+        return true;
     }
-
+    const stroke = AppState.paintStroke;
+    if (!stroke) return false;
+    AppState.paintStroke = null;
+    if (!stroke.indices.length) return false;
+    recordPixelAction({
+        indices: stroke.indices,
+        prevColors: stroke.prevColors,
+        nextColor: { ...AppState.fillColor }
+    });
+    calculateStats();
+    updateAdjustUndoButton();
     return true;
 }
 
 
 
 export function adjustUndo() {
-
-    if ((AppState.editMode !== 'adjust' && AppState.editMode !== 'delete') || !AppState.stagedActions.length) return;
-
-    const action = AppState.stagedActions.pop();
-
-
-
-    if (Array.isArray(action.indices)) {
-
-        for (let i = 0; i < action.indices.length; i++) {
-
-            AppState.stagedPixelData[action.indices[i]] = { ...action.prevColors[i] };
-
-        }
-
-    } else {
-
-        AppState.stagedPixelData[action.index] = { ...action.prevColor };
-
-    }
-
-
+    if (!AppState.editor.undoStack.length) return;
+    undoGlobalEditorOperation();
 
     const canvas = document.getElementById('result-canvas');
 
@@ -1033,13 +1048,26 @@ export function adjustUndo() {
 
 }
 
+export function adjustRedo() {
+    if (!AppState.editor.redoStack.length) return;
+    redoGlobalEditorOperation();
+    const canvas = document.getElementById('result-canvas');
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+    calculateStats();
+    updateAdjustUndoButton();
+}
+
 
 
 export function adjustCancel() {
 
     if (AppState.editMode !== 'adjust' && AppState.editMode !== 'delete') return;
 
-    exitAdjustLikeMode(false);
+    if (AppState.editor.originalPixelData) {
+        AppState.stagedPixelData = deepClonePixels(AppState.editor.originalPixelData);
+    }
+    exitAdjustLikeMode(true);
+    resetGlobalEditorSession();
 
 }
 
@@ -1050,5 +1078,6 @@ export function adjustApply() {
     if (AppState.editMode !== 'adjust' && AppState.editMode !== 'delete') return;
 
     exitAdjustLikeMode(true);
+    resetGlobalEditorSession();
 
 }

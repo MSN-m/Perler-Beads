@@ -5,26 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>拼豆图案生成器 - 工作台测试版</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/tailwind.generated.css">
     <link rel="stylesheet" href="css/style.css">
-    <script>
-        if (window.tailwind) {
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        colors: {
-                            primary: '#FF7F50',
-                            secondary: '#4ECDC4',
-                            background: '#F7F9FC',
-                        },
-                        fontFamily: {
-                            sans: ['Inter', 'system-ui', 'sans-serif'],
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <script type="module" src="src/main.js"></script>
 </head>
 
@@ -52,6 +34,17 @@
                     <button id="show-workbench-colors-panel-btn" type="button"
                         class="px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
                         颜色清单
+                    </button>
+                </div>
+                <div id="workbench-top-edit-actions" class="hidden items-center gap-1.5">
+                    <button id="workbench-top-undo-btn" type="button" class="workbench-top-action-button" title="撤销最近一次编辑">
+                        <span aria-hidden="true">↶</span><span>撤销</span>
+                    </button>
+                    <button id="workbench-top-redo-btn" type="button" class="workbench-top-action-button" title="重做最近一次撤销" disabled>
+                        <span aria-hidden="true">↷</span><span>重做</span>
+                    </button>
+                    <button id="workbench-top-cancel-btn" type="button" class="workbench-top-action-button is-muted" title="放弃当前编辑">
+                        <span>放弃修改</span>
                     </button>
                 </div>
                 <div id="workbench-top-draft-slot" class="min-w-0"></div>
@@ -161,8 +154,8 @@
                     </div>
                     <button id="eyedropper-tool-btn" class="workbench-tool-button" aria-label="吸管" title="吸管"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 3 2 2-9.5 9.5-3 1 1-3L19 3Z"/><path d="m14 6 4 4M5 19h4"/></svg></button>
                     <div id="workbench-recent-colors" class="workbench-recent-colors" aria-label="最近使用颜色">
-                        <button type="button" class="workbench-color-chip is-current" data-recent-color="0" title="当前颜色">H2</button>
-                        <button type="button" class="workbench-color-chip" data-recent-color="1" title="最近使用颜色">F6</button>
+                        <button type="button" class="workbench-color-chip is-empty" data-recent-color="0" title="当前颜色"></button>
+                        <button type="button" class="workbench-color-chip is-empty" data-recent-color="1" title="最近使用颜色"></button>
                         <button type="button" class="workbench-color-chip is-empty" data-recent-color="2" title="最近使用颜色"></button>
                     </div>
                     <div class="workbench-tool-group">
@@ -184,16 +177,6 @@
                         <button id="reset-pattern-btn">重置图纸</button>
                         <button id="collapse-edit-toolbar-btn">收起</button>
                     </div>
-                </div>
-
-                <div id="workbench-active-toolbar"
-                    class="hidden absolute left-1/2 bottom-6 -translate-x-1/2 z-30 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-white px-5 py-3 flex items-center gap-4">
-                    <div class="flex items-center gap-2">
-                        <span id="workbench-active-mode-label" class="text-sm font-bold px-2">编辑</span>
-                    </div>
-                    <button id="adjust-undo-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-primary/10 hover:text-primary hidden">撤回</button>
-                    <button id="adjust-cancel-btn" class="text-sm font-bold px-3 py-2 rounded-lg hover:bg-gray-100 hidden">取消</button>
-                    <button id="adjust-apply-btn" class="text-sm font-bold px-3 py-2 rounded-lg bg-primary text-white hidden">确认</button>
                 </div>
 
                 <button id="expand-edit-toolbar-btn"
