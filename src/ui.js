@@ -2176,6 +2176,10 @@ export function updateWorkbenchUI() {
                 ? '边缘调整'
                 : '编辑';
     setText('workbench-active-mode-label', modeLabel);
+    document.getElementById('toggle-fill-btn')?.classList.toggle('is-active', AppState.fillMode);
+    document.getElementById('toggle-delete-btn')?.classList.toggle('is-active', AppState.deleteMode);
+    document.getElementById('toggle-edge-adjust-btn')?.classList.toggle('is-active', AppState.edgeSelectionMode);
+    document.getElementById('toggle-clear-base-btn')?.classList.toggle('is-active', AppState.clearBaseMode);
     const compareSourceFrame = document.getElementById('compare-source-frame');
     const compareSourcePreview = document.getElementById('compare-source-preview');
     const shouldUseOriginalPickerCursor = AppState.fillMode && compareVisible;

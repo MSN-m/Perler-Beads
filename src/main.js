@@ -641,6 +641,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const toolMenuActions = {
+        'brush': () => {
+            toggleFillMode();
+            updateWorkbenchUI();
+        },
+        'bucket': () => {
+            toggleFillMode();
+            updateWorkbenchUI();
+        },
+        'edge': () => {
+            toggleEdgeAdjustMode();
+            updateWorkbenchUI();
+        },
+        'eraser': () => {
+            toggleDeleteMode();
+            updateWorkbenchUI();
+        },
+        'area-erase': () => {
+            toggleClearBaseMode();
+            updateWorkbenchUI();
+        },
+        'color-erase': () => {
+            toggleDeleteMode();
+            updateWorkbenchUI();
+        }
+    };
+    document.querySelectorAll('[data-tool-action]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const action = toolMenuActions[button.dataset.toolAction];
+            if (action) action();
+            button.closest('.workbench-tool-menu')?.classList.remove('is-open');
+        });
+    });
+
     const adjustUndoBtn = document.getElementById('adjust-undo-btn');
     if (adjustUndoBtn) {
         adjustUndoBtn.addEventListener('click', () => {

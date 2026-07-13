@@ -164,6 +164,131 @@
     max-height: 100%;
 }
 
+/* PC editor toolbar: a compact first level with lightweight glass surfaces. */
+.workbench-glass-toolbar {
+    min-height: 66px;
+    border: 1px solid rgba(246, 252, 255, 0.95);
+    border-radius: 999px;
+    background: linear-gradient(91deg, rgba(251, 251, 251, 0.8), rgba(255, 242, 247, 0.8) 30%, rgba(242, 250, 255, 0.8) 51%, rgba(255, 255, 255, 0.8) 70%, rgba(255, 245, 249, 0.8));
+    box-shadow: 0 0 8px rgba(226, 234, 240, 0.95);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+}
+
+.workbench-tool-group {
+    position: relative;
+}
+
+.workbench-tool-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 40px;
+    border-radius: 22px;
+    color: #242935;
+    transition: background-color .16s ease, color .16s ease, transform .16s ease;
+}
+
+.workbench-tool-button:hover,
+.workbench-tool-button.is-active {
+    color: #fff;
+    background: #de5387;
+}
+
+.workbench-tool-button:active,
+.workbench-color-chip:active {
+    transform: scale(.95);
+}
+
+.workbench-tool-button svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.75;
+}
+
+.workbench-tool-caret {
+    position: absolute;
+    right: 7px;
+    bottom: 5px;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.workbench-recent-colors {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px;
+}
+
+.workbench-color-chip {
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 50%;
+    color: #fff;
+    background: #ff7f50;
+    font: 600 10px/1 system-ui, sans-serif;
+    box-shadow: 0 1px 3px rgba(36, 41, 53, .12);
+    transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.workbench-color-chip:nth-child(2) { background: #ad5f52; opacity: .72; }
+.workbench-color-chip.is-current { outline: 2px solid #fff; box-shadow: 0 0 0 2px #ff7f50; }
+.workbench-color-chip.is-empty { background: transparent; border: 1.5px dashed #a0a6b3; box-shadow: none; }
+
+.workbench-tool-menu {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 12px);
+    display: none;
+    min-width: 152px;
+    padding: 8px;
+    transform: translateX(-50%);
+    border: 1px solid rgba(246, 252, 255, .95);
+    border-radius: 14px;
+    background: rgba(251, 251, 251, .82);
+    box-shadow: 0 12px 30px rgba(212, 225, 235, .72);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+}
+
+.workbench-tool-group:focus-within .workbench-tool-menu,
+.workbench-tool-group:hover .workbench-tool-menu,
+.workbench-tool-menu.is-open { display: grid; gap: 3px; }
+
+.workbench-tool-menu button {
+    padding: 10px 12px;
+    border-radius: 9px;
+    color: #242935;
+    text-align: left;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.workbench-tool-menu button:hover,
+.workbench-tool-menu button.is-active { color: #de5387; background: rgba(222, 83, 135, .1); }
+
+.workbench-hidden-actions {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+    .workbench-glass-toolbar { max-width: calc(100vw - 24px); }
+}
+
 @media (min-width: 768px) and (max-width: 1023px),
     (min-width: 768px) and (max-width: 1180px) and (pointer: coarse) {
     #workbench-layout {
