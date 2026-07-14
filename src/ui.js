@@ -31,6 +31,7 @@ import {
     adjustUndo as _adjustUndo,
     adjustRedo as _adjustRedo,
     adjustCancel as _adjustCancel,
+    startPaletteBatchReplace as _startPaletteBatchReplace,
 } from './features/adjust.js';
 configureEditorActions({
     enterColorReplaceMode: _enterEditSession,
@@ -326,14 +327,15 @@ function getPaletteGroupKey(color) {
 }
 
 function getPaletteColorButtonHtml(color) {
-    const selected = AppState.fillMode && String(AppState.fillColorId) === String(color.id);
+    const selected = String(AppState.highlightedColorId || '') === String(color.id);
     const textColor = getPaletteTextColor(color);
     return `
         <button type="button" data-palette-color-id="${color.id}"
-            class="h-14 rounded-xl border ${selected ? 'border-primary ring-2 ring-primary/30' : 'border-gray-200'} shadow-sm text-[11px] font-bold font-mono active:scale-95 transition"
+            class="h-10 flex items-center justify-between gap-2 px-2 rounded-full border ${selected ? 'border-primary ring-2 ring-primary/30' : 'border-transparent'} bg-white text-[11px] font-bold font-mono active:scale-95 transition"
             title="${color.id} · RGB(${color.r}, ${color.g}, ${color.b})"
-            style="background-color: rgb(${color.r},${color.g},${color.b}); color: ${textColor};">
-            ${color.id}
+            style="color: #242935;">
+            <span class="palette-used-color-chip" style="background-color: rgb(${color.r},${color.g},${color.b}); color: ${textColor};"><span>${color.id}</span><span class="opacity-75 font-normal">${color.count ? `(${color.count})` : ''}</span></span>
+            <span class="palette-row-actions"><span role="button" tabindex="0" data-palette-action="pick" aria-label="吸色替换"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 3 2 2-9.5 9.5-3 1 1-3L19 3Z"/><path d="m14 6 4 4M5 19h4"/></svg></span><span role="button" tabindex="0" data-palette-action="secondary" aria-label="其他颜色操作"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h5v5H5zM14 4h5v5h-5zM5 15h5v5H5zM14 15h5v5h-5z"/><path d="M10 6.5h4M10 17.5h4M6.5 10v5M17.5 10v5"/></svg></span></span>
         </button>
     `;
 }
@@ -386,32 +388,28 @@ function renderPalettePanel() {
     applyPalettePanelPosition(panel);
 
     const query = (AppState.palettePanelQuery || '').trim().toLowerCase();
-    const palette = getCurrentPalette();
+    const source = AppState.stagedPixelData || AppState.pixelData;
+    const usedColors = new Map();
+    (Array.isArray(source) ? source : []).forEach((pixel) => {
+        if (!pixel || pixel.id === 'NONE') return;
+        const existing = usedColors.get(String(pixel.id));
+        if (existing) existing.count += 1;
+        else usedColors.set(String(pixel.id), { ...pixel, count: 1 });
+    });
+    const palette = [...usedColors.values()].sort((a, b) => b.count - a.count || String(a.id).localeCompare(String(b.id)));
     const filtered = query
         ? palette.filter((color) => String(color.id).toLowerCase().includes(query))
         : palette;
 
-    summary.textContent = `${getPaletteTitle()} · ${filtered.length}/${palette.length} 色${AppState.fillColorId ? ` · 当前 ${AppState.fillColorId}` : ''}`;
+    const totalUsed = palette.reduce((total, color) => total + color.count, 0);
+    summary.textContent = `${palette.length}色 · ${totalUsed}颗`;
     if (searchInput && searchInput.value !== AppState.palettePanelQuery) {
         searchInput.value = AppState.palettePanelQuery;
     }
 
-    const grouped = filtered.reduce((groups, color) => {
-        const key = getPaletteGroupKey(color);
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(color);
-        return groups;
-    }, new Map());
-    const sortedGroups = [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b));
-
-    grid.innerHTML = sortedGroups.map(([group, colors]) => `
-        <section class="col-span-5">
-            <div class="sticky top-0 z-10 -mx-1 mb-2 bg-white/95 px-1 py-1 text-xs font-bold text-gray-500 backdrop-blur">${group}</div>
-            <div class="grid grid-cols-5 gap-2">
-                ${colors.map(getPaletteColorButtonHtml).join('')}
-            </div>
-        </section>
-    `).join('');
+    grid.innerHTML = filtered.length
+        ? filtered.map(getPaletteColorButtonHtml).join('')
+        : '<p class="col-span-full py-8 text-center text-xs text-gray-400">当前图纸未使用匹配颜色</p>';
 }
 
 export function togglePalettePanel() {
@@ -434,8 +432,21 @@ export function updatePalettePanelQuery(value) {
 export function handlePaletteColorSelect(colorId) {
     const color = getCurrentPalette().find((item) => String(item.id) === String(colorId));
     if (!color) return false;
-    _selectPaletteFillColor(color);
-    AppState.palettePanelOpen = false;
+    AppState.highlightedColorId = String(color.id);
+    const canvas = document.getElementById('result-canvas');
+    if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+    updateWorkbenchUI();
+    return true;
+}
+
+export function handlePaletteAction(colorId, action) {
+    if (action !== 'pick') return false;
+    const color = getCurrentPalette().find((item) => String(item.id) === String(colorId));
+    if (!color) return false;
+    AppState.highlightedColorId = String(color.id);
+    _startPaletteBatchReplace(color.id);
+    const canvas = document.getElementById('result-canvas');
+    if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
     updateWorkbenchUI();
     return true;
 }
@@ -473,6 +484,64 @@ function syncRecentColorChips() {
             button.style.backgroundColor = '';
             button.style.color = '';
         }
+    });
+}
+
+function syncEditorToolVisualState() {
+    const tool = AppState.editor?.activeTool || 'brush';
+    const toolButton = document.getElementById('toggle-fill-btn');
+    const eraserButton = document.getElementById('toggle-delete-btn');
+    const buttons = {
+        brush: {
+            button: toolButton,
+            label: '画笔工具',
+            viewBox: '0 0 16 16',
+            icon: '<path d="M6.6666 2H5.3333M10.0046 3.3389l2.658 2.6573M13.3333 10v2.6667M14.1161 4.5417a1.3333 1.3333 0 0 0-1.8824-1.8824L2.5615 10.783a1.3333 1.3333 0 0 0-.3333.553l-.8807 2.901a.6667.6667 0 0 0 .8295.8295l2.902-0.88a1.3333 1.3333 0 0 0 .553-.3333zM14.6667 11.333H12M2.6667 3.333v2.6667M4 4.667H1.3333M6 1.333v1.333"/>'
+        },
+        bucket: {
+            button: toolButton,
+            label: '油漆桶',
+            icon: '<path d="m7 3 10 10M5 6l5-3 7 7-3 5-7-7 3-5"/><path d="M17 16c0 2-1.3 3-3 3s-3-1-3-3c0-1.6 3-4 3-4s3 2.4 3 4Z"/>'
+        },
+        edge: {
+            button: toolButton,
+            label: '边框上色',
+            icon: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 4v3M12 4v3M16 4v3M8 17v3M12 17v3M16 17v3M4 8h3M4 12h3M4 16h3M17 8h3M17 12h3M17 16h3"/>'
+        },
+        eraser: {
+            button: eraserButton,
+            label: '橡皮工具',
+            viewBox: '0 0 16 16',
+            icon: '<path d="M13.9999 14H5.33321C5.15741 14.0004 4.98327 13.9661 4.8208 13.8989C4.65833 13.8318 4.51075 13.7331 4.38654 13.6087L1.72388 10.9427C1.47392 10.6927 1.3335 10.3536 1.3335 10C1.3335 9.6465 1.47392 9.30742 1.72388 9.05738L8.39055 2.39072C8.51436 2.26685 8.66137 2.16859 8.82318 2.10155C8.98498 2.03451 9.1584 2 9.33354 2C9.50869 2 9.68211 2.03451 9.84391 2.10155C10.0057 2.16859 10.1527 2.26685 10.2765 2.39072L14.2759 6.39072C14.5258 6.64075 14.6663 6.97983 14.6663 7.33338C14.6663 7.68693 14.5258 8.02601 14.2759 8.27605L8.55588 14M3.38794 7.39355L9.27327 13.2789"/>'
+        },
+        'area-erase': {
+            button: eraserButton,
+            label: '区域擦除',
+            icon: '<path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="m4 4 4 4M20 4l-4 4M4 20l4-4M20 20l-4-4"/>'
+        },
+        'color-eraser': {
+            button: eraserButton,
+            label: '按颜色擦除',
+            icon: '<path d="m7 16 8.5-8.5a2.12 2.12 0 0 1 3 0l1 1a2.12 2.12 0 0 1 0 3L11 20H6l-3-3 4-4Z"/><path d="M15 15h5M17.5 12.5v5"/>'
+        }
+    };
+    [toolButton, eraserButton].forEach((button) => {
+        if (!button) return;
+        button.dataset.activeTool = tool;
+        button.classList.toggle('is-active', button === buttons[tool]?.button);
+        button.style.backgroundColor = '';
+    });
+    const renderButton = (button, definition) => {
+        if (!button || !definition) return;
+        const caret = button.querySelector('.workbench-tool-caret')?.outerHTML || '';
+        button.innerHTML = `<svg viewBox="${definition.viewBox || '0 0 24 24'}" aria-hidden="true">${definition.icon}</svg>${caret}`;
+        button.setAttribute('aria-label', definition.label);
+        button.title = definition.label;
+    };
+    renderButton(toolButton, buttons[tool] && buttons[tool].button === toolButton ? buttons[tool] : buttons.brush);
+    renderButton(eraserButton, buttons[tool] && buttons[tool].button === eraserButton ? buttons[tool] : buttons.eraser);
+    document.querySelectorAll('[data-tool-action]').forEach((menuButton) => {
+        menuButton.classList.toggle('is-active', menuButton.dataset.toolAction === tool);
     });
 }
 
@@ -726,9 +795,10 @@ function renderDraftBox() {
     saveBtn.classList.toggle('cursor-not-allowed', false);
 
     const drafts = Array.isArray(AppState.drafts) ? AppState.drafts : [];
-    saveBtn.textContent = hasPattern
+    const draftLabel = hasPattern
         ? (isMobileTopBar ? `草稿（${drafts.length}）` : `保存为草稿（${drafts.length}）`)
         : `草稿箱（${drafts.length}）`;
+    saveBtn.innerHTML = `<svg class="draft-save-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg><span class="draft-save-label">${draftLabel}</span>`;
     drawer.classList.toggle('hidden', !AppState.draftDrawerOpen);
     toggleBtn.textContent = AppState.draftDrawerOpen ? '↓' : '↑';
     toggleBtn.setAttribute('aria-label', AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表');
@@ -1957,12 +2027,15 @@ function applyWorkbenchLayoutMode(hasPattern) {
         if (topActions) {
             topActions.style.display = 'flex';
             topActions.style.gridColumn = '1 / -1';
-            topActions.style.margin = isMobile ? '-12px -12px 0' : (isTablet ? '-16px -16px 0' : '-20px -20px 0');
+            topActions.style.margin = isMobile ? '-12px -12px 0' : (isTablet ? '-16px -16px 0' : '0');
             topActions.style.borderRadius = '0';
-            topActions.style.position = 'relative';
+            topActions.style.position = isMobile || isTablet ? 'relative' : 'fixed';
+            topActions.style.top = isMobile || isTablet ? '' : '0';
+            topActions.style.left = isMobile || isTablet ? '' : '0';
+            topActions.style.right = isMobile || isTablet ? '' : '0';
             topActions.style.zIndex = isMobile && AppState.draftDrawerOpen ? '240' : '80';
         }
-        if (tabletTabs) tabletTabs.style.display = 'flex';
+        if (tabletTabs) tabletTabs.style.display = isTablet ? 'flex' : 'none';
         if (settingsPanel) {
             settingsPanel.style.maxHeight = '100%';
             settingsPanel.style.overflowY = 'auto';
@@ -2142,6 +2215,7 @@ export function updateWorkbenchUI() {
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
     setText('workbench-pattern-title', String(AppState.patternName || '').trim() || '未命名图纸');
+    setText('workbench-pattern-meta', `${AppState.gridWidth}x${AppState.gridHeight} · ${AppState.brand === 'mard' ? `MARD ${AppState.mardSet}色` : AppState.brand.toUpperCase()}`);
     const patternNameInput = document.getElementById('pattern-name-input');
     if (patternNameInput && document.activeElement !== patternNameInput) {
         patternNameInput.value = AppState.patternName || '';
@@ -2241,6 +2315,7 @@ export function updateWorkbenchUI() {
     document.getElementById('toggle-delete-btn')?.classList.toggle('is-active', AppState.deleteMode);
     document.getElementById('toggle-edge-adjust-btn')?.classList.toggle('is-active', AppState.edgeSelectionMode);
     document.getElementById('toggle-clear-base-btn')?.classList.toggle('is-active', AppState.clearBaseMode);
+    syncEditorToolVisualState();
     const compareSourceFrame = document.getElementById('compare-source-frame');
     const compareSourcePreview = document.getElementById('compare-source-preview');
     const shouldUseOriginalPickerCursor = AppState.fillMode && compareVisible;

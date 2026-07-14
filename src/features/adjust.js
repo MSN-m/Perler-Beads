@@ -401,6 +401,31 @@ function exitAdjustLikeMode(applyChanges) {
 
 
 
+export function startPaletteBatchReplace(colorId) {
+    if (!colorId) return false;
+    if (AppState.editMode !== 'adjust') enterEditSession();
+    AppState.editMode = 'adjust';
+    AppState.adjustPhase = 'waiting_receiver';
+    AppState.receiverIndex = null;
+    AppState.batchReplace = {
+        active: true,
+        mode: 'from_canvas',
+        sourceColorId: String(colorId),
+        nearCandidates: [],
+        nearBaseline: null,
+        nearCurrentId: null
+    };
+    AppState.fillMode = false;
+    AppState.deleteMode = false;
+    AppState.colorEraseMode = false;
+    AppState.clearBaseMode = false;
+    AppState.edgeSelectionMode = false;
+    AppState.highlightedColorId = String(colorId);
+    const canvas = document.getElementById('result-canvas');
+    if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+    return true;
+}
+
 export function enterEditSession() {
 
     const resultCanvas = document.getElementById('result-canvas');

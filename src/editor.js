@@ -26,6 +26,22 @@ export function beginGlobalEditorSession(pixelData) {
     AppState.editor.undoStack = [];
     AppState.editor.redoStack = [];
     AppState.editor.hasChanges = false;
+    const mostUsed = new Map();
+    (Array.isArray(pixelData) ? pixelData : []).forEach((pixel) => {
+        if (!pixel || pixel.id === 'NONE') return;
+        const entry = mostUsed.get(String(pixel.id));
+        if (entry) entry.count += 1;
+        else mostUsed.set(String(pixel.id), { ...pixel, count: 1 });
+    });
+    const defaults = [...mostUsed.values()]
+        .sort((a, b) => b.count - a.count || String(a.id).localeCompare(String(b.id)))
+        .slice(0, 3);
+    AppState.recentColors = defaults;
+    AppState.lastRecentColorId = defaults[0]?.id || null;
+    if (defaults[0]) {
+        AppState.fillColorId = defaults[0].id;
+        AppState.fillColor = { id: defaults[0].id, r: defaults[0].r, g: defaults[0].g, b: defaults[0].b };
+    }
 }
 
 export function setActiveEditorTool(tool) {

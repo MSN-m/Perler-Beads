@@ -61,6 +61,7 @@ import {
     closePalettePanel,
     updatePalettePanelQuery,
     handlePaletteColorSelect,
+    handlePaletteAction,
     handleRecentColorSelect,
     startPalettePanelDrag,
     movePalettePanelDrag,
@@ -80,6 +81,7 @@ import {
 } from './ui.js';
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
+import { setActiveEditorTool } from './editor.js';
 
 /**
  * 处理图片上传
@@ -419,6 +421,13 @@ document.addEventListener('DOMContentLoaded', () => {
         showWorkbenchSettingsPanelBtn.addEventListener('click', () => selectWorkbenchTabletPanel('settings'));
     }
 
+    const workbenchBackBtn = document.getElementById('workbench-back-btn');
+    if (workbenchBackBtn) {
+        workbenchBackBtn.addEventListener('click', () => {
+            goToStep(2);
+        });
+    }
+
     const showWorkbenchColorsPanelBtn = document.getElementById('show-workbench-colors-panel-btn');
     if (showWorkbenchColorsPanelBtn) {
         showWorkbenchColorsPanelBtn.addEventListener('click', () => selectWorkbenchTabletPanel('colors'));
@@ -474,20 +483,24 @@ document.addEventListener('DOMContentLoaded', () => {
         paletteColorGrid.addEventListener('pointerdown', (e) => {
             const button = e.target.closest('button[data-palette-color-id]');
             if (!button) return;
+            const action = e.target.closest('[data-palette-action]');
             e.preventDefault();
             e.stopPropagation();
             suppressPaletteClickUntil = Date.now() + 600;
-            handlePaletteButton(button);
+            if (action) handlePaletteAction(button.getAttribute('data-palette-color-id'), action.dataset.paletteAction);
+            else handlePaletteButton(button);
         });
         paletteColorGrid.addEventListener('click', (e) => {
             const button = e.target.closest('button[data-palette-color-id]');
             if (!button) return;
+            const action = e.target.closest('[data-palette-action]');
             if (Date.now() < suppressPaletteClickUntil) {
                 e.preventDefault();
                 e.stopPropagation();
                 return;
             }
-            handlePaletteButton(button);
+            if (action) handlePaletteAction(button.getAttribute('data-palette-color-id'), action.dataset.paletteAction);
+            else handlePaletteButton(button);
         });
     }
 
@@ -647,26 +660,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolMenuActions = {
         'brush': () => {
             toggleFillMode();
+            setActiveEditorTool('brush');
             updateWorkbenchUI();
         },
         'bucket': () => {
             toggleFillMode();
+            setActiveEditorTool('bucket');
             updateWorkbenchUI();
         },
         'edge': () => {
             toggleEdgeAdjustMode();
+            setActiveEditorTool('edge');
             updateWorkbenchUI();
         },
         'eraser': () => {
             toggleDeleteMode();
+            setActiveEditorTool('eraser');
             updateWorkbenchUI();
         },
         'area-erase': () => {
             toggleClearBaseMode();
+            setActiveEditorTool('area-erase');
             updateWorkbenchUI();
         },
         'color-erase': () => {
             toggleColorEraseMode();
+            setActiveEditorTool('color-eraser');
             updateWorkbenchUI();
         }
     };
@@ -728,7 +747,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const saveDraftBtn = document.getElementById('save-draft-btn');
     if (saveDraftBtn) {
-        saveDraftBtn.addEventListener('click', async () => {
+        saveDraftBtn.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             if (!AppState.pixelData || !AppState.pixelData.length) {
                 toggleDraftDrawer();
                 return;

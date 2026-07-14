@@ -23,11 +23,15 @@
 
         <div id="workbench-layout" class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
             <div id="workbench-top-actions" class="hidden bg-white rounded-2xl border border-white shadow-sm p-3 items-center gap-3">
-                <div id="workbench-top-title" class="min-w-0 flex-1 flex items-center gap-2">
-                    <span id="workbench-pattern-title" class="min-w-0 truncate text-sm font-black text-gray-900">未命名图纸</span>
+                <div id="workbench-top-title" class="min-w-0 flex-1 flex items-center gap-3">
+                    <button id="workbench-back-btn" type="button" class="workbench-header-icon" aria-label="返回" title="返回">‹</button>
+                    <div class="min-w-0">
+                        <span id="workbench-pattern-title" class="block min-w-0 truncate text-base font-black text-gray-900">未命名图纸</span>
+                        <span id="workbench-pattern-meta" class="block mt-0.5 text-[10px] text-gray-400">32x32 · MARD 221色</span>
+                    </div>
                     <button id="show-workbench-settings-panel-btn" type="button"
-                        class="shrink-0 px-3 py-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
-                        设置
+                        class="workbench-header-icon shrink-0" aria-label="重命名和设置" title="重命名和设置">
+                        ✎
                     </button>
                 </div>
                 <div id="workbench-tablet-panel-tabs" class="hidden items-center gap-2">
@@ -152,7 +156,7 @@
                             <button type="button" id="toggle-edge-adjust-menu-btn" data-tool-action="edge">边框上色</button>
                         </div>
                     </div>
-                    <button id="eyedropper-tool-btn" class="workbench-tool-button" aria-label="吸管" title="吸管"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 3 2 2-9.5 9.5-3 1 1-3L19 3Z"/><path d="m14 6 4 4M5 19h4"/></svg></button>
+                    <button id="eyedropper-tool-btn" class="workbench-tool-button" aria-label="吸管" title="吸管"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 6 2.3907 11.6093a1.3333 1.3333 0 0 0-.3907.9427v.896a1.3333 1.3333 0 0 0-.3907.9427h.896a1.3333 1.3333 0 0 0 .9427-.3907L10 8M12 6l.2667.2667a1.3333 1.3333 0 0 1 0 1.8853 1.3333 1.3333 0 0 1-1.8853 0L7.7333 5.7336a1.3333 1.3333 0 0 1 0-1.8853 1.3333 1.3333 0 0 1 1.8853 0L10 4l2.2667-2.2667a1.3333 1.3333 0 0 1 1.8853 0 1.3333 1.3333 0 0 1 0 1.8853zM1.3333 14.6667l.276-.276"/></svg></button>
                     <div id="workbench-recent-colors" class="workbench-recent-colors" aria-label="最近使用颜色">
                         <button type="button" class="workbench-color-chip is-empty" data-recent-color="0" title="当前颜色"></button>
                         <button type="button" class="workbench-color-chip is-empty" data-recent-color="1" title="最近使用颜色"></button>
@@ -169,7 +173,7 @@
                             <button type="button" id="toggle-delete-color-menu-btn" data-tool-action="color-erase">按颜色擦除</button>
                         </div>
                     </div>
-                    <button id="toggle-palette-panel-btn" class="workbench-tool-button" aria-label="颜色清单" title="颜色清单"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="8" cy="19" r="1"/></svg></button>
+                    <button id="toggle-palette-panel-btn" class="workbench-tool-button" aria-label="颜色清单" title="颜色清单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.3333 11.3333a2.6667 2.6667 0 1 1-5.3333 0V3.3333A1.3333 1.3333 0 0 1 3.3333 2H6a1.3333 1.3333 0 0 1 1.3333 1.3333zM11.1334 8.667h1.5333A1.3333 1.3333 0 0 1 14 10v2.6667A1.3333 1.3333 0 0 1 12.6667 14H4.6667M4.6667 11.333h.0067M7.3334 5.333l1.5333-1.5333a2.6667 2.6667 0 0 1 3.5333 0l1.264 1.264a2.6667 2.6667 0 0 1 .0173 3.7533L6.6001 13.2"/></svg></button>
                     <div class="workbench-hidden-actions" aria-hidden="true">
                         <button id="quality-check-btn">质量检查（0）</button>
                         <button id="toggle-clear-base-btn">移除底色</button>
@@ -188,13 +192,11 @@
                     class="hidden absolute right-6 bottom-24 z-40 w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
                     <div id="palette-panel-drag-handle" class="p-4 border-b border-gray-100 cursor-move select-none">
                         <div class="flex items-center justify-between gap-3">
-                            <div>
-                                <h3 class="text-sm font-bold text-gray-900">当前色盘</h3>
-                                <p id="palette-panel-summary" class="mt-1 text-xs text-gray-500">请选择颜色用于填色</p>
-                            </div>
+                            <h3 class="text-sm font-bold text-gray-900">颜色清单</h3>
+                            <p id="palette-panel-summary" class="text-xs text-gray-400 whitespace-nowrap">12色 · 3214颗</p>
                             <button id="close-palette-panel-btn" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
                         </div>
-                        <input id="palette-search-input" type="search" placeholder="搜索色号，例如 C29"
+                        <input id="palette-search-input" type="search" placeholder="搜索已用色号，例如 C29"
                             class="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                     </div>
                     <div id="palette-color-grid" class="grid grid-cols-5 gap-2 p-4 overflow-y-auto max-h-[48vh] no-scrollbar"></div>
@@ -435,15 +437,15 @@
                         <div id="draft-box-list" class="hidden space-y-2 max-h-80 overflow-y-auto no-scrollbar"></div>
                     </div>
                     <div id="draft-primary-control" class="grid grid-cols-[minmax(0,1fr)_48px] rounded-2xl overflow-hidden shadow-sm">
-                        <button id="save-draft-btn" class="py-4 bg-white text-gray-900 text-sm font-bold border border-gray-200 border-r-0 active:scale-[0.99] transition">
-                            保存为草稿（0）
+                        <button id="save-draft-btn" type="button" class="py-4 bg-white text-gray-900 text-sm font-bold border border-gray-200 border-r-0 active:scale-[0.99] transition">
+                            <svg class="draft-save-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg><span class="draft-save-label">保存为草稿（0）</span>
                         </button>
                         <button id="toggle-draft-drawer-btn" class="py-4 bg-white text-gray-900 border border-gray-200 text-sm font-bold hover:text-primary active:scale-95 transition" aria-label="展开草稿列表">
                             ↑
                         </button>
                     </div>
                     <button id="next-to-step-4" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">
-                        导出
+                        <svg class="draft-export-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span>导出</span>
                     </button>
                 </div>
                 </div>
