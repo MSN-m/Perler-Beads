@@ -800,7 +800,8 @@ function renderDraftBox() {
         : `草稿箱（${drafts.length}）`;
     saveBtn.innerHTML = `<svg class="draft-save-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg><span class="draft-save-label">${draftLabel}</span>`;
     drawer.classList.toggle('hidden', !AppState.draftDrawerOpen);
-    toggleBtn.textContent = AppState.draftDrawerOpen ? '↓' : '↑';
+    toggleBtn.innerHTML = '<svg class="draft-toggle-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>';
+    toggleBtn.classList.toggle('is-open', AppState.draftDrawerOpen);
     toggleBtn.setAttribute('aria-label', AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表');
     toggleBtn.classList.toggle('hidden', !hasPattern);
     empty.classList.toggle('hidden', drafts.length > 0);

@@ -191,34 +191,49 @@
     }
 
     #workbench-layout[data-mode="editor"] #draft-primary-control {
-        grid-template-columns: 40px 40px;
+        display: block;
+        position: relative;
+        width: 48px;
+        height: 40px;
+        padding: 0;
+        background: #f0f0f0;
+        border-radius: 20px;
         box-shadow: none;
-        gap: 8px;
-        overflow: visible;
+        gap: 0;
+        overflow: hidden;
     }
 
     #workbench-layout[data-mode="editor"] #save-draft-btn {
-        width: 40px;
-        min-height: 40px;
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        width: 16px;
+        min-height: 16px;
         padding: 0;
         border: 0;
-        border-radius: 50%;
-        background: #f0f0f0;
+        border-radius: 0;
+        background: transparent;
         font-size: 0;
     }
 
     #workbench-layout[data-mode="editor"] #save-draft-btn .draft-save-icon {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         margin: 0;
     }
 
     #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn {
-        width: 40px;
-        min-height: 40px;
+        position: absolute;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        left: 32px;
+        top: 12px;
+        width: 16px;
+        min-height: 16px;
         padding: 0;
         border: 0;
-        border-radius: 50%;
+        border-radius: 0;
         background: transparent;
     }
 
@@ -375,6 +390,17 @@
     background: #f9fafb;
 }
 
+.workbench-top-action-icon {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .workbench-top-action-button:disabled,
 .workbench-top-action-button.is-disabled {
     cursor: not-allowed;
@@ -393,9 +419,16 @@
 }
 
 .draft-save-icon {
-    display: inline-block;
-    vertical-align: middle;
-    margin-right: 6px;
+    display: block;
+    flex: 0 0 17px;
+    margin-right: 0;
+}
+
+#save-draft-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .draft-export-icon {
@@ -491,6 +524,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     width: 48px;
     height: 40px;
     border-radius: 22px;
@@ -521,8 +555,8 @@
 }
 
 .workbench-tool-button svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;
@@ -530,12 +564,31 @@
     stroke-width: 1.75;
 }
 
-.workbench-tool-caret {
-    position: absolute;
-    right: 7px;
-    bottom: 5px;
-    font-size: 11px;
-    line-height: 1;
+.workbench-tool-button .workbench-tool-caret {
+    position: static;
+    flex: 0 0 auto;
+    width: 5px;
+    height: 3px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: .9;
+}
+
+.draft-toggle-caret {
+    width: 5px;
+    height: 3px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: .9;
+    transition: transform .16s ease;
+}
+
+#toggle-draft-drawer-btn.is-open .draft-toggle-caret {
+    transform: rotate(180deg);
 }
 
 .workbench-recent-colors {
@@ -592,6 +645,9 @@
 .workbench-tool-menu.is-open { display: grid; gap: 3px; }
 
 .workbench-tool-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     padding: 10px 12px;
     border-radius: 9px;
     color: #242935;
@@ -600,8 +656,64 @@
     white-space: nowrap;
 }
 
+.tool-menu-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .workbench-tool-menu button:hover,
 .workbench-tool-menu button.is-active { color: #de5387; background: rgba(222, 83, 135, .1); }
+
+.has-hover-tooltip {
+    position: relative;
+}
+
+.has-hover-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    z-index: 80;
+    max-width: 240px;
+    padding: 6px 9px;
+    border-radius: 7px;
+    color: #fff;
+    background: rgba(24, 29, 39, .94);
+    box-shadow: 0 5px 14px rgba(24, 29, 39, .18);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition: opacity .14s ease, transform .14s ease;
+    transition-delay: 0s;
+}
+
+.has-hover-tooltip:hover::after,
+.has-hover-tooltip:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    transition-delay: .5s;
+}
+
+.workbench-tool-menu .has-hover-tooltip::after {
+    left: 100%;
+    bottom: 50%;
+    transform: translate(6px, 50%);
+}
+
+.workbench-tool-menu .has-hover-tooltip:hover::after,
+.workbench-tool-menu .has-hover-tooltip:focus-visible::after {
+    transform: translate(0, 50%);
+}
 
 .workbench-hidden-actions {
     position: absolute;

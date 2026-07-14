@@ -175,6 +175,11 @@ const loadExample = (type) => {
 
 // 页面加载完成后绑定事件
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#workbench-edit-toolbar [title], #save-draft-btn[title]').forEach((element) => {
+        element.dataset.tooltip = element.getAttribute('title');
+        element.classList.add('has-hover-tooltip');
+        element.removeAttribute('title');
+    });
     // --- Step 1: 首页 / 上传 ---
     const fileUpload = document.getElementById('file-upload');
     if (fileUpload) {
