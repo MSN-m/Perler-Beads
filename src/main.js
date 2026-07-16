@@ -651,9 +651,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const toggleFillBtn = document.getElementById('toggle-fill-btn');
+    const closeToolOverlays = () => {
+        closePalettePanel();
+        closeAllColorsPanel();
+    };
     if (toggleFillBtn) {
         toggleFillBtn.addEventListener('click', () => {
+            closeToolOverlays();
             toggleFillMode();
+            setActiveEditorTool('brush');
             updateWorkbenchUI();
         });
     }
@@ -661,6 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleClearBaseBtn = document.getElementById('toggle-clear-base-btn');
     if (toggleClearBaseBtn) {
         toggleClearBaseBtn.addEventListener('click', () => {
+            closeToolOverlays();
             toggleClearBaseMode();
             updateWorkbenchUI();
         });
@@ -669,6 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleEdgeAdjustBtn = document.getElementById('toggle-edge-adjust-btn');
     if (toggleEdgeAdjustBtn) {
         toggleEdgeAdjustBtn.addEventListener('click', () => {
+            closeToolOverlays();
             toggleEdgeAdjustMode();
             updateWorkbenchUI();
         });
@@ -677,38 +685,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleDeleteBtn = document.getElementById('toggle-delete-btn');
     if (toggleDeleteBtn) {
         toggleDeleteBtn.addEventListener('click', () => {
+            closeToolOverlays();
             toggleDeleteMode();
+            setActiveEditorTool('eraser');
             updateWorkbenchUI();
         });
     }
 
     const toolMenuActions = {
         'brush': () => {
+            closeToolOverlays();
             toggleFillMode();
             setActiveEditorTool('brush');
             updateWorkbenchUI();
         },
         'bucket': () => {
+            closeToolOverlays();
             toggleFillMode();
             setActiveEditorTool('bucket');
             updateWorkbenchUI();
         },
         'edge': () => {
+            closeToolOverlays();
             toggleEdgeAdjustMode();
             setActiveEditorTool('edge');
             updateWorkbenchUI();
         },
         'eraser': () => {
+            closeToolOverlays();
             toggleDeleteMode();
             setActiveEditorTool('eraser');
             updateWorkbenchUI();
         },
         'area-erase': () => {
+            closeToolOverlays();
             toggleClearBaseMode();
             setActiveEditorTool('area-erase');
             updateWorkbenchUI();
         },
         'color-erase': () => {
+            closeToolOverlays();
             toggleColorEraseMode();
             setActiveEditorTool('color-eraser');
             updateWorkbenchUI();
@@ -718,6 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const eyedropperToolBtn = document.getElementById('eyedropper-tool-btn');
     if (eyedropperToolBtn) {
         eyedropperToolBtn.addEventListener('click', () => {
+            closeToolOverlays();
             activateEyedropper();
             updateWorkbenchUI();
         });
@@ -803,6 +820,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = event.target;
         if (draftDrawer?.contains(target) || saveDraftBtn?.contains(target) || toggleDraftDrawerBtn?.contains(target)) return;
         AppState.draftDrawerOpen = false;
+        updateWorkbenchUI();
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+        if (!AppState.allColorsPanelOpen) return;
+        const panel = document.getElementById('all-colors-panel');
+        const toggleBtn = document.getElementById('toggle-all-colors-panel-btn');
+        const target = event.target;
+        if (panel?.contains(target) || toggleBtn?.contains(target)) return;
+        closeAllColorsPanel();
         updateWorkbenchUI();
     });
 
@@ -957,6 +984,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('resize', () => {
+        updateWorkbenchUI();
+    });
+
+    window.addEventListener('orientationchange', () => {
+        window.setTimeout(() => {
+            updateWorkbenchUI();
+        }, 50);
+    });
+
+    window.visualViewport?.addEventListener('resize', () => {
         updateWorkbenchUI();
     });
 

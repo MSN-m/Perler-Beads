@@ -347,6 +347,7 @@ function applyPalettePanelPosition(panel) {
         panel.style.top = '';
         panel.style.right = '';
         panel.style.bottom = '';
+        panel.style.transform = '';
         return;
     }
 
@@ -354,6 +355,7 @@ function applyPalettePanelPosition(panel) {
     panel.style.top = `${position.y}px`;
     panel.style.right = 'auto';
     panel.style.bottom = 'auto';
+    panel.style.transform = 'none';
 }
 
 function resetPalettePanelPosition() {
@@ -384,6 +386,7 @@ function renderPalettePanel() {
     panel.classList.toggle('hidden', !shouldShow);
     toggleBtn?.classList.toggle('bg-primary/10', shouldShow);
     toggleBtn?.classList.toggle('text-primary', shouldShow);
+    toggleBtn?.setAttribute('aria-expanded', String(shouldShow));
     if (!shouldShow) return;
     applyPalettePanelPosition(panel);
 
@@ -415,7 +418,9 @@ function renderPalettePanel() {
 export function togglePalettePanel() {
     if (!hasWorkbenchPattern()) return;
     AppState.palettePanelOpen = !AppState.palettePanelOpen;
+    if (AppState.palettePanelOpen) AppState.allColorsPanelOpen = false;
     renderPalettePanel();
+    renderAllColorsPanel();
 }
 
 export function closePalettePanel() {
@@ -430,6 +435,29 @@ function getAllColorsButtonHtml(color) {
     return `<button type="button" data-all-color-id="${color.id}" class="all-colors-swatch ${selected ? 'ring-2 ring-primary ring-offset-2' : ''}" title="${color.id} · RGB(${color.r}, ${color.g}, ${color.b})" style="background-color: rgb(${color.r}, ${color.g}, ${color.b}); color: ${textColor};">${color.id}</button>`;
 }
 
+function positionAllColorsPanel(panel, toggleBtn) {
+    if (!toggleBtn) return;
+    const stage = document.getElementById('workbench-stage');
+    if (!stage) return;
+    const stageRect = stage.getBoundingClientRect();
+    const toggleRect = toggleBtn.getBoundingClientRect();
+    const gap = 12;
+    const panelHeight = panel.getBoundingClientRect().height;
+    const centerX = toggleRect.left - stageRect.left + toggleRect.width / 2;
+    const top = toggleRect.top - stageRect.top - panelHeight - gap;
+    panel.style.setProperty('position', 'absolute', 'important');
+    panel.style.setProperty('left', `${centerX}px`, 'important');
+    panel.style.setProperty('right', 'auto', 'important');
+    panel.style.setProperty('transform', 'translateX(-50%)', 'important');
+    if (top >= 12) {
+        panel.style.setProperty('top', `${top}px`, 'important');
+        panel.style.setProperty('bottom', 'auto', 'important');
+    } else {
+        panel.style.setProperty('top', '12px', 'important');
+        panel.style.setProperty('bottom', 'auto', 'important');
+    }
+}
+
 function renderAllColorsPanel() {
     if (!isWorkbenchLayout()) return;
     const panel = document.getElementById('all-colors-panel');
@@ -442,6 +470,7 @@ function renderAllColorsPanel() {
     const shouldShow = hasWorkbenchPattern() && AppState.allColorsPanelOpen;
     panel.classList.toggle('hidden', !shouldShow);
     toggleBtn?.classList.toggle('is-active', shouldShow);
+    toggleBtn?.setAttribute('aria-expanded', String(shouldShow));
     if (!shouldShow) return;
 
     const query = (AppState.allColorsPanelQuery || '').trim().toLowerCase();
@@ -456,27 +485,48 @@ function renderAllColorsPanel() {
     grid.innerHTML = filtered.length
         ? filtered.map(getAllColorsButtonHtml).join('')
         : '<p class="col-span-full py-8 text-center text-xs text-gray-400">未找到匹配颜色</p>';
+    positionAllColorsPanel(panel, toggleBtn);
+    requestAnimationFrame(() => {
+        if (AppState.allColorsPanelOpen) positionAllColorsPanel(panel, toggleBtn);
+    });
 
+    let suppressAllColorsClickUntil = 0;
     grid.querySelectorAll('button[data-all-color-id]').forEach((button) => {
         const selectColor = (event) => {
             event.preventDefault();
             event.stopPropagation();
             handleAllColorsSelect(button.dataset.allColorId);
         };
-        button.onpointerdown = selectColor;
-        button.onclick = selectColor;
+        button.onpointerdown = (event) => {
+            suppressAllColorsClickUntil = Date.now() + 600;
+            selectColor(event);
+        };
+        button.onclick = (event) => {
+            if (Date.now() < suppressAllColorsClickUntil) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+            selectColor(event);
+        };
     });
 }
 
 export function toggleAllColorsPanel() {
     if (!hasWorkbenchPattern()) return;
     AppState.allColorsPanelOpen = !AppState.allColorsPanelOpen;
-    if (AppState.allColorsPanelOpen) AppState.palettePanelOpen = false;
+    if (AppState.allColorsPanelOpen) {
+        AppState.palettePanelOpen = false;
+        AppState.editor.activeTool = 'palette';
+    }
     updateWorkbenchUI();
 }
 
 export function closeAllColorsPanel() {
     AppState.allColorsPanelOpen = false;
+    if (AppState.editor.activeTool === 'palette') AppState.editor.activeTool = 'brush';
+    document.getElementById('toggle-all-colors-panel-btn')?.classList.remove('is-active');
+    document.getElementById('toggle-all-colors-panel-btn')?.setAttribute('aria-expanded', 'false');
     renderAllColorsPanel();
 }
 
@@ -2074,7 +2124,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
     layout.dataset.mode = hasPattern ? 'editor' : 'setup';
     layout.dataset.viewport = viewportMode;
     layout.dataset.mobileStep = isMobile && hasImage && !hasPattern ? AppState.mobileSetupStep : '';
-    layout.classList.toggle('draft-modal-open', isMobile && AppState.draftDrawerOpen);
+    layout.classList.toggle('draft-modal-open', AppState.draftDrawerOpen);
     activeShell.dataset.mode = hasPattern ? 'editor' : 'setup';
     if (hasPattern) {
         const editorDraftParent = topDraftSlot || sideDraftSlot;
@@ -2123,7 +2173,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
             colorListPanel.style.maxHeight = '100%';
             colorListPanel.style.overflowY = 'auto';
         }
-        draftActions.style.width = isMobile ? 'auto' : (isTablet ? 'min(300px, 42vw)' : '100%');
+        draftActions.style.width = isMobile ? 'auto' : (isTablet ? 'min(260px, 42vw)' : '100%');
         draftActions.style.margin = '';
         draftActions.style.gridColumn = '';
         draftActions.style.gridTemplateColumns = isMobile ? 'minmax(0, 1fr) 72px' : 'minmax(0, 1fr) 96px';
@@ -2304,6 +2354,7 @@ export function updateWorkbenchUI() {
         settingsTab.classList.toggle('text-white', active);
         settingsTab.classList.toggle('bg-gray-100', !active);
         settingsTab.classList.toggle('text-gray-700', !active);
+        settingsTab.setAttribute('aria-expanded', String(active));
     }
     if (colorsTab) {
         const active = tabletPanel === 'colors';
@@ -2311,6 +2362,7 @@ export function updateWorkbenchUI() {
         colorsTab.classList.toggle('text-white', active);
         colorsTab.classList.toggle('bg-gray-100', !active);
         colorsTab.classList.toggle('text-gray-700', !active);
+        colorsTab.setAttribute('aria-expanded', String(active));
     }
     if (hasPattern) refreshQualityIssues();
     else AppState.qualityIssues = [];

@@ -113,6 +113,18 @@
     pointer-events: auto;
 }
 
+#workbench-layout[data-mode="setup"].draft-modal-open #workbench-stage {
+    overflow: visible;
+    position: relative;
+    z-index: 130;
+}
+
+#workbench-layout[data-mode="setup"].draft-modal-open #workbench-setup-draft-slot,
+#workbench-layout[data-mode="setup"].draft-modal-open #workbench-setup-draft-slot #workbench-draft-actions,
+#workbench-layout[data-mode="setup"].draft-modal-open #draft-drawer {
+    z-index: 140;
+}
+
 .workbench-header-icon {
     display: inline-flex;
     width: 32px;
@@ -780,6 +792,99 @@
 
 @media (min-width: 768px) and (max-width: 1023px),
     (min-width: 768px) and (max-width: 1180px) and (pointer: coarse) {
+    #workbench-layout[data-mode="editor"] #workbench-top-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        min-height: 64px;
+        height: 64px;
+        padding: 8px 16px;
+        gap: 8px;
+        overflow: visible;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-title {
+        flex: 1 1 auto;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-tablet-panel-tabs {
+        flex: 0 0 auto;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-edit-actions {
+        flex: 0 0 auto;
+        min-width: max-content;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-draft-slot {
+        flex: 0 0 260px;
+        width: 100%;
+        max-width: 260px;
+        justify-self: end;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-draft-slot #workbench-draft-actions {
+        width: 100%;
+        min-width: 0;
+        grid-template-columns: minmax(0, 1fr) 88px !important;
+        gap: 6px;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-stage,
+    #workbench-layout[data-mode="editor"] #result-container,
+    #workbench-layout[data-mode="editor"] #result-container-single {
+        min-height: 0;
+        height: 100%;
+        touch-action: none;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar {
+        bottom: 24px;
+        max-height: none;
+        overflow: visible;
+        flex-wrap: nowrap;
+        padding: 8px 10px;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-side-panel {
+        max-height: calc(100dvh - 92px);
+        overflow-y: auto;
+        touch-action: pan-y;
+        overscroll-behavior: contain;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, .96);
+        box-shadow: 0 18px 48px rgba(15, 23, 42, .18);
+    }
+
+    #workbench-layout[data-mode="editor"] #palette-panel,
+    #workbench-layout[data-mode="editor"] #all-colors-panel {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        z-index: 100;
+        width: min(360px, calc(100vw - 32px));
+        max-width: calc(100vw - 32px);
+        max-height: min(58dvh, 520px);
+        bottom: 96px;
+    }
+
+    #workbench-layout[data-mode="editor"] #palette-color-grid,
+    #workbench-layout[data-mode="editor"] #all-colors-grid {
+        max-height: min(42dvh, 360px);
+        touch-action: pan-y;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-pattern-meta {
+        white-space: nowrap;
+    }
+
+    #workbench-layout[data-mode="editor"] .workbench-top-action-button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
     #workbench-layout {
         height: 100dvh;
         gap: 16px;
@@ -832,6 +937,31 @@
         bottom: 88px;
         width: min(360px, calc(100vw - 32px));
         max-height: 58vh;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar {
+        max-height: none;
+        overflow: visible;
+        flex-wrap: nowrap;
+    }
+
+    #workbench-layout[data-mode="editor"] #palette-panel,
+    #workbench-layout[data-mode="editor"] #all-colors-panel {
+        left: 50%;
+        right: auto;
+        bottom: 96px;
+        transform: translateX(-50%);
+    }
+
+    #workbench-layout[data-mode="editor"] #next-to-step-4 {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        min-height: 40px;
+        padding: 0 12px;
+        line-height: 1.2;
+        white-space: nowrap;
     }
 
     #draft-drawer {

@@ -61,6 +61,7 @@ function getGridHitFromPoint(point, resultCanvas) {
 
 function shouldStartPan(e, resultCanvas) {
     if (!isEditingMode()) return true;
+    if (e.touches && e.touches.length >= 2) return true;
     if (!canPanFromCurrentEditMode()) return false;
     if (e.target !== resultCanvas) return true;
 
@@ -270,6 +271,8 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
         if (!shouldStartPan(e, resultCanvas)) return;
 
+        e.preventDefault();
+
         if (e.touches.length === 1) {
 
             AppState.zoomState.isDragging = true;
@@ -376,6 +379,15 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
         panStartedInEditMode = false;
         panDidMove = false;
 
+    });
+
+    resultContainer.addEventListener('touchcancel', () => {
+        if (AppState.zoomState) {
+            AppState.zoomState.isDragging = false;
+            AppState.zoomState.lastDist = 0;
+        }
+        panStartedInEditMode = false;
+        panDidMove = false;
     });
 
 }
