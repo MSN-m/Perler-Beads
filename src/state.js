@@ -69,6 +69,8 @@ export const AppState = {
     palettePanelQuery: '',
     palettePanelPosition: null,
     palettePanelDrag: null,
+    allColorsPanelOpen: false,
+    allColorsPanelQuery: '',
     qualityIssues: [],
     qualityOverlayVisible: false,
     workbenchSettingsCollapsed: false,

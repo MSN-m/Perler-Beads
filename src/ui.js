@@ -424,6 +424,78 @@ export function closePalettePanel() {
     renderPalettePanel();
 }
 
+function getAllColorsButtonHtml(color) {
+    const textColor = getPaletteTextColor(color);
+    const selected = String(AppState.fillColorId || '') === String(color.id);
+    return `<button type="button" data-all-color-id="${color.id}" class="all-colors-swatch ${selected ? 'ring-2 ring-primary ring-offset-2' : ''}" title="${color.id} · RGB(${color.r}, ${color.g}, ${color.b})" style="background-color: rgb(${color.r}, ${color.g}, ${color.b}); color: ${textColor};">${color.id}</button>`;
+}
+
+function renderAllColorsPanel() {
+    if (!isWorkbenchLayout()) return;
+    const panel = document.getElementById('all-colors-panel');
+    const grid = document.getElementById('all-colors-grid');
+    const summary = document.getElementById('all-colors-panel-summary');
+    const searchInput = document.getElementById('all-colors-search-input');
+    const toggleBtn = document.getElementById('toggle-all-colors-panel-btn');
+    if (!panel || !grid || !summary) return;
+
+    const shouldShow = hasWorkbenchPattern() && AppState.allColorsPanelOpen;
+    panel.classList.toggle('hidden', !shouldShow);
+    toggleBtn?.classList.toggle('is-active', shouldShow);
+    if (!shouldShow) return;
+
+    const query = (AppState.allColorsPanelQuery || '').trim().toLowerCase();
+    const palette = getCurrentPalette().slice().sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    const filtered = query
+        ? palette.filter((color) => String(color.id).toLowerCase().includes(query))
+        : palette;
+    summary.textContent = `${getPaletteTitle()} · ${palette.length} 色`;
+    if (searchInput && searchInput.value !== AppState.allColorsPanelQuery) {
+        searchInput.value = AppState.allColorsPanelQuery;
+    }
+    grid.innerHTML = filtered.length
+        ? filtered.map(getAllColorsButtonHtml).join('')
+        : '<p class="col-span-full py-8 text-center text-xs text-gray-400">未找到匹配颜色</p>';
+
+    grid.querySelectorAll('button[data-all-color-id]').forEach((button) => {
+        const selectColor = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            handleAllColorsSelect(button.dataset.allColorId);
+        };
+        button.onpointerdown = selectColor;
+        button.onclick = selectColor;
+    });
+}
+
+export function toggleAllColorsPanel() {
+    if (!hasWorkbenchPattern()) return;
+    AppState.allColorsPanelOpen = !AppState.allColorsPanelOpen;
+    if (AppState.allColorsPanelOpen) AppState.palettePanelOpen = false;
+    updateWorkbenchUI();
+}
+
+export function closeAllColorsPanel() {
+    AppState.allColorsPanelOpen = false;
+    renderAllColorsPanel();
+}
+
+export function updateAllColorsPanelQuery(value) {
+    AppState.allColorsPanelQuery = value || '';
+    renderAllColorsPanel();
+}
+
+export function handleAllColorsSelect(colorId) {
+    const color = getCurrentPalette().find((item) => String(item.id) === String(colorId));
+    if (!color) return false;
+    AppState.allColorsPanelOpen = false;
+    AppState.palettePanelOpen = false;
+    AppState.editor.activeTool = 'brush';
+    _selectPaletteFillColor(color);
+    updateWorkbenchUI();
+    return true;
+}
+
 export function updatePalettePanelQuery(value) {
     AppState.palettePanelQuery = value || '';
     renderPalettePanel();
@@ -798,7 +870,7 @@ function renderDraftBox() {
     const draftLabel = hasPattern
         ? (isMobileTopBar ? `草稿（${drafts.length}）` : `保存为草稿（${drafts.length}）`)
         : `草稿箱（${drafts.length}）`;
-    saveBtn.innerHTML = `<svg class="draft-save-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg><span class="draft-save-label">${draftLabel}</span>`;
+    saveBtn.innerHTML = `<svg class="draft-save-icon" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.88333 0.75C9.23503 0.755009 9.57049 0.898781 9.81667 1.15L12.35 3.68333C12.6012 3.92951 12.745 4.26497 12.75 4.61667V11.4167C12.75 11.7703 12.6095 12.1094 12.3595 12.3595C12.1094 12.6095 11.7703 12.75 11.4167 12.75H2.08333C1.72971 12.75 1.39057 12.6095 1.14052 12.3595C0.890476 12.1094 0.75 11.7703 0.75 11.4167V2.08333C0.75 1.72971 0.890476 1.39057 1.14052 1.14052C1.39057 0.890476 1.72971 0.75 2.08333 0.75H8.88333Z"/><path d="M10.0833 12.7503V8.08366C10.0833 7.90685 10.0131 7.73728 9.88803 7.61225C9.76301 7.48723 9.59344 7.41699 9.41663 7.41699H4.08329C3.90648 7.41699 3.73691 7.48723 3.61189 7.61225C3.48686 7.73728 3.41663 7.90685 3.41663 8.08366V12.7503"/><path d="M3.41663 0.75V3.41667C3.41663 3.59348 3.48686 3.76305 3.61189 3.88807C3.73691 4.0131 3.90648 4.08333 4.08329 4.08333H8.74996"/></svg><span class="draft-save-label">${draftLabel}</span>`;
     drawer.classList.toggle('hidden', !AppState.draftDrawerOpen);
     toggleBtn.innerHTML = '<svg class="draft-toggle-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>';
     toggleBtn.classList.toggle('is-open', AppState.draftDrawerOpen);
@@ -2244,6 +2316,7 @@ export function updateWorkbenchUI() {
     else AppState.qualityIssues = [];
     setText('quality-check-btn', AppState.qualityOverlayVisible ? '\u5173\u95ed\u68c0\u67e5' : `\u8d28\u91cf\u68c0\u67e5\uff08${AppState.qualityIssues.length}\uff09`);
     renderPalettePanel();
+    renderAllColorsPanel();
     syncRecentColorChips();
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {

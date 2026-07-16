@@ -60,6 +60,9 @@ import {
     togglePalettePanel,
     closePalettePanel,
     updatePalettePanelQuery,
+    toggleAllColorsPanel,
+    closeAllColorsPanel,
+    updateAllColorsPanelQuery,
     handlePaletteColorSelect,
     handlePaletteAction,
     handleRecentColorSelect,
@@ -117,6 +120,8 @@ const resetProjectForNewImage = () => {
     AppState.palettePanelQuery = '';
     AppState.palettePanelPosition = null;
     AppState.palettePanelDrag = null;
+    AppState.allColorsPanelOpen = false;
+    AppState.allColorsPanelQuery = '';
     AppState.qualityIssues = [];
     AppState.qualityOverlayVisible = false;
     AppState.workbenchSettingsCollapsed = false;
@@ -443,6 +448,11 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePalettePanelBtn.addEventListener('click', togglePalettePanel);
     }
 
+    const toggleAllColorsPanelBtn = document.getElementById('toggle-all-colors-panel-btn');
+    if (toggleAllColorsPanelBtn) {
+        toggleAllColorsPanelBtn.addEventListener('click', toggleAllColorsPanel);
+    }
+
     const qualityCheckBtn = document.getElementById('quality-check-btn');
     if (qualityCheckBtn) {
         qualityCheckBtn.addEventListener('click', () => {
@@ -454,6 +464,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const closePalettePanelBtn = document.getElementById('close-palette-panel-btn');
     if (closePalettePanelBtn) {
         closePalettePanelBtn.addEventListener('click', closePalettePanel);
+    }
+
+    const closeAllColorsPanelBtn = document.getElementById('close-all-colors-panel-btn');
+    if (closeAllColorsPanelBtn) {
+        closeAllColorsPanelBtn.addEventListener('click', closeAllColorsPanel);
     }
 
     const palettePanelDragHandle = document.getElementById('palette-panel-drag-handle');
@@ -476,6 +491,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const paletteSearchInput = document.getElementById('palette-search-input');
     if (paletteSearchInput) {
         paletteSearchInput.addEventListener('input', (e) => updatePalettePanelQuery(e.target.value));
+    }
+
+    const allColorsSearchInput = document.getElementById('all-colors-search-input');
+    if (allColorsSearchInput) {
+        allColorsSearchInput.addEventListener('input', (e) => updateAllColorsPanelQuery(e.target.value));
     }
 
     const paletteColorGrid = document.getElementById('palette-color-grid');

@@ -56,6 +56,15 @@
     display: grid;
 }
 
+#workbench-layout[data-mode="editor"],
+#workbench-layout[data-mode="editor"] #workbench-stage {
+    background: #E7EBEE;
+}
+
+#workbench-layout[data-mode="editor"] #result-canvas {
+    filter: drop-shadow(0 0 14px #E2EAF0);
+}
+
 .workbench-shell {
     grid-column: 1 / -1;
     grid-row: 1 / -1;
@@ -163,7 +172,8 @@
     }
 
     #workbench-layout[data-mode="editor"] #workbench-edit-toolbar {
-        width: 329px;
+        width: fit-content;
+        max-width: calc(100vw - 48px);
         bottom: 40px;
     }
 
@@ -205,15 +215,21 @@
 
     #workbench-layout[data-mode="editor"] #save-draft-btn {
         position: absolute;
-        left: 12px;
-        top: 12px;
-        width: 16px;
-        min-height: 16px;
-        padding: 0;
+        left: 0;
+        top: 0;
+        width: 30px;
+        height: 40px;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 0 0 12px;
         border: 0;
         border-radius: 0;
         background: transparent;
         font-size: 0;
+        cursor: pointer;
+        z-index: 2;
     }
 
     #workbench-layout[data-mode="editor"] #save-draft-btn .draft-save-icon {
@@ -226,15 +242,18 @@
         position: absolute;
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        left: 32px;
-        top: 12px;
-        width: 16px;
-        min-height: 16px;
-        padding: 0;
+        justify-content: flex-start;
+        left: 30px;
+        top: 0;
+        width: 18px;
+        height: 40px;
+        min-height: 40px;
+        padding: 0 0 0 4px;
         border: 0;
         border-radius: 0;
         background: transparent;
+        cursor: pointer;
+        z-index: 3;
     }
 
     #workbench-layout[data-mode="editor"] #next-to-step-4 {
@@ -562,6 +581,36 @@
     stroke-linecap: round;
     stroke-linejoin: round;
     stroke-width: 1.75;
+}
+
+#toggle-palette-panel-btn > svg {
+    stroke-width: 1.5;
+}
+
+#toggle-all-colors-panel-btn > svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+}
+
+#workbench-recent-colors {
+    display: none !important;
+}
+
+.all-colors-swatch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 10px;
+    font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.all-colors-swatch:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(36, 41, 53, .16);
 }
 
 .workbench-tool-button .workbench-tool-caret {
