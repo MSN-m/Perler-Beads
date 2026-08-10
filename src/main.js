@@ -428,7 +428,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const showWorkbenchSettingsPanelBtn = document.getElementById('show-workbench-settings-panel-btn');
     if (showWorkbenchSettingsPanelBtn) {
-        showWorkbenchSettingsPanelBtn.addEventListener('click', () => selectWorkbenchTabletPanel('settings'));
+        showWorkbenchSettingsPanelBtn.addEventListener('click', () => {
+            if (window.innerWidth < 768) openMobileSettingsModal('name');
+            else selectWorkbenchTabletPanel('settings');
+        });
     }
 
     const workbenchBackBtn = document.getElementById('workbench-back-btn');
@@ -833,6 +836,16 @@ document.addEventListener('DOMContentLoaded', () => {
         updateWorkbenchUI();
     });
 
+    document.addEventListener('pointerdown', (event) => {
+        if (!AppState.palettePanelOpen) return;
+        const panel = document.getElementById('palette-panel');
+        const toggleBtn = document.getElementById('toggle-palette-panel-btn');
+        const target = event.target;
+        if (panel?.contains(target) || toggleBtn?.contains(target)) return;
+        closePalettePanel();
+        updateWorkbenchUI();
+    });
+
     const importDraftsFile = document.getElementById('import-drafts-file');
     if (importDraftsFile) {
         importDraftsFile.addEventListener('change', async (event) => {
@@ -976,7 +989,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
             }
         }, { passive: false });
-        window.addEventListener('touchend', () => {
+        window.addEventListener('touchend', (e) => {
+            if (e.touches && e.touches.length > 0) return;
             endFillSelection();
             refreshQualityOverlay();
             updateWorkbenchUI();

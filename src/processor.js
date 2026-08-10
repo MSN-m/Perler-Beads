@@ -82,6 +82,10 @@ function clampChannel(value) {
     return Math.max(0, Math.min(255, Math.round(value)));
 }
 
+function colorDifference(first, second) {
+    return Math.abs(first.r - second.r) + Math.abs(first.g - second.g) + Math.abs(first.b - second.b);
+}
+
 function applyPixelArtContrast(pixelArtData, contrast) {
     if (!contrast) return pixelArtData;
     const factor = 1 + contrast / 100;
@@ -1099,6 +1103,125 @@ export function generatePatternData({
         unifySmallRegions(pixelData, gridWidth, gridHeight, 2);
     }
 
+    return pixelData;
+}
+
+/**
+ * 实验方案：主体保护型扁平化 + 多候选颜色评分。
+ * 仅供 flatness-lab.html 使用，不替换正式生成流程。
+ */
+export function generatePatternDataProtected({
+    sourceImageData,
+    gridWidth,
+    gridHeight,
+    brand,
+    mardSet,
+    isColorLimitEnabled,
+    maxColors,
+    subjectThreshold = 0.58,
+    edgeStrength = 0.65,
+    detailStrength = 0.35,
+    colorWeight = 1,
+    continuityWeight = 0.35,
+    palettes
+}) {
+    let palette = palettes[brand] || palettes.perler;
+    if (brand === 'mard') palette = getFilteredMardPalette(mardSet);
+    const labPalette = buildLabPalette(palette);
+    const cells = [];
+
+    const samplePixel = (x, y) => {
+        const safeX = Math.max(0, Math.min(sourceImageData.width - 1, x));
+        const safeY = Math.max(0, Math.min(sourceImageData.height - 1, y));
+        const offset = (safeY * sourceImageData.width + safeX) * 4;
+        return {
+            r: sourceImageData.data[offset],
+            g: sourceImageData.data[offset + 1],
+            b: sourceImageData.data[offset + 2],
+            a: sourceImageData.data[offset + 3]
+        };
+    };
+
+    for (let y = 0; y < gridHeight; y++) {
+        for (let x = 0; x < gridWidth; x++) {
+            const startX = Math.floor((x / gridWidth) * sourceImageData.width);
+            const startY = Math.floor((y / gridHeight) * sourceImageData.height);
+            const endX = Math.max(startX + 1, Math.floor(((x + 1) / gridWidth) * sourceImageData.width));
+            const endY = Math.max(startY + 1, Math.floor(((y + 1) / gridHeight) * sourceImageData.height));
+            const centerX = (startX + endX - 1) / 2;
+            const centerY = (startY + endY - 1) / 2;
+            const maxDistance = Math.max(1, Math.hypot(endX - startX, endY - startY) / 2);
+            let opaqueCount = 0;
+            let totalCount = 0;
+            let edgeTotal = 0;
+            let rSum = 0, gSum = 0, bSum = 0;
+            let centerCount = 0, centerR = 0, centerG = 0, centerB = 0;
+            let subjectCount = 0, subjectR = 0, subjectG = 0, subjectB = 0;
+
+            for (let sy = startY; sy < endY; sy++) {
+                for (let sx = startX; sx < endX; sx++) {
+                    const pixel = samplePixel(sx, sy);
+                    totalCount++;
+                    if (pixel.a <= 128) continue;
+                    opaqueCount++;
+                    rSum += pixel.r; gSum += pixel.g; bSum += pixel.b;
+                    const right = samplePixel(sx + 1, sy);
+                    const down = samplePixel(sx, sy + 1);
+                    const localEdge = Math.min(1, (colorDifference(pixel, right) + colorDifference(pixel, down)) / 510);
+                    edgeTotal += localEdge;
+                    const distance = Math.hypot(sx - centerX, sy - centerY);
+                    if (distance <= maxDistance * 0.62) {
+                        centerCount++; centerR += pixel.r; centerG += pixel.g; centerB += pixel.b;
+                    }
+                    if (localEdge >= 0.12 || distance <= maxDistance * 0.55) {
+                        subjectCount++; subjectR += pixel.r; subjectG += pixel.g; subjectB += pixel.b;
+                    }
+                }
+            }
+
+            const opaqueRatio = opaqueCount / Math.max(1, totalCount);
+            if (opaqueRatio <= 0.22 || !opaqueCount) {
+                cells.push({ color: { id: 'NONE', r: 255, g: 255, b: 255, a: 0 }, score: 0 });
+                continue;
+            }
+
+            const averageLab = rgbToLab(rSum / opaqueCount, gSum / opaqueCount, bSum / opaqueCount);
+            const centerLab = rgbToLab(centerR / Math.max(1, centerCount), centerG / Math.max(1, centerCount), centerB / Math.max(1, centerCount));
+            const subjectLab = rgbToLab(subjectR / Math.max(1, subjectCount), subjectG / Math.max(1, subjectCount), subjectB / Math.max(1, subjectCount));
+            const subjectRatio = subjectCount / opaqueCount;
+            const edgeRatio = edgeTotal / opaqueCount;
+            const protectedLab = subjectRatio >= subjectThreshold ? subjectLab : averageLab;
+            const candidates = labPalette
+                .map(color => {
+                    const sourceScore = deltaE76(protectedLab, color.lab);
+                    const centerScore = deltaE76(centerLab, color.lab);
+                    const detailPenalty = Math.abs(sourceScore - centerScore) * detailStrength;
+                    const edgeBonus = edgeRatio * edgeStrength * (sourceScore < 2600 ? 1 : 0);
+                    return { color: color.color, score: colorWeight * (sourceScore + detailPenalty) - edgeBonus };
+                })
+                .sort((a, b) => a.score - b.score)
+                .slice(0, 5);
+            const best = candidates[0];
+            const neighborColors = [];
+            if (x > 0 && cells[y * gridWidth + x - 1]?.color) neighborColors.push(cells[y * gridWidth + x - 1].color);
+            if (y > 0 && cells[(y - 1) * gridWidth + x]?.color) neighborColors.push(cells[(y - 1) * gridWidth + x].color);
+            const continuityPenalty = neighborColors.length && !neighborColors.some(color => color.id === best.color.id) ? continuityWeight * 120 : 0;
+            cells.push({ color: continuityPenalty ? candidates.find(item => neighborColors.some(color => color.id === item.color.id))?.color || best.color : best.color, score: best.score });
+        }
+    }
+
+    let pixelData = cells.map(cell => cell.color);
+    if (isColorLimitEnabled) {
+        const usage = new Map();
+        pixelData.forEach(color => { if (color.id !== 'NONE') usage.set(color.id, (usage.get(color.id) || 0) + 1); });
+        if (usage.size > maxColors) {
+            const keepIds = new Set([...usage.entries()].sort((a, b) => b[1] - a[1]).slice(0, maxColors).map(([id]) => id));
+            const reducedPalette = palette.filter(color => keepIds.has(color.id));
+            const reducedLabPalette = buildLabPalette(reducedPalette);
+            pixelData = pixelData.map(color => color.id === 'NONE' || keepIds.has(color.id) ? color : findNearestColorDeltaE(color.r, color.g, color.b, reducedLabPalette));
+        }
+    }
+    unifySmallRegions(pixelData, gridWidth, gridHeight, 2, 45, 2);
     return pixelData;
 }
 

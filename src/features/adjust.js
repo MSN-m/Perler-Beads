@@ -793,6 +793,47 @@ export function handleResultCanvasClickForAdjust(e) {
 
         }
 
+        if (AppState.editor?.activeTool === 'bucket') {
+            const targetId = pixel.id;
+            const replacement = { ...AppState.fillColor };
+            if (targetId === replacement.id) return;
+
+            const width = AppState.gridWidth;
+            const height = AppState.gridHeight;
+            const visited = new Set();
+            const queue = [idx];
+            const indices = [];
+            const prevColors = [];
+
+            while (queue.length) {
+                const currentIndex = queue.shift();
+                if (visited.has(currentIndex)) continue;
+                visited.add(currentIndex);
+
+                const currentPixel = AppState.stagedPixelData[currentIndex];
+                if (!currentPixel || currentPixel.id !== targetId) continue;
+
+                indices.push(currentIndex);
+                prevColors.push({ ...currentPixel });
+                const x = currentIndex % width;
+                const y = Math.floor(currentIndex / width);
+                if (x > 0) queue.push(currentIndex - 1);
+                if (x < width - 1) queue.push(currentIndex + 1);
+                if (y > 0) queue.push(currentIndex - width);
+                if (y < height - 1) queue.push(currentIndex + width);
+            }
+
+            if (!indices.length) return;
+            indices.forEach((currentIndex) => {
+                AppState.stagedPixelData[currentIndex] = { ...replacement };
+            });
+            recordPixelAction({ indices, prevColors, nextColor: replacement });
+            renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
+            calculateStats();
+            updateAdjustUndoButton();
+            return;
+        }
+
         if (pixel.id === AppState.fillColorId) return;
 
         recordPixelAction({
@@ -990,6 +1031,8 @@ export function handleResultCanvasClickForAdjust(e) {
 }
 
 export function startFillSelection(e) {
+    if (e.touches && e.touches.length >= 2) return false;
+    if (AppState.editor?.activeTool === 'bucket') return false;
     if (AppState.clearBaseMode) {
         const hit = getGridHitFromEvent(e);
         if (!hit) return false;
@@ -1019,6 +1062,8 @@ function paintStrokeCell(index) {
 }
 
 export function moveFillSelection(e) {
+    if (e.touches && e.touches.length >= 2) return false;
+    if (AppState.editor?.activeTool === 'bucket') return false;
     if (AppState.clearBaseMode && AppState.fillSelection) {
         const hit = getGridHitFromEvent(e);
         if (!hit) return false;

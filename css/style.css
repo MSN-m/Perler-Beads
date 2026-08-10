@@ -7,6 +7,7 @@
     overflow-y: auto;
 }
 
+
 .step-section.active {
     display: flex;
 }
@@ -790,6 +791,75 @@
     .workbench-glass-toolbar { max-width: calc(100vw - 24px); }
 }
 
+@media (max-width: 767px) and (orientation: landscape) {
+    #workbench-layout[data-mode="editor"] {
+        padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-actions {
+        min-height: 46px;
+        height: 46px;
+        padding: 4px 10px;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-edit-actions .workbench-top-action-button,
+    #workbench-layout[data-mode="editor"] #workbench-top-draft-slot #workbench-draft-actions,
+    #workbench-layout[data-mode="editor"] #save-draft-btn,
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn,
+    #workbench-layout[data-mode="editor"] #next-to-step-4 {
+        height: 32px;
+        min-height: 32px;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar {
+        bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+        min-height: 50px;
+        max-height: 54px;
+        padding: 4px 8px;
+        border-radius: 24px;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar .workbench-tool-button {
+        flex-basis: 38px;
+        width: 38px;
+        height: 38px;
+        min-height: 38px;
+    }
+
+    #workbench-layout[data-mode="editor"] .workbench-tool-menu {
+        bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+        max-height: min(68dvh, 240px);
+    }
+
+    #workbench-layout[data-mode="editor"] #palette-panel,
+    #all-colors-panel {
+        left: 12px !important;
+        right: 12px !important;
+        bottom: calc(62px + env(safe-area-inset-bottom, 0px)) !important;
+        max-height: min(78dvh, 300px);
+    }
+
+    #workbench-layout[data-mode="editor"] #palette-color-grid,
+    #all-colors-grid {
+        max-height: min(56dvh, 190px);
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    #workbench-layout[data-mode="setup"] {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-stage {
+        min-height: 0;
+        height: calc(100dvh - 96px);
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="setup"] #generate-pattern-btn {
+        min-height: 48px;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 @media (min-width: 768px) and (max-width: 1023px),
     (min-width: 768px) and (max-width: 1180px) and (pointer: coarse) {
     #workbench-layout[data-mode="editor"] #workbench-top-actions {
@@ -1464,4 +1534,192 @@
         justify-content: flex-start;
         flex-wrap: nowrap;
     }
+
+    /* Mobile editor: keep the canvas usable and reserve the bottom safe area. */
+    #workbench-layout[data-mode="editor"] {
+        grid-template-rows: minmax(0, 1fr) !important;
+        gap: 0;
+        padding: 0 0 calc(84px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-mobile-shell,
+    #workbench-layout[data-mode="editor"] #workbench-stage {
+        min-height: 0;
+        height: 100%;
+        border-radius: 0;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-actions {
+        min-height: 52px;
+        height: 52px;
+        padding: 6px 10px;
+        gap: 4px;
+        overflow: visible;
+        border-radius: 0;
+        box-shadow: 0 1px 0 rgba(226, 232, 240, .9);
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-title {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-pattern-title {
+        max-width: 34vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-edit-actions {
+        gap: 0;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-edit-actions .workbench-top-action-button {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        min-height: 36px;
+        padding: 0;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-edit-actions .workbench-top-action-button span,
+    #workbench-layout[data-mode="editor"] #workbench-top-cancel-btn {
+        display: none;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-draft-slot {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: none;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-draft-slot #workbench-draft-actions {
+        min-width: 0;
+        width: auto;
+        grid-template-columns: 38px 32px !important;
+        gap: 4px;
+    }
+
+    #workbench-layout[data-mode="editor"] #save-draft-btn,
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn,
+    #workbench-layout[data-mode="editor"] #next-to-step-4 {
+        min-width: 32px;
+        width: 32px;
+        height: 36px;
+        min-height: 36px;
+        padding: 0;
+        font-size: 0;
+    }
+
+    #workbench-layout[data-mode="editor"] #save-draft-btn .draft-save-icon,
+    #workbench-layout[data-mode="editor"] #next-to-step-4 svg,
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn svg {
+        margin: 0;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar {
+        left: 8px;
+        right: 8px;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        min-height: 58px;
+        max-height: 64px;
+        padding: 8px;
+        gap: 4px;
+        justify-content: space-around;
+        overflow: visible;
+        flex-wrap: nowrap;
+        border-radius: 28px;
+        z-index: 80;
+        touch-action: manipulation;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar .workbench-tool-button {
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+    }
+
+    #workbench-layout[data-mode="editor"] .workbench-tool-menu {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+        width: auto;
+        max-width: none;
+        max-height: min(42dvh, 320px);
+        overflow-y: auto;
+        border-radius: 18px;
+        z-index: 120;
+        touch-action: pan-y;
+    }
+
+    #workbench-layout[data-mode="editor"] #palette-panel,
+    #all-colors-panel {
+        position: fixed !important;
+        left: 12px !important;
+        right: 12px !important;
+        bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+        top: auto !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: min(72dvh, 560px);
+        transform: none !important;
+        border-radius: 22px;
+        z-index: 140;
+    }
+
+    #workbench-layout[data-mode="editor"] #palette-color-grid,
+    #all-colors-grid {
+        max-height: min(52dvh, 400px);
+        padding: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-side-panel {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767px) and (orientation: landscape) {
+    #workbench-layout[data-mode="editor"] #workbench-top-actions { min-height: 46px; height: 46px; padding: 4px 10px; }
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar { bottom: calc(4px + env(safe-area-inset-bottom, 0px)); min-height: 50px; max-height: 54px; padding: 4px 8px; }
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar .workbench-tool-button { flex-basis: 38px; width: 38px; height: 38px; min-height: 38px; }
+    #workbench-layout[data-mode="editor"] .workbench-tool-menu { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); max-height: min(68dvh, 240px); }
+    #workbench-layout[data-mode="editor"] #palette-panel,
+    #all-colors-panel { bottom: calc(62px + env(safe-area-inset-bottom, 0px)) !important; max-height: min(78dvh, 300px); }
+    #workbench-layout[data-mode="editor"] #palette-color-grid,
+    #all-colors-grid { max-height: min(56dvh, 190px); grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+@media (max-width: 374px) and (orientation: portrait) {
+    #workbench-layout[data-mode="editor"] #workbench-top-actions { padding-left: 6px; padding-right: 6px; gap: 2px; }
+    #workbench-layout[data-mode="editor"] #workbench-pattern-title { max-width: 25vw; }
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar { left: 4px; right: 4px; gap: 0; padding-left: 4px; padding-right: 4px; }
+    #workbench-layout[data-mode="editor"] #workbench-edit-toolbar .workbench-tool-button { flex-basis: 40px; width: 40px; }
+    #workbench-layout[data-mode="editor"] #all-colors-grid,
+    #workbench-layout[data-mode="editor"] #palette-color-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+    body:has(#palette-panel:not(.hidden)),
+    body:has(#all-colors-panel:not(.hidden)) { overflow: hidden; }
+
+    body:has(#palette-panel:not(.hidden))::before,
+    body:has(#all-colors-panel:not(.hidden))::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, .2);
+        z-index: 130;
+        pointer-events: auto;
+    }
+
+    #workbench-layout[data-mode="editor"] #palette-panel,
+    #all-colors-panel { padding-bottom: env(safe-area-inset-bottom, 0px); }
 }

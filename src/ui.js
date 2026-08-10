@@ -437,15 +437,12 @@ function getAllColorsButtonHtml(color) {
 
 function positionAllColorsPanel(panel, toggleBtn) {
     if (!toggleBtn) return;
-    const stage = document.getElementById('workbench-stage');
-    if (!stage) return;
-    const stageRect = stage.getBoundingClientRect();
     const toggleRect = toggleBtn.getBoundingClientRect();
     const gap = 12;
     const panelHeight = panel.getBoundingClientRect().height;
-    const centerX = toggleRect.left - stageRect.left + toggleRect.width / 2;
-    const top = toggleRect.top - stageRect.top - panelHeight - gap;
-    panel.style.setProperty('position', 'absolute', 'important');
+    const centerX = toggleRect.left + toggleRect.width / 2;
+    const top = toggleRect.top - panelHeight - gap;
+    panel.style.setProperty('position', 'fixed', 'important');
     panel.style.setProperty('left', `${centerX}px`, 'important');
     panel.style.setProperty('right', 'auto', 'important');
     panel.style.setProperty('transform', 'translateX(-50%)', 'important');
