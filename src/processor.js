@@ -1118,11 +1118,12 @@ export function generatePatternDataProtected({
     mardSet,
     isColorLimitEnabled,
     maxColors,
-    subjectThreshold = 0.58,
-    edgeStrength = 0.65,
-    detailStrength = 0.35,
-    colorWeight = 1,
-    continuityWeight = 0.35,
+    subjectThreshold = 0.80,
+    edgeStrength = 0.75,
+    detailStrength = 0.70,
+    colorWeight = 1.20,
+    continuityWeight = 0.15,
+    outputMode = 'beads',
     palettes
 }) {
     let palette = palettes[brand] || palettes.perler;
@@ -1142,6 +1143,22 @@ export function generatePatternDataProtected({
         };
     };
 
+    // 用四角像素估计背景，避免把每个网格的中心区域误认为主体。
+    const cornerPixels = [
+        samplePixel(0, 0),
+        samplePixel(sourceImageData.width - 1, 0),
+        samplePixel(0, sourceImageData.height - 1),
+        samplePixel(sourceImageData.width - 1, sourceImageData.height - 1)
+    ].filter(pixel => pixel.a > 128);
+    const backgroundPixel = cornerPixels.length
+        ? cornerPixels.reduce((sum, pixel) => ({ r: sum.r + pixel.r, g: sum.g + pixel.g, b: sum.b + pixel.b }), { r: 0, g: 0, b: 0 })
+        : { r: 255, g: 255, b: 255 };
+    if (cornerPixels.length) {
+        backgroundPixel.r /= cornerPixels.length;
+        backgroundPixel.g /= cornerPixels.length;
+        backgroundPixel.b /= cornerPixels.length;
+    }
+
     for (let y = 0; y < gridHeight; y++) {
         for (let x = 0; x < gridWidth; x++) {
             const startX = Math.floor((x / gridWidth) * sourceImageData.width);
@@ -1157,6 +1174,8 @@ export function generatePatternDataProtected({
             let rSum = 0, gSum = 0, bSum = 0;
             let centerCount = 0, centerR = 0, centerG = 0, centerB = 0;
             let subjectCount = 0, subjectR = 0, subjectG = 0, subjectB = 0;
+            let darkestPixel = null;
+            let darkestLuminance = Infinity;
 
             for (let sy = startY; sy < endY; sy++) {
                 for (let sx = startX; sx < endX; sx++) {
@@ -1165,6 +1184,11 @@ export function generatePatternDataProtected({
                     if (pixel.a <= 128) continue;
                     opaqueCount++;
                     rSum += pixel.r; gSum += pixel.g; bSum += pixel.b;
+                    const luminance = pixel.r * 0.2126 + pixel.g * 0.7152 + pixel.b * 0.0722;
+                    if (luminance < darkestLuminance) {
+                        darkestLuminance = luminance;
+                        darkestPixel = pixel;
+                    }
                     const right = samplePixel(sx + 1, sy);
                     const down = samplePixel(sx, sy + 1);
                     const localEdge = Math.min(1, (colorDifference(pixel, right) + colorDifference(pixel, down)) / 510);
@@ -1173,7 +1197,9 @@ export function generatePatternDataProtected({
                     if (distance <= maxDistance * 0.62) {
                         centerCount++; centerR += pixel.r; centerG += pixel.g; centerB += pixel.b;
                     }
-                    if (localEdge >= 0.12 || distance <= maxDistance * 0.55) {
+                    const backgroundDistance = colorDifference(pixel, backgroundPixel);
+                    // 主体候选来自明显的轮廓或与背景有足够色差的像素，不再使用中心位置作为主体依据。
+                    if (localEdge >= 0.12 || backgroundDistance >= 120) {
                         subjectCount++; subjectR += pixel.r; subjectG += pixel.g; subjectB += pixel.b;
                     }
                 }
@@ -1181,22 +1207,32 @@ export function generatePatternDataProtected({
 
             const opaqueRatio = opaqueCount / Math.max(1, totalCount);
             if (opaqueRatio <= 0.22 || !opaqueCount) {
-                cells.push({ color: { id: 'NONE', r: 255, g: 255, b: 255, a: 0 }, score: 0 });
+                cells.push({ color: { id: 'NONE', r: 255, g: 255, b: 255, a: 0 }, flatColor: { r: 255, g: 255, b: 255, a: 0 }, score: 0 });
                 continue;
             }
 
-            const averageLab = rgbToLab(rSum / opaqueCount, gSum / opaqueCount, bSum / opaqueCount);
+            const averageColor = { r: rSum / opaqueCount, g: gSum / opaqueCount, b: bSum / opaqueCount, a: 255 };
+            const subjectColor = { r: subjectR / Math.max(1, subjectCount), g: subjectG / Math.max(1, subjectCount), b: subjectB / Math.max(1, subjectCount), a: 255 };
+            const averageLuminance = averageColor.r * 0.2126 + averageColor.g * 0.7152 + averageColor.b * 0.0722;
+            const averageLab = rgbToLab(averageColor.r, averageColor.g, averageColor.b);
             const centerLab = rgbToLab(centerR / Math.max(1, centerCount), centerG / Math.max(1, centerCount), centerB / Math.max(1, centerCount));
-            const subjectLab = rgbToLab(subjectR / Math.max(1, subjectCount), subjectG / Math.max(1, subjectCount), subjectB / Math.max(1, subjectCount));
+            const subjectLab = rgbToLab(subjectColor.r, subjectColor.g, subjectColor.b);
             const subjectRatio = subjectCount / opaqueCount;
             const edgeRatio = edgeTotal / opaqueCount;
             const protectedLab = subjectRatio >= subjectThreshold ? subjectLab : averageLab;
+            const hasDarkDetail = darkestPixel && averageLuminance - darkestLuminance >= 38;
+            const detailColor = hasDarkDetail ? { r: darkestPixel.r, g: darkestPixel.g, b: darkestPixel.b, a: 255 } : null;
+            const baseFlatColor = subjectRatio >= subjectThreshold ? subjectColor : averageColor;
+            const detailInfluence = Math.max(0, Math.min(1, detailStrength));
+            const flatColor = detailColor && detailInfluence >= 0.45
+                ? { r: detailColor.r * detailInfluence + baseFlatColor.r * (1 - detailInfluence), g: detailColor.g * detailInfluence + baseFlatColor.g * (1 - detailInfluence), b: detailColor.b * detailInfluence + baseFlatColor.b * (1 - detailInfluence), a: 255 }
+                : baseFlatColor;
             const candidates = labPalette
                 .map(color => {
                     const sourceScore = deltaE76(protectedLab, color.lab);
                     const centerScore = deltaE76(centerLab, color.lab);
                     const detailPenalty = Math.abs(sourceScore - centerScore) * detailStrength;
-                    const edgeBonus = edgeRatio * edgeStrength * (sourceScore < 2600 ? 1 : 0);
+                    const edgeBonus = edgeRatio * edgeStrength * 120 * (sourceScore < 2600 ? 1 : 0);
                     return { color: color.color, score: colorWeight * (sourceScore + detailPenalty) - edgeBonus };
                 })
                 .sort((a, b) => a.score - b.score)
@@ -1206,9 +1242,11 @@ export function generatePatternDataProtected({
             if (x > 0 && cells[y * gridWidth + x - 1]?.color) neighborColors.push(cells[y * gridWidth + x - 1].color);
             if (y > 0 && cells[(y - 1) * gridWidth + x]?.color) neighborColors.push(cells[(y - 1) * gridWidth + x].color);
             const continuityPenalty = neighborColors.length && !neighborColors.some(color => color.id === best.color.id) ? continuityWeight * 120 : 0;
-            cells.push({ color: continuityPenalty ? candidates.find(item => neighborColors.some(color => color.id === item.color.id))?.color || best.color : best.color, score: best.score });
+            cells.push({ color: continuityPenalty ? candidates.find(item => neighborColors.some(color => color.id === item.color.id))?.color || best.color : best.color, flatColor, score: best.score });
         }
     }
+
+    if (outputMode === 'flat') return cells.map(cell => cell.flatColor);
 
     let pixelData = cells.map(cell => cell.color);
     if (isColorLimitEnabled) {

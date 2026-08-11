@@ -10,31 +10,26 @@
 <body class="min-h-screen bg-[#E7EBEE] text-slate-800">
 <main class="mx-auto max-w-[1500px] px-5 py-6">
     <header class="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-pink-500">Perler Beads Lab</p><h1 class="mt-1 text-2xl font-black">扁平化对比实验室</h1><p class="mt-1 text-sm text-slate-500">当前版本 vs 主体保护型扁平化 + 多候选颜色评分</p></div>
+        <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-pink-500">Perler Beads Lab</p><h1 class="mt-1 text-2xl font-black">扁平化对比实验室</h1><p class="mt-1 text-sm text-slate-500">只比较扁平化风格，不进行拼豆调色板匹配</p></div>
         <a href="./index.html" class="rounded-xl bg-white px-4 py-2 text-sm font-bold shadow-sm">返回生成器</a>
     </header>
     <section class="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside class="rounded-2xl bg-white p-4 shadow-sm">
             <h2 class="font-bold">统一测试参数</h2>
             <label class="mt-4 block text-sm font-bold">上传图片<input id="flat-image-input" type="file" accept="image/*" class="mt-2 block w-full text-xs"></label>
-            <label class="mt-3 block text-xs font-bold">最大边长<input id="flat-grid-size" type="number" min="16" max="104" step="4" value="100" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2"></label>
-            <label class="mt-3 block text-xs font-bold">拼豆品牌<select id="flat-brand" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"><option value="mard">MARD</option><option value="perler">Perler</option><option value="hama">Hama</option><option value="artkal">Artkal</option></select></label>
-            <label class="mt-3 block text-xs font-bold">最大颜色种类<input id="flat-max-colors" type="number" min="4" max="80" value="12" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2"></label>
-            <h2 class="mt-5 border-t border-slate-100 pt-4 font-bold">中期方案参数</h2>
-            <label class="mt-3 block text-xs font-bold">主体优先阈值 <output id="flat-subject-output">0.58</output><input id="flat-subject" type="range" min="0.30" max="0.85" step="0.01" value="0.58" class="mt-1 w-full"></label>
-            <label class="mt-3 block text-xs font-bold">轮廓保护强度 <output id="flat-edge-output">0.65</output><input id="flat-edge" type="range" min="0" max="1.5" step="0.05" value="0.65" class="mt-1 w-full"></label>
-            <label class="mt-3 block text-xs font-bold">细节保留强度 <output id="flat-detail-output">0.35</output><input id="flat-detail" type="range" min="0" max="1.5" step="0.05" value="0.35" class="mt-1 w-full"></label>
-            <label class="mt-3 block text-xs font-bold">颜色误差权重 <output id="flat-color-output">1.00</output><input id="flat-color" type="range" min="0.5" max="2" step="0.05" value="1" class="mt-1 w-full"></label>
-            <label class="mt-3 block text-xs font-bold">邻域连续性权重 <output id="flat-continuity-output">0.35</output><input id="flat-continuity" type="range" min="0" max="1.5" step="0.05" value="0.35" class="mt-1 w-full"></label>
+            <p class="mt-4 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-500">本页面不使用网格、不匹配拼豆颜色，只在原图像素层面比较扁平化风格。</p>
+            <h2 class="mt-5 border-t border-slate-100 pt-4 font-bold">新方案参数</h2>
+            <label class="mt-3 block text-xs font-bold">细节保留强度 <output id="flat-detail-output">0.70</output><input id="flat-detail" type="range" min="0" max="1.5" step="0.05" value="0.70" class="mt-1 w-full"></label>
+            <label class="mt-3 block text-xs font-bold">背景简化强度 <output id="flat-background-output">0.45</output><input id="flat-background" type="range" min="0" max="1" step="0.05" value="0.45" class="mt-1 w-full"></label>
             <button id="flat-generate-btn" type="button" disabled class="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">生成对比结果</button>
             <p id="flat-status" class="mt-3 text-xs leading-5 text-slate-400">请先上传图片。</p>
         </aside>
         <section class="grid gap-4 lg:grid-cols-2">
-            <article class="overflow-hidden rounded-2xl bg-white shadow-sm"><div class="border-b border-slate-100 px-4 py-3"><h2 class="font-black">当前版本</h2><p class="mt-1 text-xs text-slate-400">现有平均采样与调色板匹配，作为基准。</p></div><div class="relative aspect-square bg-slate-50"><canvas id="flat-current-canvas" class="absolute inset-0 h-full w-full image-pixelated"></canvas><div id="flat-current-empty" class="absolute inset-0 grid place-items-center text-xs text-slate-400">上传图片后生成</div></div><div id="flat-current-stats" class="grid grid-cols-3 gap-2 border-t border-slate-100 px-4 py-3 text-center text-xs text-slate-400">颜色<br><b>—</b>　豆数<br><b>—</b>　耗时<br><b>—</b></div></article>
-            <article class="overflow-hidden rounded-2xl bg-white shadow-sm"><div class="border-b border-slate-100 px-4 py-3"><h2 class="font-black">中期方案</h2><p class="mt-1 text-xs text-slate-400">主体保护、候选颜色评分与邻域连续性。</p></div><div class="relative aspect-square bg-slate-50"><canvas id="flat-protected-canvas" class="absolute inset-0 h-full w-full image-pixelated"></canvas><div id="flat-protected-empty" class="absolute inset-0 grid place-items-center text-xs text-slate-400">上传图片后生成</div></div><div id="flat-protected-stats" class="grid grid-cols-3 gap-2 border-t border-slate-100 px-4 py-3 text-center text-xs text-slate-400">颜色<br><b>—</b>　豆数<br><b>—</b>　耗时<br><b>—</b></div></article>
+            <article class="overflow-hidden rounded-2xl bg-white shadow-sm"><div class="border-b border-slate-100 px-4 py-3"><h2 class="font-black">正式页面效果</h2><p class="mt-1 text-xs text-slate-400">当前生成器的实际效果，作为对照。</p></div><div class="relative aspect-square bg-slate-50"><canvas id="flat-current-canvas" class="absolute inset-0 h-full w-full image-pixelated"></canvas><div id="flat-current-empty" class="absolute inset-0 grid place-items-center text-xs text-slate-400">上传图片后生成</div></div><div id="flat-current-stats" class="border-t border-slate-100 px-4 py-3 text-center text-xs text-slate-400">正式页面效果<br><b>—</b></div></article>
+            <article class="overflow-hidden rounded-2xl bg-white shadow-sm"><div class="border-b border-slate-100 px-4 py-3"><h2 class="font-black">新扁平化方案</h2><p class="mt-1 text-xs text-slate-400">不使用网格，保留主体细节并简化背景。</p></div><div class="relative aspect-square bg-slate-50"><canvas id="flat-protected-canvas" class="absolute inset-0 h-full w-full object-contain"></canvas><div id="flat-protected-empty" class="absolute inset-0 grid place-items-center text-xs text-slate-400">上传图片后生成</div></div><div id="flat-protected-stats" class="border-t border-slate-100 px-4 py-3 text-center text-xs text-slate-400">色彩采样<br><b>—</b></div></article>
         </section>
     </section>
 </main>
-<script type="module" src="./src/flatness-lab.js"></script>
+<script type="module" src="./src/flatness-lab.js?v=pure5"></script>
 </body>
 </html>
