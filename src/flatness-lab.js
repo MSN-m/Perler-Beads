@@ -1,5 +1,5 @@
 import { PALETTES } from './constants.js';
-import { generatePatternData, medianCut } from './processor.js?flatness-pure-v2';
+import { generatePatternData, medianCut } from './processor.js?flatness-pure-v3';
 
 const $ = id => document.getElementById(id);
 let sourceImageData = null;
@@ -85,44 +85,64 @@ function quantizeImage(imageData, colorCount, protectedMode, detailStrength, bac
 }
 
 function quantizeRegionImage(imageData, detailStrength, backgroundStrength) {
-    const background = buildBackground(imageData);
-    const records = [];
-    const foregroundSamples = [];
-    const backgroundSamples = [];
-    for (let y = 0; y < imageData.height; y++) {
-        for (let x = 0; x < imageData.width; x++) {
-            const pixel = pixelAt(imageData, x, y);
-            if (pixel.a < 128) { records.push({ pixel, x, y, foreground: false, detail: false }); continue; }
-            const edge = Math.min(1, (rgbDistance(pixel, pixelAt(imageData, x + 1, y)) + rgbDistance(pixel, pixelAt(imageData, x, y + 1))) / 360);
-            const backgroundDistance = rgbDistance(pixel, background) / 441;
-            const localContrast = rgbDistance(pixel, localAverage(imageData, x, y)) / 441;
-            const detail = edge > 0.18 || localContrast > 0.16 || (pixel.r + pixel.g + pixel.b) / 3 < 90;
-            const foreground = backgroundDistance > 0.14 || edge > 0.10 || localContrast > 0.12;
-            records.push({ pixel, x, y, foreground, detail, edge });
-            if (foreground || detail) foregroundSamples.push(pixel); else backgroundSamples.push(pixel);
+    const maxSide = 360;
+    const scale = Math.max(1, Math.ceil(Math.max(imageData.width, imageData.height) / maxSide));
+    const width = Math.ceil(imageData.width / scale);
+    const height = Math.ceil(imageData.height / scale);
+    const regionSize = Math.max(8, Math.round(22 - detailStrength * 8));
+    const colorStep = Math.max(12, Math.round(34 - detailStrength * 12));
+    const count = width * height;
+    const labels = new Int32Array(count); labels.fill(-1);
+    const colors = new Array(count);
+    const keyOf = pixel => `${Math.round(pixel.r / colorStep)},${Math.round(pixel.g / colorStep)},${Math.round(pixel.b / colorStep)}`;
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) colors[y * width + x] = pixelAt(imageData, x * scale, y * scale);
+
+    const regions = [];
+    const queue = new Int32Array(count);
+    for (let start = 0; start < count; start++) {
+        if (labels[start] !== -1) continue;
+        const id = regions.length; const key = keyOf(colors[start]); let head = 0; let tail = 0;
+        queue[tail++] = start; labels[start] = id; const members = []; let r = 0; let g = 0; let b = 0;
+        while (head < tail) {
+            const index = queue[head++]; members.push(index); const p = colors[index]; r += p.r; g += p.g; b += p.b;
+            const x = index % width; const y = Math.floor(index / width);
+            for (const next of [index - 1, index + 1, index - width, index + width]) {
+                if (next < 0 || next >= count || labels[next] !== -1) continue;
+                const nx = next % width; if (Math.abs(nx - x) > 1) continue;
+                if (keyOf(colors[next]) === key) { labels[next] = id; queue[tail++] = next; }
+            }
         }
+        regions.push({ members, color: { r: r / members.length, g: g / members.length, b: b / members.length }, active: true });
     }
-    const paletteStride = Math.max(1, Math.floor(records.length / 300000));
-    const foregroundPalette = medianCut(foregroundSamples.filter((_, index) => index % paletteStride === 0), 8);
-    const backgroundPalette = medianCut(backgroundSamples.filter((_, index) => index % paletteStride === 0), 3);
-    return records.map(record => {
-        if (record.pixel.a < 128) return { r: 255, g: 255, b: 255, a: 0 };
-        const palette = record.foreground || record.detail ? foregroundPalette : backgroundPalette;
-        const smoothing = record.detail ? 0 : Math.min(0.95, 0.70 + backgroundStrength * 0.30);
-        const local = smoothing ? localAverage(imageData, record.x, record.y) : record.pixel;
-        const blended = { r: record.pixel.r * (1 - smoothing) + local.r * smoothing, g: record.pixel.g * (1 - smoothing) + local.g * smoothing, b: record.pixel.b * (1 - smoothing) + local.b * smoothing };
-        const posterizeStep = record.detail ? 12 : Math.max(18, 42 - backgroundStrength * 18);
-        const working = { r: Math.round(blended.r / posterizeStep) * posterizeStep, g: Math.round(blended.g / posterizeStep) * posterizeStep, b: Math.round(blended.b / posterizeStep) * posterizeStep };
-        const contrast = 1 + record.edge * Math.max(0.8, detailStrength) * 1.5;
-        const adjusted = { r: Math.max(0, Math.min(255, (working.r - 128) * contrast + 128)), g: Math.max(0, Math.min(255, (working.g - 128) * contrast + 128)), b: Math.max(0, Math.min(255, (working.b - 128) * contrast + 128)) };
-        const matched = nearestColor(adjusted, palette.length ? palette : [background]);
-        if (!record.foreground && !record.detail && backgroundStrength > 0) {
-            const backgroundColor = nearestColor(background, palette.length ? palette : [background]);
-            const mix = Math.min(0.35, backgroundStrength * (1 - record.edge) * 0.35);
-            return { r: matched.r * (1 - mix) + backgroundColor.r * mix, g: matched.g * (1 - mix) + backgroundColor.g * mix, b: matched.b * (1 - mix) + backgroundColor.b * mix, a: 255 };
+
+    const minSize = Math.max(2, Math.round(regionSize * (0.55 + backgroundStrength * 1.5)));
+    for (const region of regions) {
+        if (region.members.length >= minSize) continue;
+        let best = -1; let bestDistance = Infinity;
+        for (const index of region.members) {
+            const x = index % width; const y = Math.floor(index / width);
+            for (const next of [index - 1, index + 1, index - width, index + width]) {
+                if (next < 0 || next >= count || labels[next] === -1) continue;
+                const neighbor = regions[labels[next]]; if (neighbor === region || !neighbor.active) continue;
+                const luminanceDistance = Math.abs((region.color.r * 0.2126 + region.color.g * 0.7152 + region.color.b * 0.0722) - (neighbor.color.r * 0.2126 + neighbor.color.g * 0.7152 + neighbor.color.b * 0.0722));
+                if (luminanceDistance > 28 + detailStrength * 12) continue;
+                const distance = rgbDistance(region.color, neighbor.color) + luminanceDistance * 0.8;
+                if (distance < bestDistance) { bestDistance = distance; best = labels[next]; }
+            }
         }
-        return { ...matched, a: 255 };
-    });
+        if (best < 0) continue;
+        for (const index of region.members) labels[index] = best;
+        regions[best].members.push(...region.members); region.active = false;
+    }
+    const result = new Array(imageData.width * imageData.height);
+    for (let y = 0; y < imageData.height; y++) for (let x = 0; x < imageData.width; x++) {
+        const source = pixelAt(imageData, x, y); if (source.a < 128) { result[y * imageData.width + x] = { r: 255, g: 255, b: 255, a: 0 }; continue; }
+        const region = regions[labels[Math.min(height - 1, Math.floor(y / scale)) * width + Math.min(width - 1, Math.floor(x / scale))]];
+        const color = region?.color || source;
+        // 保留区域平均色，不再映射到全局调色板，避免整体偏暗、偏灰。
+        result[y * imageData.width + x] = { r: Math.round(color.r), g: Math.round(color.g), b: Math.round(color.b), a: 255 };
+    }
+    return result;
 }
 
 function draw(canvas, pixels, width, height) {
@@ -133,26 +153,75 @@ function draw(canvas, pixels, width, height) {
 }
 
 function stats(pixels) { return new Set(pixels.filter(pixel => pixel.id || pixel.a >= 128).map(pixel => pixel.id || `${Math.round(pixel.r / 16)}-${Math.round(pixel.g / 16)}-${Math.round(pixel.b / 16)}`)).size; }
-function syncOutputs() { $('flat-detail-output').value = Number($('flat-detail').value).toFixed(2); $('flat-background-output').value = Number($('flat-background').value).toFixed(2); }
-
 async function generate() {
     if (!sourceImageData) return;
-    $('flat-generate-btn').disabled = true; $('flat-status').textContent = '正在生成纯扁平化对比...';
-    const started = performance.now();
-    const current = generatePatternData({ sourceImageData, gridWidth: 100, gridHeight: 100, brand: 'mard', mardSet: '221', isColorLimitEnabled: true, maxColors: 12, isDitheringEnabled: false, precisionMode: 'standard', colorMatchMode: 'redmean', palettes: PALETTES });
-    draw($('flat-current-canvas'), current, 100, 100); $('flat-current-empty').classList.add('hidden');
-    const protectedPixels = quantizeRegionImage(sourceImageData, Number($('flat-detail').value), Number($('flat-background').value));
-    draw($('flat-protected-canvas'), protectedPixels, sourceImageData.width, sourceImageData.height); $('flat-protected-empty').classList.add('hidden');
-    const elapsed = Math.round(performance.now() - started);
-    $('flat-current-stats').innerHTML = `正式页面效果<br><b>${stats(current)}</b> 色　耗时 <b>${elapsed}ms</b>`;
-    $('flat-protected-stats').innerHTML = `色彩采样<br><b>${stats(protectedPixels)}</b>　耗时<br><b>${elapsed}ms</b>`;
-    $('flat-status').textContent = '生成完成。当前只比较纯扁平化效果。'; $('flat-generate-btn').disabled = false;
+    $('flat-generate-btn').disabled = true;
+    $('flat-generate-spinner').classList.remove('hidden');
+    $('flat-generate-label').textContent = '生成中...';
+    $('flat-loading-overlay').classList.remove('hidden');
+    $('flat-loading-overlay').classList.add('flex');
+    $('flat-status').textContent = '正在生成原图和 4 组对比方案...';
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    draw($('flat-source-canvas'), Array.from({ length: sourceImageData.width * sourceImageData.height }, (_, index) => {
+        const offset = index * 4;
+        return { r: sourceImageData.data[offset], g: sourceImageData.data[offset + 1], b: sourceImageData.data[offset + 2], a: sourceImageData.data[offset + 3] };
+    }), sourceImageData.width, sourceImageData.height);
+    $('flat-source-empty').classList.add('hidden');
+    $('flat-source-stats').innerHTML = `原图<br><b>${sourceImageData.width}×${sourceImageData.height}</b>`;
+    const originalStarted = performance.now();
+    const original = generatePatternData({ sourceImageData, gridWidth: 100, gridHeight: 100, brand: 'mard', mardSet: '221', isColorLimitEnabled: true, maxColors: 12, isDitheringEnabled: false, precisionMode: 'standard', colorMatchMode: 'redmean', palettes: PALETTES });
+    draw($('flat-original-canvas'), original, 100, 100);
+    $('flat-original-empty').classList.add('hidden');
+    $('flat-original-stats').innerHTML = `正式页面效果<br><b>${stats(original)}</b> 色　耗时 <b>${Math.round(performance.now() - originalStarted)}ms</b>`;
+    const presets = [
+        ['low', 'flat-low', 0.45, 0.15],
+        ['medium', 'flat-medium', 0.90, 0.45],
+        ['high', 'flat-high', 1.35, 0.85]
+    ];
+    for (const [, prefix, detail, background] of presets) {
+        $('flat-loading-text').textContent = `正在生成${prefix === 'flat-low' ? '低强度' : prefix === 'flat-medium' ? '中强度' : '高强度'}方案...`;
+        const started = performance.now();
+        const pixels = quantizeRegionImage(sourceImageData, detail, background);
+        draw($(`${prefix}-canvas`), pixels, sourceImageData.width, sourceImageData.height);
+        $(`${prefix}-empty`).classList.add('hidden');
+        $(`${prefix}-stats`).innerHTML = `色彩采样<br><b>${stats(pixels)}</b>　耗时 <b>${Math.round(performance.now() - started)}ms</b>`;
+    }
+    $('flat-status').textContent = '生成完成。当前只比较纯扁平化效果。';
+    $('flat-loading-overlay').classList.add('hidden');
+    $('flat-loading-overlay').classList.remove('flex');
+    $('flat-generate-spinner').classList.add('hidden');
+    $('flat-generate-label').textContent = '重新生成对比结果';
+    $('flat-generate-btn').disabled = false;
+}
+
+function openZoom(canvas) {
+    const zoomCanvas = $('flat-zoom-canvas');
+    zoomCanvas.width = canvas.width;
+    zoomCanvas.height = canvas.height;
+    zoomCanvas.style.imageRendering = canvas.classList.contains('image-pixelated') ? 'pixelated' : 'auto';
+    zoomCanvas.getContext('2d').drawImage(canvas, 0, 0);
+    $('flat-zoom-modal').classList.remove('hidden');
+    $('flat-zoom-modal').classList.add('flex');
+}
+
+function closeZoom() {
+    $('flat-zoom-modal').classList.add('hidden');
+    $('flat-zoom-modal').classList.remove('flex');
 }
 
 $('flat-image-input').addEventListener('change', async event => {
     const file = event.target.files?.[0]; if (!file) return;
     try { const image = await createImageBitmap(file); const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height; const ctx = canvas.getContext('2d'); ctx.drawImage(image, 0, 0); sourceImageData = ctx.getImageData(0, 0, image.width, image.height); $('flat-generate-btn').disabled = false; $('flat-status').textContent = '图片已载入，可以生成纯扁平化结果。'; } catch (error) { console.error(error); $('flat-status').textContent = '图片读取失败，请重试。'; }
 });
-['flat-detail', 'flat-background'].forEach(id => $(id).addEventListener('input', syncOutputs));
-$('flat-generate-btn').addEventListener('click', () => generate().catch(error => { console.error(error); $('flat-status').textContent = '生成失败，请重试。'; $('flat-generate-btn').disabled = false; }));
-syncOutputs();
+$('flat-generate-btn').addEventListener('click', () => generate().catch(error => {
+    console.error(error);
+    $('flat-loading-overlay').classList.add('hidden');
+    $('flat-loading-overlay').classList.remove('flex');
+    $('flat-generate-spinner').classList.add('hidden');
+    $('flat-generate-label').textContent = '重新生成对比结果';
+    $('flat-status').textContent = '生成失败，请重试。';
+    $('flat-generate-btn').disabled = false;
+}));
+['flat-source-canvas', 'flat-original-canvas', 'flat-low-canvas', 'flat-medium-canvas', 'flat-high-canvas'].forEach(id => $(id).addEventListener('click', () => openZoom($(id))));
+$('flat-zoom-close').addEventListener('click', closeZoom);
+$('flat-zoom-modal').addEventListener('click', event => { if (event.target.id === 'flat-zoom-modal') closeZoom(); });
