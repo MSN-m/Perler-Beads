@@ -240,3 +240,33 @@ touchend:   if (editMode === 'adjust' || editMode === 'delete') return;
 ---
 
 *���ļ��� Claude ������ 2026-03-18������ÿ���ش�Ķ���ͬ�����¡�*
+
+---
+
+## 11. Core Product Context And Guardrails (Mandatory)
+
+Before any task in this repository, read these documents in this order:
+
+1. `AGENTS.md`
+2. `docs/PROJECT_CORE.md`
+3. `docs/PRODUCT_GUARDRAILS.md`
+4. The newest `docs/archive/DEVELOPMENT_SUMMARY_*.md`
+
+`PROJECT_CORE.md` is the source of truth for confirmed product facts and functionality. `PRODUCT_GUARDRAILS.md` defines protected flows, formal versus experimental boundaries, and required regression checks. When documents conflict, ask the user before acting; do not let an old archive overwrite a confirmed core decision.
+
+### Required Change Warning
+
+Before editing, stop and request user confirmation when a change may affect:
+
+- Upload, crop, settings, preview, generation, editing, drafts, or export flow.
+- Default generation algorithm, palette matching, color limits, dithering, or grid-size calculation.
+- `pixelData`, `stagedPixelData`, undo/redo, draft, or export data format.
+- Canvas coordinates, zoom, pan, touch gestures, or editor mode exclusivity.
+- Moving experimental behavior from `algorithm-lab.html`, `flatness-lab.html`, or experimental processor functions into the formal flow.
+- Existing function availability on PC, PAD, or mobile.
+
+The warning must state affected flow, affected device(s), data-loss or behavior risk, and the planned regression checks. Visual-only adjustments that preserve entry points, state transitions, and semantics may proceed without confirmation.
+
+### Archive Synchronization
+
+When the user says “一键归档”, also review and update `docs/PROJECT_CORE.md` and `docs/PRODUCT_GUARDRAILS.md` whenever the session establishes a lasting product fact, workflow decision, formal/experimental boundary, or new protected rule. The development archive must state whether these two documents were updated.
