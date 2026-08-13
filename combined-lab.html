@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组合流程实验室 · 拼豆</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body class="min-h-screen bg-[#E7EBEE] text-slate-800">
+<main class="mx-auto max-w-[1500px] px-5 py-6">
+    <header class="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-pink-500">Perler Beads Lab</p>
+            <h1 class="mt-1 text-2xl font-black">组合流程实验室</h1>
+            <p class="mt-1 text-sm text-slate-500">以同一输入和参数，对比正式基准与“中强度扁平化 + 主体/背景差异化”方案。</p>
+        </div>
+        <div class="flex gap-2"><a href="./flatness-lab.html" class="rounded-xl bg-white px-4 py-2 text-sm font-bold shadow-sm hover:bg-slate-50">扁平化实验</a><a href="./index.html" class="rounded-xl bg-white px-4 py-2 text-sm font-bold shadow-sm hover:bg-slate-50">返回生成器</a></div>
+    </header>
+
+    <section class="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside class="rounded-2xl bg-white p-4 shadow-sm">
+            <h2 class="font-bold">统一测试参数</h2>
+            <label class="mt-4 block text-sm font-bold">上传图片<input id="combined-image-input" type="file" accept="image/*" class="mt-2 block w-full text-xs"></label>
+            <label class="mt-3 block text-xs font-bold">最长边格数<input id="combined-grid-size" type="number" min="16" max="104" step="4" value="80" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"></label>
+            <p class="mt-1 text-xs leading-5 text-slate-400">另一边按原图比例自动计算。</p>
+            <label class="mt-3 block text-xs font-bold">拼豆品牌<select id="combined-brand" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"><option value="mard">MARD</option><option value="perler">Perler</option><option value="hama">Hama</option><option value="artkal">Artkal</option></select></label>
+            <label class="mt-3 block text-xs font-bold">最大颜色种类<input id="combined-max-colors" type="number" min="4" max="80" value="12" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"></label>
+            <button id="combined-generate-btn" type="button" disabled class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"><span id="combined-generate-spinner" class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span><span id="combined-generate-label">生成同条件对照</span></button>
+            <p id="combined-status" class="mt-3 text-xs leading-5 text-slate-400">请先上传图片。</p>
+            <div class="mt-4 rounded-xl bg-pink-50 p-3 text-xs leading-5 text-pink-700"><b>实验边界：</b>本页不写入正式图纸、草稿或导出数据，仅用于观察算法结果。</div>
+        </aside>
+
+        <section class="relative">
+            <div id="combined-loading-overlay" class="absolute inset-0 z-10 hidden items-center justify-center rounded-2xl bg-white/75 backdrop-blur-sm"><div class="rounded-2xl bg-white px-6 py-5 text-center shadow-lg"><div class="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-pink-500"></div><p id="combined-loading-text" class="mt-3 text-sm font-bold text-slate-700">正在生成对照结果…</p></div></div>
+            <div class="mb-4 rounded-2xl bg-slate-900 px-5 py-4 text-white"><p class="text-xs font-bold uppercase tracking-[0.14em] text-pink-300">Pipeline under test</p><p class="mt-1 text-sm font-semibold">原图 → 中强度区域扁平化 → 主体/背景/透明区域差异化取样 → 品牌色板匹配 → 颜色限制与小色块清理</p></div>
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <article class="overflow-hidden rounded-2xl bg-white shadow-sm"><div class="border-b border-slate-100 px-4 py-3"><h2 class="font-black">原图</h2><p class="mt-1 text-xs text-slate-400">同一份输入，不参与拼豆化。</p></div><div class="relative aspect-square bg-slate-50"><canvas id="combined-source-canvas" class="absolute inset-0 h-full w-full object-contain"></canvas><div id="combined-source-empty" class="absolute inset-0 grid place-items-center text-xs text-slate-400">上传图片后显示</div></div><div id="combined-source-stats" class="border-t border-slate-100 px-4 py-3 text-center text-xs text-slate-400">尺寸<br><b>—</b></div></article>
+                <article class="overflow-hidden rounded-2xl bg-white shadow-sm"><div class="border-b border-slate-100 px-4 py-3"><h2 class="font-black">中强度扁平化</h2><p class="mt-1 text-xs text-slate-400">组合方案的中间图，不匹配拼豆色板。</p></div><div class="relative aspect-square bg-slate-50"><canvas id="combined-flat-canvas" class="absolute inset-0 h-full w-full object-contain"></canvas><div id="combined-flat-empty" class="absolute inset-0 grid place-items-center text-xs text-slate-400">上传图片后生成</div></div><div id="combined-flat-stats" class="border-t border-slate-100 px-4 py-3 text-center text-xs text-slate-400">区域色数<br><b>—</b></div></article>
+                <article class="overflow-hidden rounded-2xl bg-white shadow-sm"><div class="border-b border-slate-100 px-4 py-3"><h2 class="font-black">正式基准</h2><p class="mt-1 text-xs text-slate-400">当前生成器的网格化、色板匹配与清理。</p></div><div class="relative aspect-square bg-slate-50"><canvas id="combined-original-canvas" class="absolute inset-0 h-full w-full image-pixelated"></canvas><div id="combined-original-empty" class="absolute inset-0 grid place-items-center text-xs text-slate-400">上传图片后生成</div></div><div id="combined-original-stats" class="border-t border-slate-100 px-4 py-3 text-center text-xs text-slate-400">颜色 / 豆数 / 耗时<br><b>—</b></div></article>
+                <article class="overflow-hidden rounded-2xl bg-white shadow-sm ring-2 ring-pink-200"><div class="border-b border-pink-100 bg-pink-50 px-4 py-3"><h2 class="font-black">组合方案</h2><p class="mt-1 text-xs text-pink-600">扁平化输入后，使用实验性主体保护映射。</p></div><div class="relative aspect-square bg-slate-50"><canvas id="combined-result-canvas" class="absolute inset-0 h-full w-full image-pixelated"></canvas><div id="combined-result-empty" class="absolute inset-0 grid place-items-center text-xs text-slate-400">上传图片后生成</div></div><div id="combined-result-stats" class="border-t border-pink-100 px-4 py-3 text-center text-xs text-slate-500">颜色 / 豆数 / 耗时<br><b>—</b></div></article>
+            </div>
+            <div class="mt-4 grid gap-3 rounded-2xl bg-white p-4 shadow-sm md:grid-cols-3"><p class="text-xs leading-5 text-slate-500"><b class="text-slate-700">观察轮廓：</b>主体边缘、五官或关键结构是否更清晰。</p><p class="text-xs leading-5 text-slate-500"><b class="text-slate-700">观察可制作性：</b>背景碎色、孤立点和断裂结构是否减少。</p><p class="text-xs leading-5 text-slate-500"><b class="text-slate-700">观察代价：</b>颜色数、豆数与耗时应处在可接受范围。</p></div>
+        </section>
+    </section>
+</main>
+<div id="combined-zoom-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 p-4" role="dialog" aria-modal="true" aria-label="放大预览"><button id="combined-zoom-close" type="button" class="absolute right-5 top-4 rounded-full bg-white/15 px-4 py-2 text-2xl text-white" aria-label="关闭放大预览">×</button><div class="max-h-full max-w-full overflow-auto rounded-xl bg-white p-2 shadow-2xl"><canvas id="combined-zoom-canvas" class="block max-h-[90vh] max-w-[90vw] object-contain"></canvas></div></div>
+<script type="module" src="./src/combined-lab.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完整策略实验室 · 拼豆</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body class="min-h-screen bg-[#E7EBEE] text-slate-800">
+<main class="mx-auto max-w-[1500px] px-5 py-6">
+    <header class="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-pink-500">Perler Beads Lab</p><h1 class="mt-1 text-2xl font-black">完整策略实验室</h1><p class="mt-1 text-sm text-slate-500">保留原实验页的结果；此页为八种策略提供独立实现，用于同条件验证。</p></div>
+        <div class="flex gap-2"><a href="./algorithm-lab.html" class="rounded-xl bg-white px-4 py-2 text-sm font-bold shadow-sm hover:bg-slate-50">原策略对比</a><a href="./index.html" class="rounded-xl bg-white px-4 py-2 text-sm font-bold shadow-sm hover:bg-slate-50">返回生成器</a></div>
+    </header>
+    <section class="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside class="rounded-2xl bg-white p-4 shadow-sm">
+            <h2 class="font-bold">统一测试参数</h2>
+            <label class="mt-4 block text-sm font-bold">上传图片<input id="complete-image-input" type="file" accept="image/*" class="mt-2 block w-full text-xs"></label>
+            <div id="complete-source-preview-wrap" class="mt-4 hidden overflow-hidden rounded-xl bg-slate-100"><canvas id="complete-source-preview" class="block h-auto w-full"></canvas></div>
+            <label class="mt-3 block text-xs font-bold">最长边格数<input id="complete-grid-size" type="number" min="16" max="104" step="4" value="80" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2"></label>
+            <label class="mt-3 block text-xs font-bold">拼豆品牌<select id="complete-brand" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"><option value="mard">MARD</option><option value="perler">Perler</option><option value="hama">Hama</option><option value="artkal">Artkal</option></select></label>
+            <label class="mt-3 block text-xs font-bold">最大颜色种类<input id="complete-max-colors" type="number" min="4" max="80" value="12" class="mt-1 w-full rounded-lg border border-slate-200 px-2 py-2"></label>
+            <button id="complete-generate-btn" type="button" disabled class="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">生成八种策略</button>
+            <p id="complete-status" class="mt-3 text-xs leading-5 text-slate-400">请先上传图片。</p>
+            <p class="mt-4 rounded-xl bg-pink-50 p-3 text-xs leading-5 text-pink-700"><b>实验页：</b>不影响当前生成器；第 4、5、7、8 组是新增的启发式实现，需用代表图片持续评估。</p>
+        </aside>
+        <section id="complete-results" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"></section>
+    </section>
+</main>
+<script type="module" src="./src/algorithm-lab-complete.js"></script>
+</body>
+</html>
