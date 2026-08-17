@@ -42,7 +42,7 @@
 
 - 当前正式生成器继续使用现有网格化拼豆流程。
 - 已选择“中强度区域级扁平化 + 主体与背景分离”作为后续正式方向，但其实现尚未完成正式接入。
-- `algorithm-lab.html`、`algorithm-lab-complete.html`、`flatness-lab.html`、`combined-lab.html` 和实验函数只用于测试、比较与参数验证。
+- `algorithm-lab.html`、`algorithm-lab-complete.html`、`algorithm-lab-final.html`、`flatness-lab.html`、`combined-lab.html` 和实验函数只用于测试、比较与参数验证；其中 `flatness-lab.html` 可输出本地 PNG，但不应写入正式图纸、草稿或导出数据。
 - 实验算法要进入正式流程前，必须得到明确确认，并完成以下验证：
   - 与裁剪、尺寸、品牌、规格、颜色限制兼容。
   - 与预览确认、编辑、草稿恢复和导出兼容。
