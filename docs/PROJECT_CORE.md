@@ -58,6 +58,8 @@
 - `algorithm-lab-complete.html`：保留原八组策略页之外的独立实验版本；为主体/背景、全局颜色、形状优先、可制作性等策略提供启发式实现。当前尚未通过颜色和精准度评测。
 - `algorithm-lab-final.html`：组合候选算法测试页，用于对照主体掩码、轮廓层、正式基准和最终候选；不属于正式生成流程。
 
+最终候选算法的人工验收使用 `docs/FINAL_CANDIDATE_ALGORITHM_TEST_CHECKLIST.md` 和 `outputs/20260824_algorithm_test_matrix/最终候选算法_覆盖图片测试矩阵.xlsx`：前者定义逐图检查项，后者将图片类型与背景、透明度、光照、纹理、细节等特征组织为覆盖矩阵，并提供记录页。
+
 实验页的结果不应直接作为正式生成器输出，也不能在没有评测和确认的情况下替换 `generatePatternData()`。
 
 ## 5. 编辑器功能定义
