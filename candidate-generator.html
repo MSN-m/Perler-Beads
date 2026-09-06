@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>候选算法生成器（PC 实验页）</title>
+    <link rel="stylesheet" href="css/tailwind.generated.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script type="module" src="src/candidate-main.js"></script>
+</head>
+
+<body data-layout="workbench" data-generator="candidate"
+    class="bg-[#E7EBEE] text-gray-800 font-sans min-h-screen overflow-hidden selection:bg-primary selection:text-white">
+
+    <section id="step-home" class="step-section"></section>
+
+    <section id="step-settings" class="step-section active bg-[#E7EBEE]">
+        <input id="file-upload" type="file" accept="image/*" class="hidden">
+        <div id="canvas-container" class="hidden">
+            <canvas id="source-canvas"></canvas>
+        </div>
+
+        <div id="workbench-layout" class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
+            <div id="workbench-top-actions" class="hidden bg-white rounded-2xl border border-white shadow-sm p-3 items-center gap-3">
+                <div id="workbench-top-title" class="min-w-0 flex-1 flex items-center gap-3">
+                    <button id="workbench-back-btn" type="button" class="workbench-header-icon" aria-label="返回" title="返回">‹</button>
+                    <div class="min-w-0">
+                        <span id="workbench-pattern-title" class="block min-w-0 truncate text-base font-black text-gray-900">未命名图纸</span>
+                        <span id="workbench-pattern-meta" class="block mt-0.5 text-[10px] text-gray-400">32x32 · MARD 221色</span>
+                    </div>
+                    <button id="show-workbench-settings-panel-btn" type="button"
+                        class="workbench-header-icon shrink-0" aria-label="重命名和设置" title="重命名和设置">
+                        ✎
+                    </button>
+                </div>
+                <div id="workbench-tablet-panel-tabs" class="hidden items-center gap-2">
+                    <button id="show-workbench-colors-panel-btn" type="button"
+                        class="px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
+                        颜色清单
+                    </button>
+                </div>
+                <div id="workbench-top-edit-actions" class="hidden items-center gap-1.5">
+                    <button id="workbench-top-undo-btn" type="button" class="workbench-top-action-button" title="撤销最近一次编辑">
+                        <svg class="workbench-top-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V13H9"/><path d="M21 17C21 14.6131 20.0518 12.3239 18.364 10.636C16.6761 8.94821 14.3869 8 12 8C9.78512 8.00226 7.64885 8.82116 6 10.3L3 13"/></svg><span>撤销</span>
+                    </button>
+                    <button id="workbench-top-redo-btn" type="button" class="workbench-top-action-button" title="重做最近一次撤销" disabled>
+                        <svg class="workbench-top-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 7V13H15"/><path d="M3 17C3 14.6131 3.94821 12.3239 5.63604 10.636C7.32387 8.94821 9.61305 8 12 8C14.2149 8.00226 16.3511 8.82116 18 10.3L21 13"/></svg><span>重做</span>
+                    </button>
+                    <button id="workbench-top-cancel-btn" type="button" class="workbench-top-action-button is-muted" title="放弃当前编辑">
+                        <span>放弃修改</span>
+                    </button>
+                </div>
+                <div id="workbench-top-draft-slot" class="min-w-0"></div>
+            </div>
+
+            <main id="workbench-stage" class="min-w-0 relative bg-[#f8fafc] overflow-hidden rounded-2xl border border-white shadow-sm">
+                <div id="workbench-upload-empty" class="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20">
+                    <label for="file-upload"
+                        class="bg-white px-16 py-7 text-xl font-bold rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:text-primary hover:shadow-md transition">
+                        上传图片
+                    </label>
+                    <div id="workbench-setup-draft-slot"></div>
+                </div>
+
+                <div id="workbench-preview-empty" class="absolute inset-0 hidden items-center justify-center z-10 pointer-events-none">
+                    <div class="bg-white/90 px-8 py-5 text-center rounded-xl shadow-sm border border-gray-100">
+                        <p class="text-lg font-bold">已上传图片</p>
+                        <p class="text-sm text-gray-500 mt-2">调整右侧参数后点击“生成图纸”</p>
+                    </div>
+                </div>
+
+                <div id="workbench-crop-overlay" class="hidden absolute inset-0 z-20">
+                    <div id="workbench-crop-mask" class="absolute inset-0 pointer-events-none"></div>
+                    <div id="workbench-crop-box" class="absolute hidden border-2 border-primary shadow-[0_0_0_9999px_rgba(15,23,42,0.28)] bg-transparent">
+                        <div data-crop-handle="n" class="crop-edge-handle crop-edge-handle-y left-4 right-4 -top-3"></div>
+                        <div data-crop-handle="s" class="crop-edge-handle crop-edge-handle-y left-4 right-4 -bottom-3"></div>
+                        <div data-crop-handle="w" class="crop-edge-handle crop-edge-handle-x -left-3 top-4 bottom-4"></div>
+                        <div data-crop-handle="e" class="crop-edge-handle crop-edge-handle-x -right-3 top-4 bottom-4"></div>
+                        <div data-crop-handle="nw" class="crop-handle -left-2 -top-2"></div>
+                        <div data-crop-handle="ne" class="crop-handle -right-2 -top-2"></div>
+                        <div data-crop-handle="sw" class="crop-handle -left-2 -bottom-2"></div>
+                        <div data-crop-handle="se" class="crop-handle -right-2 -bottom-2"></div>
+                    </div>
+                </div>
+
+                <div id="workbench-edit-stage" class="absolute inset-0 hidden">
+                    <button id="toggle-compare-preview-btn"
+                        class="hidden absolute left-4 top-1/2 -translate-y-1/2 z-30 px-3 py-2 bg-white/95 backdrop-blur shadow-lg rounded-xl border border-white text-xs font-bold text-primary hover:scale-105 active:scale-95 transition">
+                        原图对照
+                    </button>
+
+                    <section id="compare-source-pane" class="hidden absolute inset-y-0 left-0 w-[34%] min-w-[280px] border-r border-white/80 bg-[#f3f6fb] overflow-hidden">
+                        <div class="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur rounded-xl border border-white shadow-sm px-3 py-2">
+                            <p class="text-xs font-bold text-gray-800">原图对照</p>
+                            <p class="text-[11px] text-gray-500 mt-1">滚轮缩放，按钮重置</p>
+                        </div>
+                        <div id="compare-source-frame" class="absolute inset-0 overflow-hidden">
+                            <canvas id="compare-source-preview" class="absolute image-pixelated"></canvas>
+                        </div>
+                        <button id="compare-source-reset-btn"
+                            class="absolute bottom-4 right-4 z-20 px-3 py-2 bg-white/90 backdrop-blur shadow-lg rounded-xl text-xs font-bold text-primary hover:scale-105 active:scale-95 transition">
+                            原图重置
+                        </button>
+                    </section>
+
+                    <div id="result-pane" class="absolute inset-y-0 left-0 right-0 overflow-hidden">
+                        <div class="absolute inset-0 overflow-hidden" id="result-container">
+                            <canvas id="result-canvas" class="hidden absolute top-0 left-0 image-pixelated cursor-grab"></canvas>
+                            <button id="zoom-reset-btn"
+                                class="absolute bottom-6 right-6 p-2.5 bg-white/90 backdrop-blur shadow-xl rounded-full text-primary hover:scale-110 active:scale-95 transition-all opacity-0 pointer-events-none z-20">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="workbench-single-stage" class="absolute inset-0">
+                    <div class="absolute inset-0 overflow-hidden" id="result-container-single">
+                        <canvas id="workbench-source-preview" class="hidden absolute image-pixelated"></canvas>
+                    </div>
+                    <div id="mobile-crop-actions" class="hidden absolute left-4 right-4 top-4 z-30 flex items-center justify-end gap-2">
+                        <button id="mobile-recrop-btn" type="button"
+                            class="rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-gray-800 shadow-sm border border-white active:scale-95 transition">
+                            重新裁剪
+                        </button>
+                        <button id="mobile-remove-image-btn" type="button"
+                            class="rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-primary shadow-sm border border-white active:scale-95 transition">
+                            移除图片
+                        </button>
+                    </div>
+                    <div id="mobile-crop-confirm-actions" class="hidden absolute left-4 right-4 bottom-4 z-30 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+                        <label for="file-upload"
+                            class="min-h-12 rounded-2xl bg-gray-100 text-sm font-bold text-gray-800 shadow-sm active:scale-95 transition flex items-center justify-center">
+                            重新选择图片
+                        </label>
+                        <button id="mobile-confirm-range-btn" type="button"
+                            class="min-h-12 rounded-2xl bg-gray-900 text-sm font-bold text-white shadow-sm active:scale-95 transition">
+                            确认范围
+                        </button>
+                    </div>
+                </div>
+
+                <div id="workbench-edit-toolbar" class="hidden workbench-glass-toolbar absolute left-1/2 bottom-6 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-2.5">
+                    <div class="workbench-tool-group">
+                        <button id="toggle-fill-btn" class="workbench-tool-button" aria-label="画笔工具" title="画笔：沿网格轨迹填色，点击箭头打开更多工具">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4 5 5M13 6l5 5-8.5 8.5a2.12 2.12 0 0 1-3 0l-1-1a2.12 2.12 0 0 1 0-3L13 6Z"/><path d="m5 19-1 1M14 5l2-2 5 5-2 2"/></svg>
+                            <svg class="workbench-tool-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>
+                        </button>
+                        <div class="workbench-tool-menu" data-tool-menu="brush">
+                            <button type="button" data-tool-action="brush" title="沿网格轨迹填色">画笔工具</button>
+                            <button type="button" id="toggle-fill-bucket-btn" data-tool-action="bucket" title="填充相连区域"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.66667 4.66634L12 1.33301M3.33874 8H14.6394M2.66656 11C2.56105 11.492 2.29199 11.9338 1.90323 12.2533C1.52323 12.5633 1.33323 12.93 1.33323 13.3167C1.33102 13.4932 1.36388 13.6683 1.4299 13.832C1.49592 13.9957 1.59378 14.1447 1.71781 14.2703C1.84184 14.3959 1.98958 14.4956 2.15244 14.5636C2.3153 14.6316 2.49006 14.6667 2.66656 14.6667C2.84307 14.6667 3.01782 14.6316 3.18069 14.5636C3.34355 14.4956 3.49128 14.3959 3.61531 14.2703C3.73935 14.1447 3.83721 13.9957 3.90323 13.832C3.96924 13.6683 4.0021 13.4932 3.9999 13.3167C3.9999 12.9333 3.81323 12.56 3.4299 12.2533C3.03951 11.9352 2.77006 11.4928 2.66656 11ZM10.3334 3.00026L8.90138 1.56826C8.75073 1.41763 8.54642 1.33301 8.33338 1.33301C8.12034 1.33301 7.91603 1.41763 7.76538 1.56826L2.90138 6.43226C2.75075 6.58291 2.66613 6.78722 2.66613 7.00026C2.66613 7.21329 2.75075 7.41761 2.90138 7.56826L7.96271 12.6296C8.41466 13.0815 9.0276 13.3353 9.66671 13.3353C10.3058 13.3353 10.9188 13.0815 11.3707 12.6296L13.9627 10.0376C14.4146 9.58564 14.6685 8.9727 14.6685 8.33359C14.6685 7.69448 14.4146 7.08154 13.9627 6.62959L12.22 4.88692"/></svg>油漆桶</button>
+                            <button type="button" id="toggle-edge-adjust-menu-btn" data-tool-action="edge" title="给边缘区域统一上色"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878"/><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878" stroke="black" stroke-opacity="0.2"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714" stroke="black" stroke-opacity="0.2"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538" stroke="black" stroke-opacity="0.2"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688" stroke="black" stroke-opacity="0.2"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031" stroke="black" stroke-opacity="0.2"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354" stroke="black" stroke-opacity="0.2"/></svg>边框上色</button>
+                        </div>
+                    </div>
+                    <button id="eyedropper-tool-btn" class="workbench-tool-button" aria-label="吸管" title="吸管"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 6 2.3907 11.6093a1.3333 1.3333 0 0 0-.3907.9427v.896a1.3333 1.3333 0 0 0-.3907.9427h.896a1.3333 1.3333 0 0 0 .9427-.3907L10 8M12 6l.2667.2667a1.3333 1.3333 0 0 1 0 1.8853 1.3333 1.3333 0 0 1-1.8853 0L7.7333 5.7336a1.3333 1.3333 0 0 1 0-1.8853 1.3333 1.3333 0 0 1 1.8853 0L10 4l2.2667-2.2667a1.3333 1.3333 0 0 1 1.8853 0 1.3333 1.3333 0 0 1 0 1.8853zM1.3333 14.6667l.276-.276"/></svg></button>
+                    <div id="workbench-recent-colors" class="workbench-recent-colors hidden" aria-label="最近使用颜色" aria-hidden="true">
+                        <button type="button" class="workbench-color-chip is-empty" data-recent-color="0" title="当前颜色"></button>
+                        <button type="button" class="workbench-color-chip is-empty" data-recent-color="1" title="最近使用颜色"></button>
+                        <button type="button" class="workbench-color-chip is-empty" data-recent-color="2" title="最近使用颜色"></button>
+                    </div>
+                    <button id="toggle-all-colors-panel-btn" class="workbench-tool-button" aria-label="全部颜色" title="全部颜色">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+                    </button>
+                    <div class="workbench-tool-group">
+                        <button id="toggle-delete-btn" class="workbench-tool-button" aria-label="橡皮工具" title="橡皮：逐格擦除，点击箭头打开更多擦除工具">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 16 8.5-8.5a2.12 2.12 0 0 1 3 0l1 1a2.12 2.12 0 0 1 0 3L11 20H6l-3-3 4-4Z"/><path d="m6 20 5-5"/></svg>
+                            <svg class="workbench-tool-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>
+                        </button>
+                        <div class="workbench-tool-menu" data-tool-menu="eraser">
+                            <button type="button" data-tool-action="eraser" title="逐格擦除色块">橡皮工具</button>
+                            <button type="button" id="toggle-clear-base-menu-btn" data-tool-action="area-erase" title="框选区域并擦除"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6667 14.6667L10 12M12.6667 9.33301C12.8436 9.33301 13.0131 9.26277 13.1382 9.13775C13.2632 9.01272 13.3334 8.84315 13.3334 8.66634V7.99967C13.3334 7.64605 13.1929 7.30691 12.9429 7.05687C12.6928 6.80682 12.3537 6.66634 12.0001 6.66634H10.0001C9.82327 6.66634 9.6537 6.5961 9.52868 6.47108C9.40365 6.34605 9.33341 6.17649 9.33341 5.99967V2.66634C9.33341 2.31272 9.19294 1.97358 8.94289 1.72353C8.69284 1.47348 8.3537 1.33301 8.00008 1.33301C7.64646 1.33301 7.30732 1.47348 7.05727 1.72353C6.80722 1.97358 6.66675 2.31272 6.66675 2.66634V5.99967C6.66675 6.17649 6.59651 6.34605 6.47149 6.47108C6.34646 6.5961 6.17689 6.66634 6.00008 6.66634H4.00008C3.64646 6.66634 3.30732 6.80682 3.05727 7.05687C2.80722 7.30691 2.66675 7.64605 2.66675 7.99967V8.66634C2.66675 8.84315 2.73699 9.01272 2.86201 9.13775C2.98703 9.26277 3.1566 9.33301 3.33341 9.33301M12.6668 9.33301H3.33344L2.0181 13.8443C1.99462 13.9424 1.99367 14.0444 2.01531 14.1429C2.03696 14.2413 2.08064 14.3335 2.14308 14.4127C2.20552 14.4918 2.28508 14.5557 2.37579 14.5997C2.46649 14.6436 2.56598 14.6664 2.66677 14.6663H13.3334C13.4342 14.6664 13.5337 14.6436 13.6244 14.5997C13.7151 14.5557 13.7947 14.4918 13.8571 14.4127C13.9196 14.3335 13.9633 14.2413 13.9849 14.1429C14.0065 14.0444 14.0056 13.9424 13.9821 13.8443L12.6668 9.33301ZM5.33325 14.6667L5.99992 12"/></svg>区域擦除</button>
+                            <button type="button" id="toggle-delete-color-menu-btn" data-tool-action="color-erase" title="点击一种颜色并擦除全部同色块">按颜色擦除</button>
+                        </div>
+                    </div>
+                    <button id="toggle-palette-panel-btn" class="workbench-tool-button" aria-label="颜色清单" title="颜色清单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.3333 11.3333a2.6667 2.6667 0 1 1-5.3333 0V3.3333A1.3333 1.3333 0 0 1 3.3333 2H6a1.3333 1.3333 0 0 1 1.3333 1.3333zM11.1334 8.667h1.5333A1.3333 1.3333 0 0 1 14 10v2.6667A1.3333 1.3333 0 0 1 12.6667 14H4.6667M4.6667 11.333h.0067M7.3334 5.333l1.5333-1.5333a2.6667 2.6667 0 0 1 3.5333 0l1.264 1.264a2.6667 2.6667 0 0 1 .0173 3.7533L6.6001 13.2"/></svg></button>
+                    <div class="workbench-hidden-actions" aria-hidden="true">
+                        <button id="quality-check-btn">质量检查（0）</button>
+                        <button id="toggle-clear-base-btn">移除底色</button>
+                        <button id="toggle-edge-adjust-btn">边缘调整</button>
+                        <button id="reset-pattern-btn">重置图纸</button>
+                        <button id="collapse-edit-toolbar-btn">收起</button>
+                    </div>
+                </div>
+
+                <button id="expand-edit-toolbar-btn"
+                    class="hidden absolute right-6 bottom-6 z-30 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-white px-5 py-3 text-sm font-bold hover:text-primary">
+                    编辑图纸
+                </button>
+
+                <div id="palette-panel"
+                    class="hidden absolute right-6 bottom-24 z-40 w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
+                    <div id="palette-panel-drag-handle" class="p-4 border-b border-gray-100 cursor-move select-none">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold text-gray-900">颜色清单</h3>
+                            <p id="palette-panel-summary" class="text-xs text-gray-400 whitespace-nowrap">12色 · 3214颗</p>
+                            <button id="close-palette-panel-btn" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
+                        </div>
+                        <input id="palette-search-input" type="search" placeholder="搜索已用色号，例如 C29"
+                            class="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div id="palette-color-grid" class="grid grid-cols-5 gap-2 p-4 overflow-y-auto max-h-[48vh] no-scrollbar"></div>
+                </div>
+            </main>
+
+            <aside id="workbench-side-panel" class="min-h-0 flex flex-col gap-4">
+                <section id="workbench-settings-panel" class="bg-white p-5 rounded-2xl border border-white shadow-sm">
+                    <button id="toggle-workbench-settings-btn" type="button"
+                        class="w-full flex items-center justify-between gap-3 text-left">
+                        <span>
+                            <span class="block text-sm font-bold text-gray-900">生成设置</span>
+                            <span id="workbench-settings-summary" class="block mt-1 text-xs text-gray-500">32x32 · MARD 221色 · 最多24色</span>
+                        </span>
+                        <span id="workbench-settings-toggle-label" class="shrink-0 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">收起</span>
+                    </button>
+
+                    <div id="mobile-settings-preview-card" class="hidden">
+                        <div class="flex items-center gap-3">
+                            <div class="w-24 h-24 shrink-0 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
+                                <canvas id="mobile-settings-thumbnail" class="max-w-full max-h-full image-pixelated"></canvas>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-bold text-gray-900">已选择图片</p>
+                                <p id="mobile-settings-thumbnail-summary" class="mt-1 text-xs text-gray-500">裁剪范围已确认</p>
+                                <div class="mt-3 flex items-center gap-2">
+                                    <button id="mobile-settings-recrop-btn" type="button" class="px-3 py-2 rounded-xl bg-gray-100 text-xs font-bold text-gray-700 active:scale-95 transition">重新裁剪</button>
+                                    <button id="mobile-settings-remove-image-btn" type="button" class="px-3 py-2 rounded-xl bg-primary/10 text-xs font-bold text-primary active:scale-95 transition">移除图片</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="workbench-settings-content" class="mt-5 space-y-5">
+                    <label id="workbench-change-image" for="file-upload"
+                        class="hidden block w-full text-center py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold cursor-pointer">
+                        更换图片
+                    </label>
+                    <div>
+                        <label class="text-sm font-bold text-gray-800 mb-2 block">图纸名称</label>
+                        <input id="pattern-name-input" type="text" maxlength="40" placeholder="未命名图纸"
+                            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                                <label class="text-sm font-bold text-gray-800 mb-2 block">拼豆品牌</label>
+                                <select id="brand-select"
+                                    class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                                <option value="mard">MARD</option>
+                                <option value="perler">Perler</option>
+                                <option value="hama">Hama</option>
+                                <option value="artkal">Artkal</option>
+                            </select>
+                        </div>
+                        <div id="mard-set-container">
+                            <label class="text-sm font-bold text-gray-800 mb-2 block">规格</label>
+                            <select id="mard-set-select"
+                                class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                                <option value="264">264色</option>
+                                <option value="221" selected>221色</option>
+                                <option value="216">216色</option>
+                                <option value="144">144色</option>
+                                <option value="120">120色</option>
+                                <option value="96">96色</option>
+                                <option value="72">72色</option>
+                                <option value="48">48色</option>
+                                <option value="24">24色</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-bold text-gray-800">像素密度</label>
+                            <span id="grid-size-display"
+                                class="text-xs font-mono bg-gray-100 px-2 py-1 rounded-lg text-primary font-bold">32x32</span>
+                        </div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span id="board-size-display" class="text-[10px] px-1.5 py-0.5 rounded-md font-bold"></span>
+                        </div>
+                        <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="32"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    </div>
+
+                    <div class="bg-gray-50 p-4 space-y-4 rounded-xl border border-gray-100">
+                        <div class="hidden space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm font-bold text-gray-800">像素风调整</label>
+                                <span id="pixel-art-status" class="text-[11px] text-gray-400">未生成预览</span>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-gray-500">对比度</span>
+                                    <span id="pixel-contrast-display" class="text-xs font-mono text-primary">0</span>
+                                </div>
+                                <input type="range" id="pixel-contrast-slider" min="-30" max="50" value="0" step="1"
+                                    class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-gray-500">锐化强度</span>
+                                    <span id="pixel-sharpen-display" class="text-xs font-mono text-primary">0</span>
+                                </div>
+                                <input type="range" id="pixel-sharpen-slider" min="0" max="100" value="0" step="1"
+                                    class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-gray-500">主色保留</span>
+                                    <span id="pixel-dominant-display" class="text-xs font-mono text-primary">50</span>
+                                </div>
+                                <input type="range" id="pixel-dominant-slider" min="0" max="100" value="50" step="1"
+                                    class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-bold text-gray-800 mb-2 block">转换精度</label>
+                            <select id="precision-mode-select"
+                                class="hidden w-full p-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
+                                <option value="high" selected>忠实还原（推荐）</option>
+                                <option value="standard">标准模式（回退）</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-bold text-gray-800 mb-2 block">颜色匹配</label>
+                            <select id="color-match-mode-select"
+                                class="hidden w-full p-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
+                                <option value="deltae" selected>感知优化 DeltaE（推荐）</option>
+                                <option value="redmean">标准匹配（回退）</option>
+                            </select>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-bold text-gray-800">数量限制</label>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="color-limit-toggle" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                        </div>
+                        <div id="color-limit-controls" class="space-y-3 transition-opacity">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">最大颜色种类</span>
+                        <span id="max-colors-display"
+                                    class="text-xs font-mono font-bold text-primary bg-white px-2 py-0.5 rounded border border-primary/20">36</span>
+                            </div>
+                            <input type="range" id="max-colors-slider" min="2" max="64" value="36" step="1"
+                                class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                            <label class="hidden flex items-start gap-2 text-xs text-gray-500">
+                                <input type="checkbox" id="dithering-toggle" checked
+                                    class="mt-0.5 w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary">
+                                <span>启用抖动算法</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    </div>
+
+                    <div id="mobile-settings-modal" class="hidden fixed inset-0 z-[260]">
+                        <button id="mobile-settings-backdrop" type="button" class="absolute inset-0 bg-gray-900/30" aria-label="关闭设置"></button>
+                        <section class="absolute left-3 right-3 bottom-3 bg-white rounded-3xl shadow-2xl border border-gray-100 p-4">
+                            <div id="mobile-name-panel" class="hidden space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-base font-bold text-gray-900">图纸名称</h3>
+                                    <button id="mobile-name-cancel-btn" type="button" class="px-3 py-2 rounded-xl bg-gray-100 text-xs font-bold text-gray-600">取消</button>
+                                </div>
+                                <input id="mobile-pattern-name-input" type="text" maxlength="40" placeholder="未命名图纸"
+                                    class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-base font-bold focus:outline-none focus:border-primary">
+                                <button id="mobile-name-apply-btn" type="button" class="w-full py-4 rounded-2xl bg-gray-900 text-white text-sm font-bold">完成</button>
+                            </div>
+                            <div id="mobile-scheme-panel" class="hidden space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-base font-bold text-gray-900">拼豆方案</h3>
+                                    <button id="mobile-scheme-close-btn" type="button" class="px-3 py-2 rounded-xl bg-gray-100 text-xs font-bold text-gray-600">完成</button>
+                                </div>
+                                <div>
+                                    <p class="mb-2 text-xs font-bold text-gray-500">品牌</p>
+                                    <div id="mobile-brand-options" class="grid grid-cols-2 gap-2"></div>
+                                </div>
+                                <div id="mobile-mard-set-options-wrap">
+                                    <p class="mb-2 text-xs font-bold text-gray-500">规格</p>
+                                    <div id="mobile-mard-set-options" class="grid grid-cols-3 gap-2"></div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="workbench-generate-actions" class="grid grid-cols-1 gap-3">
+                        <button id="generate-pixel-art-btn"
+                            class="hidden w-full py-4 bg-primary text-white text-sm font-bold rounded-xl active:scale-95 transition justify-center items-center shadow-sm">
+                            生成像素风
+                        </button>
+                        <button id="generate-pattern-btn"
+                            class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition flex justify-center items-center shadow-sm">
+                            <span id="generate-pattern-label">生成预览</span>
+                        </button>
+                    </div>
+                    <button id="legacy-generate-pattern-btn"
+                        class="hidden w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition flex justify-center items-center shadow-sm">
+                        原始算法生成（对比）
+                    </button>
+                    <button id="apply-workbench-settings-btn"
+                        class="hidden w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition">
+                        应用设置
+                    </button>
+                </section>
+
+                <section id="workbench-color-list-panel" class="flex-1 min-h-0 bg-white p-5 rounded-2xl border border-white shadow-sm overflow-y-auto no-scrollbar">
+                    <h3 class="text-sm font-bold mb-4 flex items-center justify-between">
+                        <span>颜色清单</span>
+                        <span class="flex items-center gap-2">
+                            <span id="color-types-count" class="text-xs bg-primary/20 text-primary px-2 py-1"></span>
+                            <span id="total-beads-count" class="text-gray-500 font-mono text-xs"></span>
+                        </span>
+                    </h3>
+                    <div id="workbench-color-panel-empty" class="h-full min-h-48 flex items-center justify-center text-gray-500">
+                        生成图纸后显示颜色清单
+                    </div>
+                    <div id="color-stats" class="grid grid-cols-2 gap-2"></div>
+                </section>
+
+                <div id="workbench-side-draft-slot">
+                <div id="workbench-draft-actions" class="hidden" aria-hidden="true"></div>
+                <button id="next-to-step-4" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">
+                        <svg class="draft-export-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span>导出</span>
+                    </button>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <div id="pattern-preview-layer" class="hidden fixed inset-0 z-50 bg-[#E7EBEE]">
+        <div class="h-full grid grid-cols-[minmax(0,1fr)_340px] max-lg:grid-cols-1">
+            <main class="min-h-0 flex items-center justify-center p-5 max-lg:p-3">
+                <div class="w-full h-full bg-white rounded-2xl border border-white shadow-sm overflow-hidden flex items-center justify-center">
+                    <canvas id="pattern-preview-canvas" class="image-pixelated max-w-full max-h-full"></canvas>
+                </div>
+            </main>
+            <aside class="bg-white border-l border-gray-100 p-5 flex flex-col gap-4 max-lg:border-l-0 max-lg:border-t max-lg:max-h-[42vh] max-lg:overflow-y-auto">
+                <div>
+                    <p class="text-xs font-bold text-primary mb-2">生成预览</p>
+                    <h2 class="text-xl font-black text-gray-900">候选算法生成预览</h2>
+                    <p id="pattern-preview-summary" class="text-xs text-gray-500 mt-2"></p>
+                </div>
+                <div class="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs leading-5 text-gray-600">本页固定使用：裁剪后的图片 → 中强度扁平化加工 → 最终候选算法。正式主页算法与数据不会被修改。</div>
+                <div class="text-xs text-gray-500 leading-relaxed">
+                    基础规格仍在右侧设置中调整。这里仅切换生成风格，点击后会直接重新生成预览。
+                </div>
+                <div class="mt-auto grid grid-cols-2 gap-3">
+                    <button id="pattern-preview-cancel-btn" class="py-3 rounded-xl bg-gray-100 text-gray-800 text-sm font-bold active:scale-95 transition">返回调整</button>
+                    <button id="pattern-preview-confirm-btn" class="py-3 rounded-xl bg-gray-900 text-white text-sm font-bold active:scale-95 transition">使用这个效果</button>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <section id="step-export" class="step-section bg-background">
+        <div class="p-4 flex justify-between items-center z-10">
+            <button id="back-to-step-3" class="p-2 -ml-2 text-gray-500 hover:text-gray-800">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <h2 class="font-bold text-lg">保存与分享</h2>
+            <div class="w-6"></div>
+        </div>
+
+        <div class="flex-1 flex flex-col items-center justify-center p-8 space-y-6">
+            <div class="w-full max-w-sm bg-white p-4 rounded-2xl shadow-xl transform rotate-1">
+                <img id="export-preview" class="w-full rounded-lg border border-gray-100 image-pixelated">
+                <div class="mt-4 flex justify-between items-center">
+                    <span class="text-xs text-gray-400" id="export-meta">32x32 · MARD</span>
+                    <span class="text-xs font-bold text-primary">拼豆大师</span>
+                </div>
+            </div>
+
+            <div class="w-full max-w-sm space-y-3">
+                <button id="download-image-btn"
+                    class="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold shadow-lg flex justify-center items-center active:scale-95 transition">
+                    保存图片
+                </button>
+                <button id="download-mirrored-image-btn"
+                    class="w-full py-3.5 bg-white text-gray-900 border border-gray-200 rounded-xl font-bold shadow-sm flex justify-center items-center active:scale-95 transition">
+                    保存镜像图
+                </button>
+                <button id="download-raw-image-btn"
+                    class="w-full py-3.5 bg-white text-gray-900 border border-gray-200 rounded-xl font-bold shadow-sm flex justify-center items-center active:scale-95 transition">
+                    保存原图
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <div id="all-colors-panel"
+        class="hidden fixed left-1/2 top-1/2 z-[100] w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] -translate-x-1/2 bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+            <div class="flex items-center justify-between gap-3">
+                <h3 class="text-sm font-bold text-gray-900">全部颜色</h3>
+                <p id="all-colors-panel-summary" class="text-xs text-gray-400 whitespace-nowrap"></p>
+                <button id="close-all-colors-panel-btn" type="button" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
+            </div>
+            <input id="all-colors-search-input" type="search" placeholder="搜索色号，例如 C29"
+                class="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+        </div>
+        <div id="all-colors-grid" class="grid grid-cols-5 gap-2 max-h-[48vh] overflow-y-auto p-4"></div>
+    </div>
+
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center space-y-4">
+            <p class="text-lg font-semibold">确定要删除这个色块吗？</p>
+            <div class="flex justify-center space-x-4">
+                <button id="delete-confirm-yes" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition">确认</button>
+                <button id="delete-confirm-no" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition">取消</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
