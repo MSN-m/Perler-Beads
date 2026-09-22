@@ -917,9 +917,10 @@ function renderDraftBox() {
     const draftLabel = hasPattern
         ? (isMobileTopBar ? `草稿（${drafts.length}）` : `保存为草稿（${drafts.length}）`)
         : `草稿箱（${drafts.length}）`;
-    saveBtn.innerHTML = `<svg class="draft-save-icon" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.88333 0.75C9.23503 0.755009 9.57049 0.898781 9.81667 1.15L12.35 3.68333C12.6012 3.92951 12.745 4.26497 12.75 4.61667V11.4167C12.75 11.7703 12.6095 12.1094 12.3595 12.3595C12.1094 12.6095 11.7703 12.75 11.4167 12.75H2.08333C1.72971 12.75 1.39057 12.6095 1.14052 12.3595C0.890476 12.1094 0.75 11.7703 0.75 11.4167V2.08333C0.75 1.72971 0.890476 1.39057 1.14052 1.14052C1.39057 0.890476 1.72971 0.75 2.08333 0.75H8.88333Z"/><path d="M10.0833 12.7503V8.08366C10.0833 7.90685 10.0131 7.73728 9.88803 7.61225C9.76301 7.48723 9.59344 7.41699 9.41663 7.41699H4.08329C3.90648 7.41699 3.73691 7.48723 3.61189 7.61225C3.48686 7.73728 3.41663 7.90685 3.41663 8.08366V12.7503"/><path d="M3.41663 0.75V3.41667C3.41663 3.59348 3.48686 3.76305 3.61189 3.88807C3.73691 4.0131 3.90648 4.08333 4.08329 4.08333H8.74996"/></svg><span class="draft-save-label">${draftLabel}</span>`;
+    // Keep the click target stable while panels and editor state refresh.
+    const saveLabel = saveBtn.querySelector('.draft-save-label');
+    if (saveLabel && saveLabel.textContent !== draftLabel) saveLabel.textContent = draftLabel;
     drawer.classList.toggle('hidden', !AppState.draftDrawerOpen);
-    toggleBtn.innerHTML = '<svg class="draft-toggle-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>';
     toggleBtn.classList.toggle('is-open', AppState.draftDrawerOpen);
     toggleBtn.setAttribute('aria-label', AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表');
     toggleBtn.classList.toggle('hidden', !hasPattern);

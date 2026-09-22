@@ -975,7 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         window.addEventListener('mouseup', () => {
-            endFillSelection();
+            if (!endFillSelection()) return;
             refreshQualityOverlay();
             updateWorkbenchUI();
         });
@@ -991,7 +991,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
         window.addEventListener('touchend', (e) => {
             if (e.touches && e.touches.length > 0) return;
-            endFillSelection();
+            if (!endFillSelection()) return;
             refreshQualityOverlay();
             updateWorkbenchUI();
         });
