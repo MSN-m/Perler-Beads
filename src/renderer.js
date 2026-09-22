@@ -1,4 +1,5 @@
 import { AppState } from './state.js';
+import { renderFixedRuler } from './features/fixed-ruler.js';
 
 /**
  * 渲染图纸结果
@@ -51,12 +52,11 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
     
     ctx.imageSmoothingEnabled = false;
 
-    // 2. 绘制背景
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 3. 绘制内容
+    // 2. 绘制内容
+    // 左上角原先内嵌的标尺区域保持透明，固定标尺由独立覆盖层绘制。
     const gridOffset = scale; // 标尺宽度
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(gridOffset, gridOffset, contentWidth * scale, contentHeight * scale);
     
     // 绘制色块 (注意：需要减去 minX/minY 偏移)
     for (let y = minY; y <= maxY; y++) {
@@ -106,7 +106,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         ctx.shadowOffsetY = 0;
     }
 
-    // 5. 网格线、辅助线、标尺和 ID
+    // 5. 网格线、辅助线和 ID
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -193,22 +193,6 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             ctx.stroke();
             ctx.setLineDash([]);
         }
-    }
-
-    // 5.4 外部标尺 (显示全局坐标)
-    ctx.font = `bold ${Math.floor(scale * 0.4)}px Arial`;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    // 横向标尺
-    for (let i = 0; i < contentWidth; i++) {
-        const globalX = minX + i + 1; // 标尺从1开始
-        const textPos = gridOffset + i * scale + scale / 2;
-        ctx.fillText(globalX.toString(), textPos, scale / 2);
-    }
-    // 纵向标尺
-    for (let i = 0; i < contentHeight; i++) {
-        const globalY = minY + i + 1; // 标尺从1开始
-        const textPos = gridOffset + i * scale + scale / 2;
-        ctx.fillText(globalY.toString(), scale / 2, textPos);
     }
 
     if ((AppState.fillMode || AppState.clearBaseMode) && AppState.fillSelection) {
@@ -299,6 +283,8 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         }
         ctx.restore();
     }
+
+    renderFixedRuler();
 }
 
 /**
@@ -316,6 +302,8 @@ export function updateResultTransform(canvas, zoomState, resetBtn) {
     } else {
         resetBtn.classList.add('opacity-0', 'pointer-events-none');
     }
+
+    renderFixedRuler();
 }
 
 /**
