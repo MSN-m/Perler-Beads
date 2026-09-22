@@ -37,16 +37,33 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
     ctx.rect(RULER_SIZE, RULER_SIZE, width - RULER_SIZE, height - RULER_SIZE);
     ctx.clip();
 
+    // 用均匀点阵代替逐格浅色实线，缩小时沿用网格降采样避免过密。
+    const dotRadius = Math.max(0.6, Math.min(1.15, cellSize * 0.035));
+    ctx.fillStyle = 'rgba(100, 116, 139, 0.34)';
+    for (let x = startX; x <= endX; x += gridStep) {
+        const dotX = originX + x * cellSize;
+        if (dotX < RULER_SIZE || dotX > width) continue;
+        for (let y = startY; y <= endY; y += gridStep) {
+            const dotY = originY + y * cellSize;
+            if (dotY < RULER_SIZE || dotY > height) continue;
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // 继续保留每 5 格虚线和每 10 格深色实线。
     for (let x = startX; x <= endX; x += gridStep) {
         const pos = originX + x * cellSize;
         const isMajor = x % 10 === 0;
         const isMinor = x % 5 === 0;
+        if (!isMajor && !isMinor) continue;
         ctx.beginPath();
         ctx.moveTo(Math.round(pos) + 0.5, RULER_SIZE);
         ctx.lineTo(Math.round(pos) + 0.5, height);
-        ctx.strokeStyle = isMajor ? 'rgba(96, 165, 250, 0.48)' : isMinor ? 'rgba(147, 197, 253, 0.34)' : 'rgba(148, 163, 184, 0.16)';
+        ctx.strokeStyle = isMajor ? 'rgba(96, 165, 250, 0.48)' : 'rgba(147, 197, 253, 0.34)';
         ctx.lineWidth = isMajor ? 1.4 : 1;
-        ctx.setLineDash(isMajor || !isMinor ? [] : [4, 4]);
+        ctx.setLineDash(isMajor ? [] : [4, 4]);
         ctx.stroke();
     }
 
@@ -54,12 +71,13 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
         const pos = originY + y * cellSize;
         const isMajor = y % 10 === 0;
         const isMinor = y % 5 === 0;
+        if (!isMajor && !isMinor) continue;
         ctx.beginPath();
         ctx.moveTo(RULER_SIZE, Math.round(pos) + 0.5);
         ctx.lineTo(width, Math.round(pos) + 0.5);
-        ctx.strokeStyle = isMajor ? 'rgba(96, 165, 250, 0.48)' : isMinor ? 'rgba(147, 197, 253, 0.34)' : 'rgba(148, 163, 184, 0.16)';
+        ctx.strokeStyle = isMajor ? 'rgba(96, 165, 250, 0.48)' : 'rgba(147, 197, 253, 0.34)';
         ctx.lineWidth = isMajor ? 1.4 : 1;
-        ctx.setLineDash(isMajor || !isMinor ? [] : [4, 4]);
+        ctx.setLineDash(isMajor ? [] : [4, 4]);
         ctx.stroke();
     }
 
