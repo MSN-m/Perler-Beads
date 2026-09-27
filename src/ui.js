@@ -2,7 +2,7 @@
  * 拼豆图纸生成器 - UI 与页面流程
  */
 import { AppState } from './state.js';
-import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, mapPixelArtToBeads } from './processor.js';
+import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, generateAlignedPixelArtData, detectPixelArtGrid, mapPixelArtToBeads } from './processor.js';
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
 import { calculateStats, configureEditorActions, deepClonePixels, getCurrentPalette, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
@@ -257,6 +257,15 @@ const PATTERN_PREVIEW_STYLES = {
         precisionMode: 'high',
         colorMatchMode: 'deltae',
         dithering: true
+    },
+    pixel: {
+        label: '像素画',
+        contrast: 0,
+        sharpen: 0,
+        dominant: 0,
+        precisionMode: 'high',
+        colorMatchMode: 'deltae',
+        dithering: false
     }
 };
 
@@ -1938,6 +1947,27 @@ function renderPatternPreviewLayer() {
     if (!visible) return;
 
     setText('pattern-preview-summary', `${PATTERN_PREVIEW_STYLES[AppState.patternPreviewStyle]?.label || '预览'} · ${getWorkbenchGenerationSummary()}`);
+    const isDesktop = getWorkbenchViewportMode() === 'desktop';
+    const styleOptions = document.getElementById('pattern-preview-style-options');
+    const pixelArtButton = document.querySelector('[data-preview-style="pixel"]');
+    const pixelArtHint = document.getElementById('pixel-art-detection-hint');
+    const hasPixelArtGrid = Boolean(AppState.patternPreviewPixelGridDetection);
+    if (styleOptions) {
+        styleOptions.classList.toggle('grid-cols-4', isDesktop);
+        styleOptions.classList.toggle('grid-cols-3', !isDesktop);
+    }
+    if (pixelArtButton) {
+        pixelArtButton.classList.toggle('hidden', !isDesktop);
+        pixelArtButton.disabled = !hasPixelArtGrid;
+        pixelArtButton.title = hasPixelArtGrid ? '已识别到排列整齐的像素格' : '没有识别到排列整齐的像素格';
+        pixelArtButton.setAttribute('aria-label', hasPixelArtGrid ? '像素画（已识别到规则像素格）' : '像素画（未识别到规则像素格）');
+    }
+    if (pixelArtHint) {
+        pixelArtHint.classList.toggle('hidden', !isDesktop);
+        pixelArtHint.textContent = hasPixelArtGrid
+            ? `识别到约 ${AppState.patternPreviewPixelGridDetection.columns} × ${AppState.patternPreviewPixelGridDetection.rows} 格，可以试用像素画效果。`
+            : '没有识别到排列整齐的像素格，像素画效果暂不可用。';
+    }
     document.querySelectorAll('.pattern-preview-style-btn').forEach((btn) => {
         const active = btn.dataset.previewStyle === AppState.patternPreviewStyle;
         btn.classList.toggle('bg-primary', active);
@@ -1949,9 +1979,21 @@ function renderPatternPreviewLayer() {
 }
 
 function buildPatternPreview(style = 'photo') {
-    const config = PATTERN_PREVIEW_STYLES[style] || PATTERN_PREVIEW_STYLES.photo;
     const sourceImageData = getSourceImageDataForGeneration();
-    const pixelArtData = generatePixelArtData({
+    AppState.patternPreviewPixelGridDetection = detectPixelArtGrid(sourceImageData);
+    if (style === 'pixel' && (getWorkbenchViewportMode() !== 'desktop' || !AppState.patternPreviewPixelGridDetection)) {
+        style = 'photo';
+    }
+    const config = PATTERN_PREVIEW_STYLES[style] || PATTERN_PREVIEW_STYLES.photo;
+    const alignedPixelArtData = style === 'pixel' && AppState.patternPreviewPixelGridDetection
+        ? generateAlignedPixelArtData({
+            sourceImageData,
+            gridWidth: AppState.gridWidth,
+            gridHeight: AppState.gridHeight,
+            pixelGrid: AppState.patternPreviewPixelGridDetection
+        })
+        : null;
+    const pixelArtData = alignedPixelArtData || generatePixelArtData({
         sourceImageData,
         gridWidth: AppState.gridWidth,
         gridHeight: AppState.gridHeight,
@@ -1972,7 +2014,8 @@ function buildPatternPreview(style = 'photo') {
         isDitheringEnabled: config.dithering,
         precisionMode: 'standard',
         colorMatchMode: config.colorMatchMode,
-        palettes: PALETTES
+        palettes: PALETTES,
+        skipSmallRegionCleanup: style === 'pixel'
     });
 
     AppState.patternPreviewStyle = style;
@@ -2996,6 +3039,7 @@ export function applyWorkbenchSettings() {
 
 export function handlePatternPreviewStyle(style) {
     if (!AppState.image || !PATTERN_PREVIEW_STYLES[style]) return;
+    if (style === 'pixel' && (getWorkbenchViewportMode() !== 'desktop' || !AppState.patternPreviewPixelGridDetection)) return;
     buildPatternPreview(style);
     updateWorkbenchUI();
 }

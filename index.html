@@ -470,11 +470,13 @@
                     <h2 class="text-xl font-black text-gray-900">选择一个更合适的效果</h2>
                     <p id="pattern-preview-summary" class="text-xs text-gray-500 mt-2"></p>
                 </div>
-                <div class="grid grid-cols-3 gap-2">
+                <div id="pattern-preview-style-options" class="grid grid-cols-3 gap-2">
                     <button data-preview-style="original" class="pattern-preview-style-btn px-3 py-3 rounded-xl border border-gray-200 text-sm font-bold hover:border-primary hover:text-primary">原图</button>
                     <button data-preview-style="cartoon" class="pattern-preview-style-btn px-3 py-3 rounded-xl border border-gray-200 text-sm font-bold hover:border-primary hover:text-primary">卡通</button>
                     <button data-preview-style="photo" class="pattern-preview-style-btn px-3 py-3 rounded-xl border border-gray-200 text-sm font-bold hover:border-primary hover:text-primary">照片</button>
+                    <button data-preview-style="pixel" disabled class="pattern-preview-style-btn hidden px-3 py-3 rounded-xl border border-gray-200 text-sm font-bold hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed">像素画</button>
                 </div>
+                <p id="pixel-art-detection-hint" class="hidden text-xs text-gray-500 -mt-2"></p>
                 <div class="text-xs text-gray-500 leading-relaxed">
                     基础规格仍在右侧设置中调整。这里仅切换生成风格，点击后会直接重新生成预览。
                 </div>

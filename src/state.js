@@ -26,6 +26,7 @@ export const AppState = {
     patternPreviewStyle: 'photo',
     patternPreviewPixelData: null,
     patternPreviewPixelArtData: null,
+    patternPreviewPixelGridDetection: null,
     generatedPixelData: null,
     isBgRemoving: false,
     bgRemovalSelection: null,

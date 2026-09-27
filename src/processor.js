@@ -411,6 +411,115 @@ export function cleanTinyFragments(imageData, minIslandSize = 15) {
     return imageData;
 }
 
+function detectAxisPixelGrid(imageData, horizontal) {
+    const { data, width, height } = imageData;
+    const axisLength = horizontal ? width : height;
+    const scanLength = horizontal ? height : width;
+    const boundaryWeights = new Float64Array(axisLength);
+    const edgeThreshold = 42;
+    let totalWeight = 0;
+    let activeBoundaryCount = 0;
+
+    for (let scan = 0; scan < scanLength; scan++) {
+        for (let boundary = 1; boundary < axisLength; boundary++) {
+            const x1 = horizontal ? boundary - 1 : scan;
+            const y1 = horizontal ? scan : boundary - 1;
+            const x2 = horizontal ? boundary : scan;
+            const y2 = horizontal ? scan : boundary;
+            const first = (y1 * width + x1) * 4;
+            const second = (y2 * width + x2) * 4;
+            if (data[first + 3] < 128 || data[second + 3] < 128) continue;
+
+            const difference = Math.abs(data[first] - data[second])
+                + Math.abs(data[first + 1] - data[second + 1])
+                + Math.abs(data[first + 2] - data[second + 2]);
+            if (difference < edgeThreshold) continue;
+            boundaryWeights[boundary] += difference;
+        }
+    }
+
+    for (let boundary = 1; boundary < axisLength; boundary++) {
+        if (boundaryWeights[boundary] <= 0) continue;
+        totalWeight += boundaryWeights[boundary];
+        activeBoundaryCount++;
+    }
+    if (activeBoundaryCount < 8 || totalWeight === 0) return null;
+
+    let best = null;
+    const maxSpacing = Math.min(32, Math.floor(axisLength / 4));
+    for (let spacing = 2; spacing <= maxSpacing; spacing++) {
+        for (let offset = 0; offset < spacing; offset++) {
+            let alignedWeight = 0;
+            let alignedBoundaryCount = 0;
+            for (let boundary = 1; boundary < axisLength; boundary++) {
+                if (boundaryWeights[boundary] <= 0) continue;
+                if ((boundary - offset + spacing) % spacing !== 0) continue;
+                alignedWeight += boundaryWeights[boundary];
+                alignedBoundaryCount++;
+            }
+
+            const coverage = alignedWeight / totalWeight;
+            const minimumAligned = Math.max(4, Math.ceil((axisLength / spacing) * 0.08));
+            if (coverage < 0.78 || alignedBoundaryCount < minimumAligned) continue;
+            if (!best || spacing > best.spacing || (spacing === best.spacing && coverage > best.coverage)) {
+                best = { spacing, offset, coverage, alignedBoundaryCount };
+            }
+        }
+    }
+
+    return best;
+}
+
+/**
+ * Only returns a grid when strong image edges repeatedly line up on the same
+ * square-pixel lattice. This intentionally favors false negatives over
+ * enabling the pixel-art option for an irregular image.
+ */
+export function detectPixelArtGrid(imageData) {
+    if (!imageData?.data || imageData.width < 16 || imageData.height < 16) return null;
+
+    const horizontal = detectAxisPixelGrid(imageData, true);
+    const vertical = detectAxisPixelGrid(imageData, false);
+    if (!horizontal || !vertical || horizontal.spacing !== vertical.spacing) return null;
+
+    const spacing = horizontal.spacing;
+    const columns = Math.floor((imageData.width - horizontal.offset) / horizontal.spacing);
+    const rows = Math.floor((imageData.height - vertical.offset) / vertical.spacing);
+    if (columns < 4 || rows < 4) return null;
+
+    return {
+        spacing,
+        offsetX: horizontal.offset,
+        offsetY: vertical.offset,
+        confidence: Math.min(horizontal.coverage, vertical.coverage),
+        columns,
+        rows
+    };
+}
+
+export function generateAlignedPixelArtData({ sourceImageData, gridWidth, gridHeight, pixelGrid }) {
+    if (!pixelGrid) return null;
+    const { data, width, height } = sourceImageData;
+    const logicalWidth = Math.floor((width - pixelGrid.offsetX) / pixelGrid.spacing);
+    const logicalHeight = Math.floor((height - pixelGrid.offsetY) / pixelGrid.spacing);
+    if (logicalWidth < 1 || logicalHeight < 1) return null;
+
+    const result = new Array(gridWidth * gridHeight);
+    for (let y = 0; y < gridHeight; y++) {
+        const logicalY = Math.min(logicalHeight - 1, Math.floor(((y + 0.5) / gridHeight) * logicalHeight));
+        const sourceY = Math.min(height - 1, pixelGrid.offsetY + logicalY * pixelGrid.spacing + Math.floor(pixelGrid.spacing / 2));
+        for (let x = 0; x < gridWidth; x++) {
+            const logicalX = Math.min(logicalWidth - 1, Math.floor(((x + 0.5) / gridWidth) * logicalWidth));
+            const sourceX = Math.min(width - 1, pixelGrid.offsetX + logicalX * pixelGrid.spacing + Math.floor(pixelGrid.spacing / 2));
+            const sourceIndex = (sourceY * width + sourceX) * 4;
+            result[y * gridWidth + x] = data[sourceIndex + 3] < 128
+                ? { r: 255, g: 255, b: 255, a: 0 }
+                : { r: data[sourceIndex], g: data[sourceIndex + 1], b: data[sourceIndex + 2], a: 255 };
+        }
+    }
+    return result;
+}
+
 /**
  * 核心算法：像素化与颜色匹配（包含颜色量化和抖动处理）
  * @param {Object} options - 配置选项
@@ -544,7 +653,8 @@ export function mapPixelArtToBeads({
     isDitheringEnabled,
     precisionMode = 'standard',
     colorMatchMode = 'redmean',
-    palettes
+    palettes,
+    skipSmallRegionCleanup = false
 }) {
     let palette = palettes[brand] || palettes.perler;
 
@@ -649,10 +759,12 @@ export function mapPixelArtToBeads({
         console.log('[SmartDither] dithered:', ditheredCount, 'skipped:', skippedCount);
     }
 
-    if (precisionMode === 'high') {
-        unifySmallRegions(pixelData, gridWidth, gridHeight, 2, 45, 2);
-    } else {
-        unifySmallRegions(pixelData, gridWidth, gridHeight, 2);
+    if (!skipSmallRegionCleanup) {
+        if (precisionMode === 'high') {
+            unifySmallRegions(pixelData, gridWidth, gridHeight, 2, 45, 2);
+        } else {
+            unifySmallRegions(pixelData, gridWidth, gridHeight, 2);
+        }
     }
 
     return pixelData;

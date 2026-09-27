@@ -100,6 +100,7 @@ const resetProjectForNewImage = () => {
     AppState.patternPreviewStyle = 'photo';
     AppState.patternPreviewPixelData = null;
     AppState.patternPreviewPixelArtData = null;
+    AppState.patternPreviewPixelGridDetection = null;
     AppState.generatedPixelData = null;
     AppState.originalImageData = null;
     AppState.history = [];
