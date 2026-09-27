@@ -497,6 +497,93 @@ export function detectPixelArtGrid(imageData) {
     };
 }
 
+/**
+ * Detects blocky pixel-art-like images when their original grid is no longer
+ * recoverable (for example, after a non-integer resize or screenshot export).
+ * This is deliberately a separate, weaker signal from detectPixelArtGrid.
+ */
+export function detectPixelArtAppearance(imageData) {
+    if (!imageData?.data || imageData.width < 24 || imageData.height < 24) return false;
+    const { data, width, height } = imageData;
+    const step = Math.max(1, Math.floor(Math.sqrt((width * height) / 180000)));
+    let hardEdges = 0;
+    let softEdges = 0;
+    let compared = 0;
+    const colorBuckets = new Set();
+    for (let y = 1; y < height; y += step) {
+        for (let x = 1; x < width; x += step) {
+            const i = (y * width + x) * 4;
+            if (data[i + 3] < 128) continue;
+            colorBuckets.add(`${data[i] >> 4},${data[i + 1] >> 4},${data[i + 2] >> 4}`);
+            if (x % (step * 2) === 1) {
+                const left = i - 4;
+                if (data[left + 3] >= 128) {
+                    const d = Math.abs(data[i] - data[left]) + Math.abs(data[i + 1] - data[left + 1]) + Math.abs(data[i + 2] - data[left + 2]);
+                    compared++;
+                    if (d >= 105) hardEdges++;
+                    else if (d >= 18) softEdges++;
+                }
+            }
+            if (y % (step * 2) === 1) {
+                const above = i - width * 4;
+                if (data[above + 3] >= 128) {
+                    const d = Math.abs(data[i] - data[above]) + Math.abs(data[i + 1] - data[above + 1]) + Math.abs(data[i + 2] - data[above + 2]);
+                    compared++;
+                    if (d >= 105) hardEdges++;
+                    else if (d >= 18) softEdges++;
+                }
+            }
+        }
+    }
+    if (compared < 100 || colorBuckets.size < 4) return false;
+    const hardRatio = hardEdges / compared;
+    const hardShareOfEdges = hardEdges / Math.max(1, hardEdges + softEdges);
+    return hardRatio >= 0.0025 && hardShareOfEdges >= 0.2 && colorBuckets.size <= 900;
+}
+
+/** Samples the most common quantized source color inside each output bead cell. */
+export function generateDominantPixelArtData({ sourceImageData, gridWidth, gridHeight }) {
+    const { data, width, height } = sourceImageData;
+    const result = new Array(gridWidth * gridHeight);
+    for (let y = 0; y < gridHeight; y++) {
+        const startY = Math.floor((y / gridHeight) * height);
+        const endY = Math.max(startY + 1, Math.floor(((y + 1) / gridHeight) * height));
+        for (let x = 0; x < gridWidth; x++) {
+            const startX = Math.floor((x / gridWidth) * width);
+            const endX = Math.max(startX + 1, Math.floor(((x + 1) / gridWidth) * width));
+            const buckets = new Map();
+            let opaque = 0;
+            let total = 0;
+            for (let sy = startY; sy < endY; sy++) {
+                for (let sx = startX; sx < endX; sx++) {
+                    const i = (sy * width + sx) * 4;
+                    total++;
+                    if (data[i + 3] < 128) continue;
+                    opaque++;
+                    const key = `${data[i] >> 4},${data[i + 1] >> 4},${data[i + 2] >> 4}`;
+                    let bucket = buckets.get(key);
+                    if (!bucket) {
+                        bucket = { r: 0, g: 0, b: 0, count: 0 };
+                        buckets.set(key, bucket);
+                    }
+                    bucket.r += data[i];
+                    bucket.g += data[i + 1];
+                    bucket.b += data[i + 2];
+                    bucket.count++;
+                }
+            }
+            if (!opaque || opaque / Math.max(1, total) <= 0.3) {
+                result[y * gridWidth + x] = { r: 255, g: 255, b: 255, a: 0 };
+                continue;
+            }
+            let dominant = null;
+            for (const bucket of buckets.values()) if (!dominant || bucket.count > dominant.count) dominant = bucket;
+            result[y * gridWidth + x] = { r: dominant.r / dominant.count, g: dominant.g / dominant.count, b: dominant.b / dominant.count, a: 255 };
+        }
+    }
+    return result;
+}
+
 export function generateAlignedPixelArtData({ sourceImageData, gridWidth, gridHeight, pixelGrid }) {
     if (!pixelGrid) return null;
     const { data, width, height } = sourceImageData;

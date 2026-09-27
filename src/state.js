@@ -27,6 +27,7 @@ export const AppState = {
     patternPreviewPixelData: null,
     patternPreviewPixelArtData: null,
     patternPreviewPixelGridDetection: null,
+    patternPreviewLooksLikePixelArt: false,
     generatedPixelData: null,
     isBgRemoving: false,
     bgRemovalSelection: null,
