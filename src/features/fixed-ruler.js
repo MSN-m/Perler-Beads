@@ -99,16 +99,20 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
     const verticalStep = getLabelStep(cellSize, 18);
     const tickStep = getGridStep(cellSize);
 
+    ctx.save();
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.shadowColor = 'rgba(39, 46, 62, 0.08)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetY = 2;
     ctx.fillRect(0, 0, width, TOP_RULER_HEIGHT);
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 0;
     ctx.fillRect(0, 0, LEFT_RULER_WIDTH, height);
-    ctx.fillStyle = '#A0A6B3';
-    ctx.fillRect(0, TOP_RULER_HEIGHT - 1, width, 1);
-    ctx.fillRect(LEFT_RULER_WIDTH - 1, 0, 1, height);
+    ctx.restore();
 
     ctx.save();
     ctx.font = '600 11px Inter, Arial';
-    ctx.fillStyle = '#272F3F';
+    ctx.fillStyle = '#272E3E';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.beginPath();
@@ -132,7 +136,7 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
 
     ctx.save();
     ctx.font = '600 11px Inter, Arial';
-    ctx.fillStyle = '#272F3F';
+    ctx.fillStyle = '#272E3E';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.beginPath();
