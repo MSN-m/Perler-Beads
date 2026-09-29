@@ -24,14 +24,14 @@
         <div id="workbench-layout" class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
             <div id="workbench-top-actions" class="hidden bg-white rounded-2xl border border-white shadow-sm p-3 items-center gap-3">
                 <div id="workbench-top-title" class="min-w-0 flex-1 flex items-center gap-3">
-                    <button id="workbench-back-btn" type="button" class="workbench-header-icon" aria-label="返回" title="返回">‹</button>
+                    <button id="workbench-back-btn" type="button" class="workbench-header-icon" aria-label="返回" title="返回"><img class="workbench-header-back-icon" src="assets/figma-ui/back.svg" alt=""></button>
                     <div class="min-w-0">
                         <span id="workbench-pattern-title" class="block min-w-0 truncate text-base font-black text-gray-900">未命名图纸</span>
                         <span id="workbench-pattern-meta" class="block mt-0.5 text-[10px] text-gray-400">32x32 · MARD 221色</span>
                     </div>
                     <button id="show-workbench-settings-panel-btn" type="button"
                         class="workbench-header-icon shrink-0" aria-label="重命名和设置" title="重命名和设置">
-                        ✎
+                        <img class="workbench-header-edit-icon" src="assets/figma-ui/edit.svg" alt=""><span>编辑图纸</span>
                     </button>
                 </div>
                 <div id="workbench-tablet-panel-tabs" class="hidden items-center gap-2">
@@ -449,7 +449,7 @@
                         </button>
                     </div>
                     <button id="next-to-step-4" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">
-                        <svg class="draft-export-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span>导出</span>
+                        <img class="draft-export-icon" src="assets/figma-ui/export.svg" alt=""><span>导出</span>
                     </button>
                 </div>
                 </div>
