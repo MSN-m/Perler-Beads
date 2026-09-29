@@ -32,3 +32,26 @@ export function findNearestColor(r, g, b, palette) {
     }
     return nearest;
 }
+
+/**
+ * Reads the semantic primary color token for canvas overlays, which cannot use CSS variables directly.
+ * @param {number} alpha - Opacity between 0 and 1
+ * @returns {string} CSS rgba() color
+ */
+function getThemeColor(variableName, fallbackHex, alpha) {
+    const token = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+    const match = /^#([\da-f]{6})$/i.exec(token);
+    const hex = match ? match[1] : fallbackHex;
+    const red = Number.parseInt(hex.slice(0, 2), 16);
+    const green = Number.parseInt(hex.slice(2, 4), 16);
+    const blue = Number.parseInt(hex.slice(4, 6), 16);
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
+export function getThemePrimaryColor(alpha = 1) {
+    return getThemeColor('--pb-color-primary', 'DE5387', alpha);
+}
+
+export function getThemeMutedColor(alpha = 1) {
+    return getThemeColor('--pb-color-muted', 'A0A6B3', alpha);
+}

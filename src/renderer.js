@@ -1,5 +1,6 @@
 import { AppState } from './state.js';
 import { renderFixedRuler } from './features/fixed-ruler.js';
+import { getThemePrimaryColor } from './utils.js';
 
 /**
  * 渲染图纸结果
@@ -206,9 +207,9 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         const drawH = (endY - startY + 1) * scale;
 
         ctx.save();
-        ctx.fillStyle = 'rgba(255, 127, 80, 0.14)';
+        ctx.fillStyle = getThemePrimaryColor(0.14);
         ctx.fillRect(drawX, drawY, drawW, drawH);
-        ctx.strokeStyle = 'rgba(255, 127, 80, 0.95)';
+        ctx.strokeStyle = getThemePrimaryColor(0.95);
         ctx.lineWidth = 2;
         ctx.setLineDash([8, 5]);
         ctx.strokeRect(drawX + 1, drawY + 1, drawW - 2, drawH - 2);
@@ -229,7 +230,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             const badgeX = Math.min(canvas.width - 14, Math.max(gridOffset + 14, drawX + drawW - 6));
             const badgeY = Math.min(canvas.height - 14, Math.max(gridOffset + 14, drawY + 6));
 
-            ctx.fillStyle = 'rgba(255, 127, 80, 0.025)';
+            ctx.fillStyle = getThemePrimaryColor(0.025);
             ctx.fillRect(drawX, drawY, drawW, drawH);
 
             if (issue.suspectIndices && issue.suspectIndices.length) {
@@ -261,7 +262,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
                 }
             }
 
-            ctx.strokeStyle = 'rgba(255, 127, 80, 0.9)';
+            ctx.strokeStyle = getThemePrimaryColor(0.9);
             ctx.lineWidth = 3;
             ctx.setLineDash([7, 5]);
             ctx.strokeRect(drawX + 2, drawY + 2, Math.max(4, drawW - 4), Math.max(4, drawH - 4));
@@ -269,7 +270,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
 
             ctx.beginPath();
             ctx.arc(badgeX, badgeY, 12, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255, 127, 80, 0.96)';
+            ctx.fillStyle = getThemePrimaryColor(0.96);
             ctx.fill();
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;

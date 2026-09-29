@@ -1,3 +1,21 @@
+/* Semantic color tokens from the Figma color styles. */
+:root {
+    --pb-color-deep: #272E3E;
+    --pb-color-primary: #DE5387;
+    --pb-color-muted: #A0A6B3;
+    --pb-color-stroke: #F4EFF2;
+
+    /* Keep existing Tailwind utility classes aligned with the semantic palette. */
+    --color-primary: var(--pb-color-primary);
+    --color-gray-900: var(--pb-color-deep);
+    --color-gray-800: var(--pb-color-deep);
+    --color-gray-700: var(--pb-color-deep);
+    --color-gray-600: var(--pb-color-muted);
+    --color-gray-500: var(--pb-color-muted);
+    --color-gray-400: var(--pb-color-muted);
+    --color-gray-200: var(--pb-color-stroke);
+}
+
 /* Custom Utilities */
 .step-section {
     display: none;
@@ -33,7 +51,7 @@
     height: 14px;
     border-radius: 999px;
     border: 2px solid #ffffff;
-    background: #ff7f50;
+    background: var(--pb-color-primary);
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
 }
 
@@ -154,7 +172,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    color: #242935;
+    color: var(--pb-color-deep);
     font-size: 22px;
     line-height: 1;
     transition: background-color .16s ease, color .16s ease, transform .16s ease;
@@ -168,8 +186,8 @@
 }
 
 .workbench-header-icon:hover {
-    color: #de5387;
-    background: rgba(222, 83, 135, .1);
+    color: var(--pb-color-primary);
+    background: color-mix(in srgb, var(--pb-color-primary) 10%, transparent);
 }
 
   @media (min-width: 1024px) and (pointer: fine) {
@@ -224,7 +242,7 @@
     }
 
     #workbench-layout[data-mode="editor"] #workbench-pattern-title {
-        color: #000;
+        color: var(--pb-color-deep);
         font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
         font-size: 20px;
         font-weight: 600;
@@ -233,7 +251,7 @@
 
     #workbench-layout[data-mode="editor"] #workbench-pattern-meta {
         margin-top: 4px;
-        color: #a0a6b3;
+        color: var(--pb-color-muted);
         font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
         font-size: 10px;
         font-weight: 400;
@@ -252,8 +270,8 @@
         padding: 12px 16px;
         border: 0;
         border-radius: 26px;
-        background: #f4eff2;
-        color: #272f3f;
+        background: var(--pb-color-stroke);
+        color: var(--pb-color-deep);
         font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
         font-size: 12px;
         font-weight: 400;
@@ -263,7 +281,7 @@
 
     #workbench-layout[data-mode="editor"] #show-workbench-settings-panel-btn:hover {
         background: #eee8ed;
-        color: #272f3f;
+        color: var(--pb-color-deep);
     }
 
     #workbench-layout[data-mode="editor"] .workbench-header-edit-icon {
@@ -312,8 +330,8 @@
         justify-content: center;
         gap: 2px;
         border-radius: 20px;
-        background: #f4eff2;
-        color: #272f3f;
+        background: var(--pb-color-stroke);
+        color: var(--pb-color-deep);
         font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
         font-size: 10px;
         font-weight: 400;
@@ -334,8 +352,8 @@
         padding: 0;
         border: 0;
         border-radius: 50%;
-        background: #f4eff2;
-        color: #272f3f;
+        background: var(--pb-color-stroke);
+        color: var(--pb-color-deep);
         font-size: 0;
     }
 
@@ -368,7 +386,7 @@
         height: 40px;
         min-height: 40px;
         padding: 0;
-        background: #f4eff2;
+        background: var(--pb-color-stroke);
         border: 0;
         border-radius: 26px;
         box-shadow: none;
@@ -393,7 +411,7 @@
         border: 0;
         border-radius: 0;
         background: transparent;
-        color: #272f3f;
+        color: var(--pb-color-deep);
         font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
         font-size: 12px;
         font-weight: 400;
@@ -437,7 +455,7 @@
         border: 0;
         border-radius: 0;
         background: transparent;
-        color: #272f3f;
+        color: var(--pb-color-deep);
         cursor: pointer;
         z-index: 1;
     }
@@ -474,7 +492,7 @@
         padding: 0 16px;
         border: 0;
         border-radius: 20px;
-        background: #de5387;
+        background: var(--pb-color-primary);
         font-size: 14px;
         font-weight: 500;
         line-height: 14px;
@@ -586,7 +604,7 @@
           min-width: 48px;
           justify-content: space-between;
           padding-right: 0;
-          color: #242935;
+          color: var(--pb-color-deep);
       }
 
       #workbench-layout[data-mode="editor"] .palette-row-actions svg {
@@ -626,22 +644,22 @@
     gap: 5px;
     min-height: 32px;
     padding: 6px 9px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--pb-color-stroke);
     border-radius: 10px;
     background: #fff;
-    color: #374151;
+    color: var(--pb-color-deep);
     font-size: 12px;
     font-weight: 700;
     transition: color .16s ease, background .16s ease, opacity .16s ease;
 }
 
 .workbench-top-action-button:hover:not(:disabled) {
-    color: #de5387;
+    color: var(--pb-color-primary);
     background: #fff5f8;
 }
 
 .workbench-top-action-button.is-muted {
-    color: #6b7280;
+    color: var(--pb-color-muted);
     background: #f9fafb;
 }
 
@@ -783,24 +801,24 @@
     width: 48px;
     height: 40px;
     border-radius: 22px;
-    color: #242935;
+    color: var(--pb-color-deep);
     transition: background-color .16s ease, color .16s ease, transform .16s ease;
 }
 
 .workbench-tool-button:hover,
 .workbench-tool-button.is-active {
     color: #fff;
-    background: #de5387;
+    background: var(--pb-color-primary);
 }
 
 #toggle-fill-btn.is-active,
 #toggle-delete-btn.is-active {
     color: #fff;
-    background: #de5387 !important;
+    background: var(--pb-color-primary) !important;
 }
 
 #toggle-delete-btn:not(.is-active) {
-    color: #242935;
+    color: var(--pb-color-deep);
     background: transparent !important;
 }
 
@@ -889,15 +907,15 @@
     border: 0;
     border-radius: 50%;
     color: #fff;
-    background: #ff7f50;
+    background: var(--pb-color-primary);
     font: 600 10px/1 system-ui, sans-serif;
     box-shadow: 0 1px 3px rgba(36, 41, 53, .12);
     transition: transform .16s ease, box-shadow .16s ease;
 }
 
 .workbench-color-chip:nth-child(2) { background: #ad5f52; opacity: .72; }
-.workbench-color-chip.is-current { outline: 2px solid #fff; box-shadow: 0 0 0 2px #ff7f50; }
-.workbench-color-chip.is-empty { background: transparent; border: 1.5px dashed #a0a6b3; box-shadow: none; }
+.workbench-color-chip.is-current { outline: 2px solid #fff; box-shadow: 0 0 0 2px var(--pb-color-primary); }
+.workbench-color-chip.is-empty { background: transparent; border: 1.5px dashed var(--pb-color-muted); box-shadow: none; }
 
 .workbench-tool-menu {
     position: absolute;
@@ -935,7 +953,7 @@
     gap: 10px;
     padding: 10px 12px;
     border-radius: 9px;
-    color: #242935;
+    color: var(--pb-color-deep);
     text-align: left;
     font-size: 13px;
     white-space: nowrap;
@@ -953,7 +971,7 @@
 }
 
 .workbench-tool-menu button:hover,
-.workbench-tool-menu button.is-active { color: #de5387; background: rgba(222, 83, 135, .1); }
+.workbench-tool-menu button.is-active { color: var(--pb-color-primary); background: color-mix(in srgb, var(--pb-color-primary) 10%, transparent); }
 
 .has-hover-tooltip {
     position: relative;
@@ -1554,7 +1572,7 @@
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-settings-content > div:has(#pattern-name-input)::after,
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-settings-content > div:has(#brand-select)::after {
         content: "›";
-        color: #94a3b8;
+        color: var(--pb-color-muted);
         font-size: 20px;
         font-weight: 700;
         line-height: 1;
@@ -1562,7 +1580,7 @@
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-settings-content > div:has(#pattern-name-input) label {
         margin: 0;
-        color: #1f2937;
+        color: var(--pb-color-deep);
         white-space: nowrap;
     }
 
@@ -1575,7 +1593,7 @@
         padding: 8px 0 8px 10px;
         font-size: 14px;
         font-weight: 700;
-        color: #111827;
+        color: var(--pb-color-deep);
         text-align: right;
     }
 
@@ -1609,8 +1627,8 @@
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #max-colors-display {
         border-radius: 999px;
         border: 0;
-        background: #fff1eb;
-        color: #ff6b3d;
+        background: color-mix(in srgb, var(--pb-color-primary) 8%, white);
+        color: var(--pb-color-primary);
         padding: 4px 9px;
     }
 
@@ -1627,7 +1645,7 @@
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #workbench-settings-content > div:has(#brand-select)::before {
         content: "拼豆方案";
-        color: #1f2937;
+        color: var(--pb-color-deep);
         font-size: 13px;
         font-weight: 700;
         line-height: 1.25;
@@ -1651,7 +1669,7 @@
         background: #f8fafc;
         padding: 8px 26px 8px 10px;
         font-weight: 700;
-        color: #111827;
+        color: var(--pb-color-deep);
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #mobile-settings-modal section {
@@ -1683,7 +1701,7 @@
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #grid-size-slider {
         height: 24px;
         background: transparent;
-        accent-color: #ff7f50;
+        accent-color: var(--pb-color-primary);
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #max-colors-slider::-webkit-slider-runnable-track,
@@ -1701,8 +1719,8 @@
         margin-top: -8px;
         border-radius: 999px;
         border: 4px solid #ffffff;
-        background: #ff7f50;
-        box-shadow: 0 6px 16px rgba(255, 127, 80, 0.36);
+        background: var(--pb-color-primary);
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--pb-color-primary) 36%, transparent);
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"] #max-colors-slider::-moz-range-track,
@@ -1718,8 +1736,8 @@
         height: 18px;
         border-radius: 999px;
         border: 4px solid #ffffff;
-        background: #ff7f50;
-        box-shadow: 0 6px 16px rgba(255, 127, 80, 0.36);
+        background: var(--pb-color-primary);
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--pb-color-primary) 36%, transparent);
     }
 
     #workbench-layout[data-mode="editor"] #workbench-side-panel {

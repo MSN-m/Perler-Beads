@@ -5,6 +5,7 @@
  */
 
 import { AppState } from '../state.js';
+import { getThemePrimaryColor } from '../utils.js';
 
 import { renderResult } from '../renderer.js';
 
@@ -36,7 +37,7 @@ function drawReceiverOutline(canvas, gx, gy) {
 
     ctx.lineWidth = 3;
 
-    ctx.strokeStyle = 'rgba(255, 127, 80, 0.9)';
+    ctx.strokeStyle = getThemePrimaryColor(0.9);
 
     ctx.setLineDash([6, 4]);
 

@@ -342,7 +342,7 @@ function getPaletteColorButtonHtml(color) {
         <button type="button" data-palette-color-id="${color.id}"
             class="h-10 flex items-center justify-between gap-2 px-2 rounded-full border ${selected ? 'border-primary ring-2 ring-primary/30' : 'border-transparent'} bg-white text-[11px] font-bold font-mono active:scale-95 transition"
             title="${color.id} · RGB(${color.r}, ${color.g}, ${color.b})"
-            style="color: #242935;">
+            style="color: var(--pb-color-deep);">
             <span class="palette-used-color-chip" style="background-color: rgb(${color.r},${color.g},${color.b}); color: ${textColor};"><span>${color.id}</span><span class="opacity-75 font-normal">${color.count ? `(${color.count})` : ''}</span></span>
             <span class="palette-row-actions"><span role="button" tabindex="0" data-palette-action="pick" aria-label="吸色替换"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 3 2 2-9.5 9.5-3 1 1-3L19 3Z"/><path d="m14 6 4 4M5 19h4"/></svg></span><span role="button" tabindex="0" data-palette-action="secondary" aria-label="其他颜色操作"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h5v5H5zM14 4h5v5h-5zM5 15h5v5H5zM14 15h5v5h-5z"/><path d="M10 6.5h4M10 17.5h4M6.5 10v5M17.5 10v5"/></svg></span></span>
         </button>
