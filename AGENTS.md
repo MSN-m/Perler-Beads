@@ -174,7 +174,8 @@ touchend:   if (editMode === 'adjust' || editMode === 'delete') return;
 - 运行 `ReadLints` 确认无 lint 错误
 - 在浏览器中测试被改动的功能
 - 同时测试相关联的功能（同一函数服务多个模式时）
-- 通过后执行 `git commit`，提交信息说明改了什么、为什么
+- 除非用户明确要求，否则不要执行 `git add`（暂存）、`git commit` 或 `git push`；改动与验证完成后保留在工作区，由用户自行填写提交信息并提交。
+- 用户明确要求提交时，提交信息应说明改了什么、为什么。
 
 ---
 
