@@ -129,7 +129,7 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
         if (center < LEFT_RULER_WIDTH || center > width) continue;
         ctx.fillText(String(x + 1), center, 16);
     }
-    ctx.fillStyle = '#A0A6B3';
+    ctx.fillStyle = 'rgba(160, 166, 179, 0.6)';
     for (let x = startX; x <= endX; x++) {
         if (x % tickStep !== 0) continue;
         const pos = originX + x * cellSize;
@@ -153,7 +153,7 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
         if (center < TOP_RULER_HEIGHT || center > height) continue;
         ctx.fillText(String(y + 1), 16, center);
     }
-    ctx.fillStyle = '#A0A6B3';
+    ctx.fillStyle = 'rgba(160, 166, 179, 0.6)';
     for (let y = startY; y <= endY; y++) {
         if (y % tickStep !== 0) continue;
         const pos = originY + y * cellSize;
