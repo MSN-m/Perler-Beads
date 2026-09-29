@@ -1,8 +1,8 @@
 import { AppState } from '../state.js';
 
 const CELL_SIZE = 30;
-const TOP_RULER_HEIGHT = 20;
-const LEFT_RULER_WIDTH = 35;
+const TOP_RULER_HEIGHT = 33;
+const LEFT_RULER_WIDTH = 32;
 
 function isDesktopWorkbench() {
     return document.getElementById('workbench-layout')?.dataset.viewport === 'desktop';
@@ -97,6 +97,7 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
     );
     const horizontalStep = getLabelStep(cellSize, Math.max(22, labelWidth + 8));
     const verticalStep = getLabelStep(cellSize, 18);
+    const tickStep = getGridStep(cellSize);
 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.fillRect(0, 0, width, TOP_RULER_HEIGHT);
@@ -106,7 +107,7 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
     ctx.fillRect(LEFT_RULER_WIDTH - 1, 0, 1, height);
 
     ctx.save();
-    ctx.font = '400 7px Inter, Arial';
+    ctx.font = '600 11px Inter, Arial';
     ctx.fillStyle = '#272F3F';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -117,12 +118,20 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
         if (x % horizontalStep !== 0) continue;
         const center = originX + (x + 0.5) * cellSize;
         if (center < LEFT_RULER_WIDTH || center > width) continue;
-        ctx.fillText(String(x + 1), center, 6);
+        ctx.fillText(String(x + 1), center, 16);
+    }
+    ctx.fillStyle = '#A0A6B3';
+    for (let x = startX; x <= endX; x++) {
+        if (x % tickStep !== 0) continue;
+        const pos = originX + x * cellSize;
+        if (pos < LEFT_RULER_WIDTH || pos > width) continue;
+        const length = x % 10 === 0 ? 8 : 5;
+        ctx.fillRect(Math.round(pos), TOP_RULER_HEIGHT - length, 1, length);
     }
     ctx.restore();
 
     ctx.save();
-    ctx.font = '400 7px Inter, Arial';
+    ctx.font = '600 11px Inter, Arial';
     ctx.fillStyle = '#272F3F';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -133,7 +142,15 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
         if (y % verticalStep !== 0) continue;
         const center = originY + (y + 0.5) * cellSize;
         if (center < TOP_RULER_HEIGHT || center > height) continue;
-        ctx.fillText(String(y + 1), 12, center);
+        ctx.fillText(String(y + 1), 16, center);
+    }
+    ctx.fillStyle = '#A0A6B3';
+    for (let y = startY; y <= endY; y++) {
+        if (y % tickStep !== 0) continue;
+        const pos = originY + y * cellSize;
+        if (pos < TOP_RULER_HEIGHT || pos > height) continue;
+        const length = y % 10 === 0 ? 8 : 5;
+        ctx.fillRect(LEFT_RULER_WIDTH - length, Math.round(pos), length, 1);
     }
     ctx.restore();
 }
