@@ -29,6 +29,7 @@ function lastVisibleCell(origin, cellSize, viewportEnd) {
 
 function drawGrid(ctx, width, height, originX, originY, cellSize) {
     const gridStep = getGridStep(cellSize);
+    const dotStep = gridStep / 2;
     const startX = firstVisibleCell(originX, cellSize, LEFT_RULER_WIDTH);
     const endX = lastVisibleCell(originX, cellSize, width);
     const startY = firstVisibleCell(originY, cellSize, TOP_RULER_HEIGHT);
@@ -42,10 +43,10 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
     // 用均匀点阵代替逐格浅色实线，缩小时沿用网格降采样避免过密。
     const dotRadius = Math.max(0.6, Math.min(1.15, cellSize * 0.035));
     ctx.fillStyle = 'rgba(206, 146, 168, 0.4)';
-    for (let x = startX; x <= endX; x += gridStep) {
+    for (let x = startX; x <= endX; x += dotStep) {
         const dotX = originX + x * cellSize;
         if (dotX < LEFT_RULER_WIDTH || dotX > width) continue;
-        for (let y = startY; y <= endY; y += gridStep) {
+        for (let y = startY; y <= endY; y += dotStep) {
             const dotY = originY + y * cellSize;
             if (dotY < TOP_RULER_HEIGHT || dotY > height) continue;
             ctx.beginPath();
