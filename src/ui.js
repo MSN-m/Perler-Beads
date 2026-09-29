@@ -918,13 +918,15 @@ function renderDraftBox() {
 
     const hasPattern = hasWorkbenchPattern();
     const isMobileTopBar = AppState.workbenchViewportMode === 'mobile' && hasPattern;
+    const isDesktopEditor = AppState.workbenchViewportMode === 'desktop' && hasPattern;
     saveBtn.disabled = false;
     saveBtn.classList.toggle('opacity-40', false);
     saveBtn.classList.toggle('cursor-not-allowed', false);
 
     const drafts = Array.isArray(AppState.drafts) ? AppState.drafts : [];
+    const desktopDraftCount = drafts.length > 9 ? '9+' : String(drafts.length);
     const draftLabel = hasPattern
-        ? (isMobileTopBar ? `草稿（${drafts.length}）` : `保存为草稿（${drafts.length}）`)
+        ? (isMobileTopBar ? `草稿（${drafts.length}）` : isDesktopEditor ? `保存草稿(${desktopDraftCount})` : `保存为草稿（${drafts.length}）`)
         : `草稿箱（${drafts.length}）`;
     // Keep the click target stable while panels and editor state refresh.
     const saveLabel = saveBtn.querySelector('.draft-save-label');

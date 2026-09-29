@@ -123,7 +123,6 @@
 }
 
 #workbench-top-mirror-visual,
-.draft-save-pc-label,
 .draft-export-pc-label,
 .draft-toggle-pc-caret {
     display: none;
@@ -363,7 +362,8 @@
     #workbench-layout[data-mode="editor"] #draft-primary-control {
         display: flex !important;
         position: relative;
-        width: 124px;
+        width: max-content;
+        min-width: 124px;
         height: 40px;
         min-height: 40px;
         padding: 0;
@@ -380,8 +380,8 @@
         position: relative;
         left: auto;
         top: auto;
-        width: 88px;
-        flex: 0 0 88px;
+        width: auto;
+        flex: 0 0 auto;
         height: 40px;
         min-height: 40px;
         display: inline-flex;
@@ -414,10 +414,6 @@
     }
 
     #workbench-layout[data-mode="editor"] #save-draft-btn .draft-save-label {
-        display: none;
-    }
-
-    #workbench-layout[data-mode="editor"] #save-draft-btn .draft-save-pc-label {
         display: inline;
         font-size: 12px;
         font-weight: 400;
@@ -432,11 +428,11 @@
         justify-content: center;
         left: auto;
         top: auto;
-        width: 36px;
-        min-width: 36px;
+        width: 29px;
+        min-width: 29px;
         height: 40px;
         min-height: 40px;
-        padding: 0 16px 0 4px;
+        padding: 0 8px 0 4px;
         border: 0;
         border-radius: 0;
         background: transparent;
