@@ -21,6 +21,16 @@ export function deepClonePixels(arr) {
     return arr ? arr.map(p => ({ id: p.id, r: p.r, g: p.g, b: p.b, a: p.a })) : null;
 }
 
+export function mirrorPixelRows(pixels, gridWidth) {
+    if (!Array.isArray(pixels)) return pixels;
+    const result = pixels.slice();
+    for (let start = 0; start < result.length; start += gridWidth) {
+        const row = pixels.slice(start, start + gridWidth).reverse();
+        result.splice(start, row.length, ...row);
+    }
+    return result;
+}
+
 export function beginGlobalEditorSession(pixelData) {
     AppState.editor.originalPixelData = deepClonePixels(pixelData);
     AppState.editor.undoStack = [];
@@ -72,6 +82,7 @@ export function recordPixelAction(action) {
     if (!action) return false;
     AppState.stagedActions.push(action);
     AppState.editor.undoStack.push({
+        pixelAction: action,
         apply() {
             applyPixelAction(AppState.stagedPixelData, action, true);
             syncCurrentPixelData();
@@ -87,6 +98,25 @@ export function recordPixelAction(action) {
     AppState.editor.hasChanges = true;
     syncCurrentPixelData();
     return true;
+}
+
+// A mirror toggle is a view orientation, not an undoable edit. Rebase every
+// recorded edit so undo/redo continues to address the same bead after a flip.
+export function mirrorEditorHistory(gridWidth) {
+    const mirrorIndex = (index) => {
+        const row = Math.floor(index / gridWidth);
+        return row * gridWidth + gridWidth - 1 - (index % gridWidth);
+    };
+    const actions = new Set([
+        ...AppState.stagedActions,
+        ...AppState.editor.undoStack.map((operation) => operation.pixelAction),
+        ...AppState.editor.redoStack.map((operation) => operation.pixelAction)
+    ]);
+    actions.forEach((action) => {
+        if (!action) return;
+        if (Array.isArray(action.indices)) action.indices = action.indices.map(mirrorIndex);
+        else if (Number.isInteger(action.index)) action.index = mirrorIndex(action.index);
+    });
 }
 
 export function applyGlobalEditorOperation(operation) {

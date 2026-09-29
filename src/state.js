@@ -16,6 +16,7 @@ export const AppState = {
     brand: 'mard',
     mardSet: 221,
     pixelData: [],
+    isMirrored: false,
     pixelArtData: null,
     pixelArtSettings: {
         contrast: 0,

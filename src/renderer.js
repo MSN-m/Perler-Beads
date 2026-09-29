@@ -56,9 +56,6 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
     // 2. 绘制内容
     // 左上角原先内嵌的标尺区域保持透明，固定标尺由独立覆盖层绘制。
     const gridOffset = scale; // 标尺宽度
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(gridOffset, gridOffset, contentWidth * scale, contentHeight * scale);
-    
     // 绘制色块 (注意：需要减去 minX/minY 偏移)
     for (let y = minY; y <= maxY; y++) {
         for (let x = minX; x <= maxX; x++) {

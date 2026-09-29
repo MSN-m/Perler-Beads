@@ -51,6 +51,7 @@ import {
     renameWorkbenchDraft,
     toggleDraftDrawer,
     resetPatternToGenerated,
+    toggleWorkbenchMirror,
     collapseWorkbenchEditToolbar,
     expandWorkbenchEditToolbar,
     toggleWorkbenchSettingsPanel,
@@ -94,6 +95,7 @@ const resetProjectForNewImage = () => {
     AppState.pendingGridWidth = null;
     AppState.pendingGridHeight = null;
     AppState.pixelData = [];
+    AppState.isMirrored = false;
     AppState.pixelArtData = null;
     AppState.pixelArtSettings = { contrast: 0, sharpen: 0, dominant: 50 };
     AppState.patternPreviewVisible = false;
@@ -649,6 +651,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nextToStep4) {
         nextToStep4.addEventListener('click', () => goToStep(4));
     }
+
+    document.getElementById('workbench-top-mirror-visual')?.addEventListener('click', toggleWorkbenchMirror);
 
     const backToStep3 = document.getElementById('back-to-step-3');
     if (backToStep3) {

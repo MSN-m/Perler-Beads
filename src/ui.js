@@ -5,7 +5,7 @@ import { AppState } from './state.js';
 import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, generateAlignedPixelArtData, generateDominantPixelArtData, detectPixelArtGrid, detectPixelArtAppearance, mapPixelArtToBeads } from './processor.js';
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
-import { calculateStats, configureEditorActions, deepClonePixels, getCurrentPalette, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
+import { calculateStats, configureEditorActions, deepClonePixels, getCurrentPalette, mirrorEditorHistory, mirrorPixelRows, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
 import { toggleDeleteMode as _toggleDeleteMode, toggleColorEraseMode as _toggleColorEraseMode } from './features/delete.js';
 import { resetZoom as _resetZoom } from './features/zoom.js';
 import { toggleEdgeAdjustMode as _toggleEdgeAdjustMode } from './features/edge.js';
@@ -379,6 +379,35 @@ function hasWorkbenchPattern() {
     return Array.isArray(AppState.pixelData)
         && AppState.pixelData.length === AppState.gridWidth * AppState.gridHeight
         && AppState.pixelData.length > 0;
+}
+
+export function toggleWorkbenchMirror() {
+    if (!isWorkbenchLayout() || getWorkbenchViewportMode() !== 'desktop' || !hasWorkbenchPattern()) return;
+    if (AppState.paintStroke) _endFillSelection();
+
+    const width = AppState.gridWidth;
+    const mirrorIndex = (index) => Math.floor(index / width) * width + width - 1 - (index % width);
+    AppState.pixelData = mirrorPixelRows(AppState.pixelData, width);
+    AppState.stagedPixelData = mirrorPixelRows(AppState.stagedPixelData, width);
+    AppState.generatedPixelData = mirrorPixelRows(AppState.generatedPixelData, width);
+    AppState.editor.originalPixelData = mirrorPixelRows(AppState.editor.originalPixelData, width);
+    AppState.batchReplace.nearBaseline = mirrorPixelRows(AppState.batchReplace.nearBaseline, width);
+    mirrorEditorHistory(width);
+
+    if (Number.isInteger(AppState.receiverIndex)) AppState.receiverIndex = mirrorIndex(AppState.receiverIndex);
+    if (Number.isInteger(AppState.fillSourceIndex)) AppState.fillSourceIndex = mirrorIndex(AppState.fillSourceIndex);
+    AppState.selectedEdgeBeadsIndices = AppState.selectedEdgeBeadsIndices.map(mirrorIndex);
+    if (AppState.fillSelection) {
+        AppState.fillSelection.startX = width - 1 - AppState.fillSelection.startX;
+        AppState.fillSelection.endX = width - 1 - AppState.fillSelection.endX;
+    }
+
+    AppState.isMirrored = !AppState.isMirrored;
+    const canvas = document.getElementById('result-canvas');
+    renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, width, AppState.gridHeight, AppState.highlightedColorId);
+    calculateStats();
+    updateAdjustUndoButton();
+    updateWorkbenchUI();
 }
 
 function renderPalettePanel() {
@@ -842,6 +871,7 @@ function normalizeImportedDraft(draft, index = 0) {
         brand: draft.brand || 'mard',
         mardSet: draft.mardSet || 221,
         colorCount: draft.colorCount || colorIds.size,
+        isMirrored: draft.isMirrored === true,
         cropRect: draft.cropRect ? { ...draft.cropRect } : null,
         sourceImageDataUrl: draft.sourceImageDataUrl || null,
         thumbnailDataUrl: draft.thumbnailDataUrl || createDraftThumbnail(pixelData, gridWidth, gridHeight),
@@ -999,6 +1029,7 @@ export async function saveWorkbenchDraft() {
         brand: AppState.brand,
         mardSet: AppState.mardSet,
         colorCount: colorIds.size,
+        isMirrored: AppState.isMirrored,
         cropRect: AppState.cropRect ? { ...AppState.cropRect } : null,
         sourceImageDataUrl: getCurrentSourceCanvasSnapshot(),
         thumbnailDataUrl: createDraftThumbnail(pixels, AppState.gridWidth, AppState.gridHeight),
@@ -1087,6 +1118,7 @@ export function restoreWorkbenchDraft(draftId) {
     AppState.pixelArtData = null;
     AppState.pixelData = deepClonePixels(draft.pixelData);
     AppState.generatedPixelData = deepClonePixels(draft.pixelData);
+    AppState.isMirrored = draft.isMirrored === true;
     AppState.stagedPixelData = null;
     AppState.stagedActions = [];
     AppState.cropRect = draft.cropRect ? { ...draft.cropRect } : AppState.cropRect;
@@ -2119,6 +2151,7 @@ export function removeWorkbenchImage() {
     AppState.originalImageData = null;
     AppState.history = [];
     AppState.pixelData = [];
+    AppState.isMirrored = false;
     AppState.pixelArtData = null;
     AppState.generatedPixelData = null;
     AppState.patternPreviewVisible = false;
@@ -2329,6 +2362,11 @@ export function updateWorkbenchUI() {
     document.getElementById('dithering-toggle')?.closest('label')?.classList.add('hidden');
     const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
+    const mirrorButton = document.getElementById('workbench-top-mirror-visual');
+    if (mirrorButton) {
+        mirrorButton.classList.toggle('is-active', hasPattern && AppState.isMirrored);
+        mirrorButton.setAttribute('aria-pressed', String(hasPattern && AppState.isMirrored));
+    }
     const hasPixelArt = Boolean(AppState.pixelArtData) && !hasPattern;
     const isMobile = isWorkbenchMobileLayout();
     const isMobileCropStep = isMobile && hasImage && !hasPattern && AppState.mobileSetupStep === 'crop';
@@ -2621,6 +2659,7 @@ export function updateGridDimensions() {
     AppState.pendingGridHeight = null;
     if (!hasWorkbenchPattern()) {
         AppState.pixelData = [];
+        AppState.isMirrored = false;
         AppState.generatedPixelData = null;
         AppState.patternPreviewVisible = false;
         AppState.patternPreviewPixelData = null;
@@ -2926,6 +2965,7 @@ export function handleGeneratePixelArt() {
         dominant: settings.dominant
     });
     AppState.pixelData = [];
+    AppState.isMirrored = false;
     AppState.generatedPixelData = null;
     AppState.patternPreviewVisible = false;
     AppState.patternPreviewPixelData = null;
@@ -2963,6 +3003,7 @@ export function handleGeneratePatternLegacy() {
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.isMirrored = false;
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchTabletPanel = null;
     AppState.workbenchToolbarCollapsed = false;
@@ -3013,6 +3054,7 @@ export function handleGeneratePattern() {
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.isMirrored = false;
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchTabletPanel = null;
     AppState.workbenchToolbarCollapsed = false;
@@ -3066,6 +3108,7 @@ export function confirmPatternPreview() {
     AppState.pixelArtData = AppState.patternPreviewPixelArtData;
     AppState.pixelData = deepClonePixels(AppState.patternPreviewPixelData);
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.isMirrored = false;
     AppState.stagedPixelData = null;
     AppState.stagedActions = [];
     AppState.editMode = 'none';
