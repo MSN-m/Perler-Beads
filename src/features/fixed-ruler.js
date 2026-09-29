@@ -100,14 +100,19 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
     const tickStep = getGridStep(cellSize);
 
     ctx.save();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
     ctx.shadowColor = 'rgba(39, 46, 62, 0.08)';
     ctx.shadowBlur = 6;
     ctx.shadowOffsetY = 2;
-    ctx.fillRect(0, 0, width, TOP_RULER_HEIGHT);
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 0;
-    ctx.fillRect(0, 0, LEFT_RULER_WIDTH, height);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(width, 0);
+    ctx.lineTo(width, TOP_RULER_HEIGHT);
+    ctx.lineTo(LEFT_RULER_WIDTH, TOP_RULER_HEIGHT);
+    ctx.lineTo(LEFT_RULER_WIDTH, height);
+    ctx.lineTo(0, height);
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
 
     ctx.save();
