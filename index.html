@@ -86,11 +86,6 @@
                 </div>
 
                 <div id="workbench-edit-stage" class="absolute inset-0 hidden">
-                    <button id="toggle-compare-preview-btn"
-                        class="hidden absolute left-4 top-1/2 -translate-y-1/2 z-30 px-3 py-2 bg-white/95 backdrop-blur shadow-lg rounded-xl border border-white text-xs font-bold text-primary hover:scale-105 active:scale-95 transition">
-                        原图对照
-                    </button>
-
                     <section id="compare-source-pane" class="hidden absolute inset-y-0 left-0 w-[34%] min-w-[280px] border-r border-white/80 bg-[#f3f6fb] overflow-hidden">
                         <div class="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur rounded-xl border border-white shadow-sm px-3 py-2">
                             <p class="text-xs font-bold text-gray-800">原图对照</p>
@@ -106,6 +101,11 @@
                     </section>
 
                     <div id="result-pane" class="absolute inset-y-0 left-0 right-0 overflow-hidden">
+                        <button id="toggle-compare-preview-btn"
+                            class="hidden absolute left-4 top-1/2 -translate-y-1/2 z-30 transition"
+                            aria-controls="compare-source-pane" aria-expanded="false">
+                            原图对照
+                        </button>
                         <div class="absolute inset-0 overflow-hidden" id="result-container">
                             <canvas id="fixed-ruler-canvas" class="hidden" aria-hidden="true"></canvas>
                             <canvas id="result-canvas" class="hidden absolute top-0 left-0 image-pixelated cursor-grab"></canvas>

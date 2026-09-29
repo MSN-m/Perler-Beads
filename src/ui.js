@@ -2542,6 +2542,7 @@ export function updateWorkbenchUI() {
     const compareBtn = document.getElementById('toggle-compare-preview-btn');
     if (compareBtn) {
         compareBtn.textContent = compareVisible ? '收起原图' : '原图对照';
+        compareBtn.setAttribute('aria-expanded', String(compareVisible));
     }
     const resultPane = document.getElementById('result-pane');
     if (resultPane) {

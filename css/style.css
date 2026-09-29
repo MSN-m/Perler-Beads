@@ -277,11 +277,7 @@
         font-weight: 400;
         line-height: 12px;
         white-space: nowrap;
-    }
-
-    #workbench-layout[data-mode="editor"] #show-workbench-settings-panel-btn:hover {
-        background: #eee8ed;
-        color: var(--pb-color-deep);
+        transition: background-color .16s ease, color .16s ease, box-shadow .16s ease;
     }
 
     #workbench-layout[data-mode="editor"] .workbench-header-edit-icon {
@@ -652,6 +648,53 @@
 
     #workbench-layout[data-mode="editor"] #toggle-compare-preview-btn {
         left: 2px;
+    }
+}
+
+@media (min-width: 768px) {
+    #workbench-layout[data-mode="editor"] #toggle-compare-preview-btn {
+        left: 56px;
+        width: 28px;
+        height: 88px;
+        box-sizing: border-box;
+        padding: 12px 8px;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        border: 1px solid #F6FCFF;
+        border-radius: 33px;
+        background: rgba(251, 251, 251, 0.8);
+        box-shadow: 0 0 8px #E2EAF0;
+        color: #DE5387;
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 12px;
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        white-space: nowrap;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+    }
+
+    #workbench-layout[data-mode="editor"] #toggle-compare-preview-btn:not(.hidden) {
+        display: inline-flex;
+    }
+
+    #workbench-layout[data-mode="editor"] #toggle-compare-preview-btn::after {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 10px;
+        background: url("../assets/figma-ui/original-compare-arrow.svg") center / 7.2px 6.5px no-repeat;
+        content: "";
+        transform: rotate(90deg);
+        transition: transform .16s ease;
+    }
+
+    #workbench-layout[data-mode="editor"] #toggle-compare-preview-btn[aria-expanded="true"]::after {
+        transform: rotate(-90deg);
     }
 }
 
@@ -1980,4 +2023,106 @@
 
     #workbench-layout[data-mode="editor"] #palette-panel,
     #all-colors-panel { padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
+
+@media (min-width: 1024px) and (pointer: fine) {
+    #workbench-layout[data-mode="editor"] button:not(#workbench-edit-toolbar button) {
+        transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, color .16s ease, filter .16s ease;
+    }
+
+    body:has(#workbench-layout[data-mode="editor"]) #all-colors-panel button,
+    body:has(#workbench-layout[data-mode="editor"]) #delete-confirm-modal button {
+        transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease, color .16s ease, filter .16s ease;
+    }
+
+    #workbench-layout[data-mode="editor"] button:not(#workbench-edit-toolbar button):hover:not(:disabled) {
+        background-color: #F7F3F6;
+        filter: none;
+        transform: none !important;
+    }
+
+    #workbench-layout[data-mode="editor"] button:not(#workbench-edit-toolbar button):active:not(:disabled) {
+        box-shadow: inset 0 0 0 2px rgba(222, 83, 135, 0.22);
+        transform: none !important;
+    }
+
+    body:has(#workbench-layout[data-mode="editor"]) #all-colors-panel button:hover:not(:disabled),
+    body:has(#workbench-layout[data-mode="editor"]) #delete-confirm-modal button:hover:not(:disabled) {
+        background-color: #F7F3F6;
+        transform: none !important;
+    }
+
+    body:has(#workbench-layout[data-mode="editor"]) #all-colors-grid button:hover:not(:disabled) {
+        filter: brightness(0.96);
+    }
+
+    body:has(#workbench-layout[data-mode="editor"]) #all-colors-panel button:active:not(:disabled),
+    body:has(#workbench-layout[data-mode="editor"]) #delete-confirm-modal button:active:not(:disabled) {
+        box-shadow: inset 0 0 0 2px rgba(222, 83, 135, 0.22);
+        transform: none !important;
+    }
+
+    #workbench-layout[data-mode="editor"] #toggle-compare-preview-btn:hover,
+    #workbench-layout[data-mode="editor"] #toggle-compare-preview-btn:active {
+        translate: 0 -50%;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-back-btn:hover,
+    #workbench-layout[data-mode="editor"] #show-workbench-settings-panel-btn:hover,
+    #workbench-layout[data-mode="editor"] .workbench-top-action-button:hover,
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn:hover,
+    #workbench-layout[data-mode="editor"] #close-palette-panel-btn:hover {
+        color: var(--pb-color-deep);
+    }
+
+    body:has(#workbench-layout[data-mode="editor"]) #all-colors-panel #close-all-colors-panel-btn:hover {
+        color: #9CA3AF;
+    }
+
+    #workbench-layout[data-mode="editor"] #next-to-step-4:hover:not(:disabled) {
+        background-color: var(--pb-color-primary) !important;
+        color: #fff !important;
+        filter: brightness(0.97) !important;
+    }
+
+    #workbench-layout[data-mode="editor"] #next-to-step-4:not(:disabled) {
+        cursor: pointer;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-top-mirror-visual.is-active:hover {
+        background-color: var(--pb-color-primary) !important;
+        color: #fff !important;
+        filter: brightness(0.97) !important;
+    }
+
+    #workbench-layout[data-mode="editor"] #workbench-side-panel #next-to-step-4:active,
+    #workbench-layout[data-mode="editor"] #workbench-top-actions #workbench-top-mirror-visual.is-active:active {
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.78);
+    }
+
+    #workbench-layout[data-mode="editor"] #export-drafts-btn:hover:not(:disabled) {
+        background-color: var(--pb-color-deep) !important;
+        color: #fff !important;
+        filter: brightness(1.08) !important;
+    }
+
+    #workbench-layout[data-mode="editor"] #export-drafts-btn:not(:disabled) {
+        cursor: pointer;
+    }
+
+    body:has(#workbench-layout[data-mode="editor"]) #delete-confirm-modal #delete-confirm-yes:hover:not(:disabled) {
+        background-color: #DC2626;
+        filter: brightness(0.97);
+    }
+
+    #workbench-layout[data-mode="editor"] [data-draft-action="restore"]:hover,
+    #workbench-layout[data-mode="editor"] [data-draft-action="export"]:hover {
+        border-color: #E5E7EB;
+        color: #374151;
+    }
+
+    #workbench-layout[data-mode="editor"] [data-draft-action="delete"]:hover {
+        border-color: #E5E7EB;
+        color: #6B7280;
+    }
 }
