@@ -277,6 +277,7 @@ function setCursor(id, cursor) {
 
 function getResultCanvasCursor() {
     if (!hasWorkbenchPattern()) return '';
+    if (AppState.editor?.activeTool === 'pan') return 'grab';
     if (AppState.deleteMode || AppState.clearBaseMode) return WORKBENCH_CURSORS.eraser;
     if (AppState.fillMode) {
         if (AppState.fillColor) return WORKBENCH_CURSORS.brush;
@@ -2392,7 +2393,19 @@ export function updateWorkbenchUI() {
     setHidden('toggle-compare-preview-btn', !hasPattern);
     setHidden('compare-source-pane', !compareVisible);
     // The tool palette stays available while editing; only the active tool changes.
-    setHidden('workbench-edit-toolbar', !hasPattern || toolbarCollapsed);
+    const desktopToolbar = getWorkbenchViewportMode() === 'desktop';
+    setHidden('workbench-edit-toolbar', !hasPattern || toolbarCollapsed || desktopToolbar);
+    setHidden('workbench-figma-main-toolbar', !hasPattern || !desktopToolbar);
+    const brushMenu = document.querySelector('[data-tool-menu="brush"]');
+    const eraserMenu = document.querySelector('[data-tool-menu="eraser"]');
+    const brushMenuTarget = desktopToolbar
+        ? document.getElementById('figma-main-brush-wrap')
+        : document.getElementById('toggle-fill-btn')?.parentElement;
+    const eraserMenuTarget = desktopToolbar
+        ? document.getElementById('figma-main-eraser-wrap')
+        : document.getElementById('toggle-delete-btn')?.parentElement;
+    if (brushMenu && brushMenuTarget && brushMenu.parentElement !== brushMenuTarget) brushMenuTarget.appendChild(brushMenu);
+    if (eraserMenu && eraserMenuTarget && eraserMenu.parentElement !== eraserMenuTarget) eraserMenuTarget.appendChild(eraserMenu);
     setHidden('collapse-edit-toolbar-btn', true);
     setHidden('expand-edit-toolbar-btn', true);
     setHidden('workbench-active-toolbar', true);
@@ -2503,6 +2516,10 @@ export function updateWorkbenchUI() {
         topRedoBtn.disabled = !AppState.editor.redoStack.length;
         topRedoBtn.classList.toggle('is-disabled', !AppState.editor.redoStack.length);
     }
+    const figmaUndoBtn = document.getElementById('figma-main-undo-btn');
+    const figmaRedoBtn = document.getElementById('figma-main-redo-btn');
+    if (figmaUndoBtn) figmaUndoBtn.disabled = !AppState.editor.undoStack.length;
+    if (figmaRedoBtn) figmaRedoBtn.disabled = !AppState.editor.redoStack.length;
     const topCancelBtn = document.getElementById('workbench-top-cancel-btn');
     if (topCancelBtn) {
         topCancelBtn.disabled = AppState.editMode === 'none';
@@ -2528,6 +2545,17 @@ export function updateWorkbenchUI() {
     document.getElementById('toggle-delete-btn')?.classList.toggle('is-active', AppState.deleteMode);
     document.getElementById('toggle-edge-adjust-btn')?.classList.toggle('is-active', AppState.edgeSelectionMode);
     document.getElementById('toggle-clear-base-btn')?.classList.toggle('is-active', AppState.clearBaseMode);
+    const activeTool = AppState.editor?.activeTool || 'brush';
+    document.getElementById('result-canvas')?.classList.toggle('cursor-grab', activeTool === 'pan');
+    document.getElementById('result-canvas')?.classList.toggle('cursor-crosshair', activeTool === 'eyedropper');
+    document.querySelectorAll('#workbench-figma-main-toolbar [data-main-tool]').forEach((button) => {
+        const selected = (button.dataset.mainTool === 'brush' && ['brush', 'bucket', 'edge'].includes(activeTool))
+            || (button.dataset.mainTool === 'eraser' && ['eraser', 'area-erase', 'color-eraser'].includes(activeTool))
+            || button.dataset.mainTool === activeTool
+            || (button.dataset.mainTool === 'palette' && AppState.allColorsPanelOpen);
+        button.classList.toggle('is-active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+    });
     syncEditorToolVisualState();
     const compareSourceFrame = document.getElementById('compare-source-frame');
     const compareSourcePreview = document.getElementById('compare-source-preview');

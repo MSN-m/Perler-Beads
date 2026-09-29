@@ -16,6 +16,81 @@
     --color-gray-200: var(--pb-color-stroke);
 }
 
+/* Figma desktop primary toolbar (node 423:834). */
+#workbench-figma-main-toolbar {
+    box-sizing: border-box;
+    width: 690px;
+    height: 72px;
+    padding: 12px 22px 12px 12px;
+    align-items: center;
+    gap: 13.5px;
+    border: 1px solid #F6FCFF;
+    border-radius: 40px;
+    background: linear-gradient(91deg, rgba(251, 251, 251, .9), rgba(255, 242, 247, .9) 30%, rgba(242, 250, 255, .9) 51%, rgba(255, 255, 255, .9) 70%, rgba(255, 245, 249, .9));
+    box-shadow: 0 0 8px #E2EAF0;
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+}
+#workbench-figma-main-toolbar.hidden { display: none; }
+#workbench-figma-main-toolbar:not(.hidden) { display: flex; }
+
+.figma-main-tool-group,
+.figma-main-history-group { display: flex; align-items: center; }
+.figma-main-tool-group { width: 534px; gap: 4px; flex: 0 0 534px; }
+.figma-main-tool-wrap { position: relative; height: 48px; flex: 0 0 auto; }
+.figma-main-tool-button {
+    box-sizing: border-box;
+    height: 48px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 26px;
+    background: transparent;
+    color: #272E3E;
+    font: 400 12px/12px "PingFang SC", "Microsoft YaHei", sans-serif;
+    white-space: nowrap;
+    transition: color .15s ease, background-color .15s ease;
+}
+#figma-main-brush-wrap { width: 105px; }
+#figma-main-brush-btn { width: 100%; }
+#figma-main-pan-btn { width: 105px; }
+#figma-main-eyedropper-btn { width: 99px; }
+#figma-main-palette-btn { width: 105px; }
+#figma-main-eraser-wrap { width: 104px; }
+#figma-main-eraser-btn { width: 100%; }
+.figma-main-tool-button img { width: 16px; height: 16px; flex: 0 0 16px; }
+.figma-main-tool-button.is-active { background: #DE5387; color: #fff; }
+.figma-main-tool-button.is-active img { filter: brightness(0) invert(1); }
+#workbench-layout[data-mode="editor"] #workbench-figma-main-toolbar .figma-main-tool-button.is-active:hover {
+    background: #DE5387;
+    color: #fff;
+    filter: none;
+}
+.figma-main-divider { width: 24px; height: 1px; flex: 0 0 1px; transform: rotate(90deg); }
+.figma-main-history-group { gap: 20px; flex: 0 0 auto; }
+.figma-main-history-button {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border: 0;
+    border-radius: 50%;
+    background: #F4EFF2;
+    color: #272E3E;
+}
+.figma-main-history-button img { display: block; width: 20px; height: 20px; }
+.figma-main-history-button:disabled { opacity: .42; cursor: not-allowed; }
+@media (max-width: 1100px) {
+    #workbench-figma-main-toolbar { transform: translateX(-50%) scale(.88); transform-origin: bottom center; }
+}
+
 /* Custom Utilities */
 .step-section {
     display: none;

@@ -60,6 +60,7 @@ function getGridHitFromPoint(point, resultCanvas) {
 }
 
 function shouldStartPan(e, resultCanvas) {
+    if (AppState.editor?.activeTool === 'pan') return true;
     if (!isEditingMode()) return true;
     if (e.touches && e.touches.length >= 2) return true;
     if (!canPanFromCurrentEditMode()) return false;
@@ -182,6 +183,7 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
     // 画布点击（编辑模式）
 
     resultCanvas.addEventListener('click', (e) => {
+        if (AppState.editor?.activeTool === 'pan') return;
         if (suppressNextCanvasClick) {
             suppressNextCanvasClick = false;
             return;

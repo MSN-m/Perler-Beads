@@ -146,6 +146,21 @@
                     </div>
                 </div>
 
+                <div id="workbench-figma-main-toolbar" class="hidden absolute left-1/2 bottom-[67px] -translate-x-1/2 z-30" aria-label="主工具栏">
+                    <div class="figma-main-tool-group">
+                        <div class="figma-main-tool-wrap workbench-tool-group" id="figma-main-brush-wrap"><button type="button" id="figma-main-brush-btn" data-main-tool="brush" class="figma-main-tool-button" aria-label="画笔" title="画笔（B）"><img src="assets/figma-ui/toolbar-brush.svg" alt=""><span>画笔(B)</span></button></div>
+                        <button type="button" id="figma-main-pan-btn" data-main-tool="pan" class="figma-main-tool-button" aria-label="拖动" title="拖动画布（H）"><img src="assets/figma-ui/toolbar-hand.svg" alt=""><span>拖动(H)</span></button>
+                        <button type="button" id="figma-main-eyedropper-btn" data-main-tool="eyedropper" class="figma-main-tool-button" aria-label="吸管" title="吸管（I）"><img src="assets/figma-ui/toolbar-eyedropper.svg" alt=""><span>吸管(I)</span></button>
+                        <button type="button" id="figma-main-palette-btn" data-main-tool="palette" class="figma-main-tool-button" aria-label="色板" title="色板（C）"><img src="assets/figma-ui/toolbar-palette.svg" alt=""><span>色板(C)</span></button>
+                        <div class="figma-main-tool-wrap workbench-tool-group" id="figma-main-eraser-wrap"><button type="button" id="figma-main-eraser-btn" data-main-tool="eraser" class="figma-main-tool-button" aria-label="橡皮" title="橡皮（E）"><img src="assets/figma-ui/toolbar-eraser.svg" alt=""><span>橡皮(E)</span></button></div>
+                    </div>
+                    <img class="figma-main-divider" src="assets/figma-ui/toolbar-divider.svg" alt="" aria-hidden="true">
+                    <div class="figma-main-history-group">
+                        <button type="button" id="figma-main-undo-btn" class="figma-main-history-button" aria-label="撤销" title="撤销"><img src="assets/figma-ui/toolbar-undo.svg" alt=""></button>
+                        <button type="button" id="figma-main-redo-btn" class="figma-main-history-button" aria-label="重做" title="重做"><img src="assets/figma-ui/toolbar-redo.svg" alt=""></button>
+                    </div>
+                </div>
+
                 <div id="workbench-edit-toolbar" class="hidden workbench-glass-toolbar absolute left-1/2 bottom-6 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-2.5">
                     <div class="workbench-tool-group">
                         <button id="toggle-fill-btn" class="workbench-tool-button" aria-label="画笔工具" title="画笔：沿网格轨迹填色，点击箭头打开更多工具">

@@ -782,6 +782,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    document.getElementById('figma-main-brush-btn')?.addEventListener('click', () => {
+        if (AppState.fillMode) {
+            setActiveEditorTool('brush');
+            updateWorkbenchUI();
+            return;
+        }
+        document.getElementById('toggle-fill-btn')?.click();
+    });
+    document.getElementById('figma-main-pan-btn')?.addEventListener('click', () => {
+        closeToolOverlays();
+        setActiveEditorTool('pan');
+        updateWorkbenchUI();
+    });
+    document.getElementById('figma-main-eyedropper-btn')?.addEventListener('click', () => {
+        document.getElementById('eyedropper-tool-btn')?.click();
+        setActiveEditorTool('eyedropper');
+        updateWorkbenchUI();
+    });
+    document.getElementById('figma-main-palette-btn')?.addEventListener('click', () => {
+        document.getElementById('toggle-all-colors-panel-btn')?.click();
+        setActiveEditorTool(AppState.allColorsPanelOpen ? 'palette' : 'brush');
+        updateWorkbenchUI();
+    });
+    document.getElementById('figma-main-eraser-btn')?.addEventListener('click', () => {
+        if (AppState.deleteMode) {
+            setActiveEditorTool('eraser');
+            updateWorkbenchUI();
+            return;
+        }
+        document.getElementById('toggle-delete-btn')?.click();
+    });
+    document.getElementById('figma-main-undo-btn')?.addEventListener('click', () => topUndoBtn?.click());
+    document.getElementById('figma-main-redo-btn')?.addEventListener('click', () => topRedoBtn?.click());
+
+    window.addEventListener('keydown', (event) => {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        const target = event.target;
+        if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+        const shortcuts = { b: 'figma-main-brush-btn', h: 'figma-main-pan-btn', i: 'figma-main-eyedropper-btn', c: 'figma-main-palette-btn', e: 'figma-main-eraser-btn' };
+        const buttonId = shortcuts[event.key.toLowerCase()];
+        if (!buttonId || !document.getElementById('workbench-figma-main-toolbar')?.classList.contains('hidden')) return;
+        event.preventDefault();
+        document.getElementById(buttonId)?.click();
+    });
+
     const topCancelBtn = document.getElementById('workbench-top-cancel-btn');
     if (topCancelBtn) {
         topCancelBtn.addEventListener('click', () => {
