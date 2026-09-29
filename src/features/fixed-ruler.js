@@ -1,7 +1,8 @@
 import { AppState } from '../state.js';
 
 const CELL_SIZE = 30;
-const RULER_SIZE = 28;
+const TOP_RULER_HEIGHT = 20;
+const LEFT_RULER_WIDTH = 35;
 
 function isDesktopWorkbench() {
     return document.getElementById('workbench-layout')?.dataset.viewport === 'desktop';
@@ -27,25 +28,25 @@ function lastVisibleCell(origin, cellSize, viewportEnd) {
 
 function drawGrid(ctx, width, height, originX, originY, cellSize) {
     const gridStep = getGridStep(cellSize);
-    const startX = firstVisibleCell(originX, cellSize, RULER_SIZE);
+    const startX = firstVisibleCell(originX, cellSize, LEFT_RULER_WIDTH);
     const endX = lastVisibleCell(originX, cellSize, width);
-    const startY = firstVisibleCell(originY, cellSize, RULER_SIZE);
+    const startY = firstVisibleCell(originY, cellSize, TOP_RULER_HEIGHT);
     const endY = lastVisibleCell(originY, cellSize, height);
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(RULER_SIZE, RULER_SIZE, width - RULER_SIZE, height - RULER_SIZE);
+    ctx.rect(LEFT_RULER_WIDTH, TOP_RULER_HEIGHT, width - LEFT_RULER_WIDTH, height - TOP_RULER_HEIGHT);
     ctx.clip();
 
     // 用均匀点阵代替逐格浅色实线，缩小时沿用网格降采样避免过密。
     const dotRadius = Math.max(0.6, Math.min(1.15, cellSize * 0.035));
-    ctx.fillStyle = 'rgba(100, 116, 139, 0.34)';
+    ctx.fillStyle = 'rgba(206, 146, 168, 0.2)';
     for (let x = startX; x <= endX; x += gridStep) {
         const dotX = originX + x * cellSize;
-        if (dotX < RULER_SIZE || dotX > width) continue;
+        if (dotX < LEFT_RULER_WIDTH || dotX > width) continue;
         for (let y = startY; y <= endY; y += gridStep) {
             const dotY = originY + y * cellSize;
-            if (dotY < RULER_SIZE || dotY > height) continue;
+            if (dotY < TOP_RULER_HEIGHT || dotY > height) continue;
             ctx.beginPath();
             ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
             ctx.fill();
@@ -59,9 +60,9 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
         const isMinor = x % 5 === 0;
         if (!isMajor && !isMinor) continue;
         ctx.beginPath();
-        ctx.moveTo(Math.round(pos) + 0.5, RULER_SIZE);
+        ctx.moveTo(Math.round(pos) + 0.5, TOP_RULER_HEIGHT);
         ctx.lineTo(Math.round(pos) + 0.5, height);
-        ctx.strokeStyle = isMajor ? 'rgba(96, 165, 250, 0.48)' : 'rgba(147, 197, 253, 0.34)';
+        ctx.strokeStyle = isMajor ? 'rgba(206, 146, 168, 0.6)' : 'rgba(206, 146, 168, 0.4)';
         ctx.lineWidth = isMajor ? 1.4 : 1;
         ctx.setLineDash(isMajor ? [] : [4, 4]);
         ctx.stroke();
@@ -73,9 +74,9 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
         const isMinor = y % 5 === 0;
         if (!isMajor && !isMinor) continue;
         ctx.beginPath();
-        ctx.moveTo(RULER_SIZE, Math.round(pos) + 0.5);
+        ctx.moveTo(LEFT_RULER_WIDTH, Math.round(pos) + 0.5);
         ctx.lineTo(width, Math.round(pos) + 0.5);
-        ctx.strokeStyle = isMajor ? 'rgba(96, 165, 250, 0.48)' : 'rgba(147, 197, 253, 0.34)';
+        ctx.strokeStyle = isMajor ? 'rgba(206, 146, 168, 0.6)' : 'rgba(206, 146, 168, 0.4)';
         ctx.lineWidth = isMajor ? 1.4 : 1;
         ctx.setLineDash(isMajor ? [] : [4, 4]);
         ctx.stroke();
@@ -85,9 +86,9 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
 }
 
 function drawRulers(ctx, width, height, originX, originY, cellSize) {
-    const startX = firstVisibleCell(originX, cellSize, RULER_SIZE);
+    const startX = firstVisibleCell(originX, cellSize, LEFT_RULER_WIDTH);
     const endX = lastVisibleCell(originX, cellSize, width);
-    const startY = firstVisibleCell(originY, cellSize, RULER_SIZE);
+    const startY = firstVisibleCell(originY, cellSize, TOP_RULER_HEIGHT);
     const endY = lastVisibleCell(originY, cellSize, height);
     ctx.font = '600 11px Arial';
     const labelWidth = Math.max(
@@ -97,42 +98,42 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
     const horizontalStep = getLabelStep(cellSize, Math.max(22, labelWidth + 8));
     const verticalStep = getLabelStep(cellSize, 18);
 
-    ctx.fillStyle = 'rgba(248, 250, 252, 0.97)';
-    ctx.fillRect(0, 0, width, RULER_SIZE);
-    ctx.fillRect(0, 0, RULER_SIZE, height);
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.34)';
-    ctx.fillRect(0, RULER_SIZE - 1, width, 1);
-    ctx.fillRect(RULER_SIZE - 1, 0, 1, height);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillRect(0, 0, width, TOP_RULER_HEIGHT);
+    ctx.fillRect(0, 0, LEFT_RULER_WIDTH, height);
+    ctx.fillStyle = '#A0A6B3';
+    ctx.fillRect(0, TOP_RULER_HEIGHT - 1, width, 1);
+    ctx.fillRect(LEFT_RULER_WIDTH - 1, 0, 1, height);
 
     ctx.save();
-    ctx.font = '600 11px Arial';
-    ctx.fillStyle = 'rgba(71, 85, 105, 0.9)';
+    ctx.font = '400 7px Inter, Arial';
+    ctx.fillStyle = '#272F3F';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.beginPath();
-    ctx.rect(RULER_SIZE, 0, width - RULER_SIZE, RULER_SIZE);
+    ctx.rect(LEFT_RULER_WIDTH, 0, width - LEFT_RULER_WIDTH, TOP_RULER_HEIGHT);
     ctx.clip();
     for (let x = startX; x <= endX; x++) {
         if (x % horizontalStep !== 0) continue;
         const center = originX + (x + 0.5) * cellSize;
-        if (center < RULER_SIZE || center > width) continue;
-        ctx.fillText(String(x + 1), center, RULER_SIZE / 2);
+        if (center < LEFT_RULER_WIDTH || center > width) continue;
+        ctx.fillText(String(x + 1), center, 6);
     }
     ctx.restore();
 
     ctx.save();
-    ctx.font = '600 11px Arial';
-    ctx.fillStyle = 'rgba(71, 85, 105, 0.9)';
+    ctx.font = '400 7px Inter, Arial';
+    ctx.fillStyle = '#272F3F';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.beginPath();
-    ctx.rect(0, RULER_SIZE, RULER_SIZE, height - RULER_SIZE);
+    ctx.rect(0, TOP_RULER_HEIGHT, LEFT_RULER_WIDTH, height - TOP_RULER_HEIGHT);
     ctx.clip();
     for (let y = startY; y <= endY; y++) {
         if (y % verticalStep !== 0) continue;
         const center = originY + (y + 0.5) * cellSize;
-        if (center < RULER_SIZE || center > height) continue;
-        ctx.fillText(String(y + 1), RULER_SIZE / 2, center);
+        if (center < TOP_RULER_HEIGHT || center > height) continue;
+        ctx.fillText(String(y + 1), 12, center);
     }
     ctx.restore();
 }
