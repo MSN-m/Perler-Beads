@@ -5,6 +5,7 @@
  */
 
 import { AppState } from '../state.js';
+import { rememberPaintColor, restorePaintColor } from '../editor.js';
 import { getThemePrimaryColor } from '../utils.js';
 
 import { renderResult } from '../renderer.js';
@@ -234,8 +235,7 @@ function sampleFromOriginalImage(event) {
 function setFillColorFromSample(sampled) {
     const matched = getNearestPaletteColor(sampled);
     AppState.fillSourceSample = sampled;
-    AppState.fillColorId = matched.id;
-    AppState.fillColor = { id: matched.id, r: matched.r, g: matched.g, b: matched.b };
+    rememberPaintColor(matched);
     AppState.fillSourceIndex = null;
     AppState.fillSelection = null;
 }
@@ -471,9 +471,7 @@ export function enterEditSession() {
 
     AppState.fillSourceMode = 'canvas';
 
-    AppState.fillColor = null;
-
-    AppState.fillColorId = null;
+    restorePaintColor();
 
     AppState.fillSourceIndex = null;
 
@@ -544,7 +542,7 @@ export function toggleClearBaseMode() {
 
 
 
-export function toggleFillMode() {
+export function toggleFillMode(tool = null) {
 
     if (AppState.editMode !== 'adjust') {
 
@@ -552,9 +550,9 @@ export function toggleFillMode() {
 
     }
 
-    AppState.fillMode = !AppState.fillMode;
+    AppState.fillMode = tool === 'brush' || tool === 'bucket' ? true : !AppState.fillMode;
     AppState.eyedropperMode = false;
-    setActiveEditorTool(AppState.fillMode ? 'brush' : 'brush');
+    setActiveEditorTool(tool === 'bucket' ? 'bucket' : 'brush');
     AppState.fillSourceMode = 'canvas';
 
     AppState.clearBaseMode = false;
@@ -567,9 +565,7 @@ export function toggleFillMode() {
 
     AppState.receiverIndex = null;
 
-    AppState.fillColor = null;
-
-    AppState.fillColorId = null;
+    restorePaintColor();
 
     AppState.fillSourceIndex = null;
 
@@ -581,23 +577,24 @@ export function toggleFillMode() {
 
 }
 
-export function selectPaletteFillColor(color) {
+export function selectPaletteFillColor(color, { preserveTool = false } = {}) {
     if (!color || color.id === 'NONE') return;
+    const previousTool = AppState.editor.activeTool;
+    const tool = preserveTool && ['brush', 'bucket', 'edge'].includes(previousTool) ? previousTool : 'brush';
 
     if (AppState.editMode !== 'adjust') {
         enterEditSession();
     }
 
-    AppState.fillMode = true;
-    setActiveEditorTool('brush');
+    AppState.fillMode = tool !== 'edge';
+    setActiveEditorTool(tool);
     AppState.fillSourceMode = 'palette';
     AppState.clearBaseMode = false;
-    AppState.edgeSelectionMode = false;
+    AppState.edgeSelectionMode = tool === 'edge';
     AppState.deleteMode = false;
     AppState.adjustPhase = 'waiting_receiver';
     AppState.receiverIndex = null;
-    AppState.fillColorId = color.id;
-    AppState.fillColor = { id: color.id, r: color.r, g: color.g, b: color.b };
+    rememberPaintColor(color);
     AppState.fillSourceIndex = null;
     AppState.fillSourceSample = null;
     AppState.fillSelection = null;
@@ -609,6 +606,7 @@ export function selectPaletteFillColor(color) {
 }
 
 export function handleOriginalFillPick(event) {
+    if (AppState.editor?.activeTool === 'pan') return false;
     if (!AppState.fillMode && !AppState.eyedropperMode) return false;
     const sampled = sampleFromOriginalImage(event);
     if (!sampled) return false;
@@ -778,9 +776,7 @@ export function handleResultCanvasClickForAdjust(e) {
 
             if (pixel.id === 'NONE') return;
 
-            AppState.fillColorId = pixel.id;
-
-            AppState.fillColor = { id: pixel.id, r: pixel.r, g: pixel.g, b: pixel.b };
+            rememberPaintColor(pixel);
 
             AppState.fillSourceIndex = idx;
 
@@ -1032,6 +1028,7 @@ export function handleResultCanvasClickForAdjust(e) {
 }
 
 export function startFillSelection(e) {
+    if (AppState.editor?.activeTool === 'pan') return false;
     if (e.touches && e.touches.length >= 2) return false;
     if (AppState.editor?.activeTool === 'bucket') return false;
     if (AppState.clearBaseMode) {

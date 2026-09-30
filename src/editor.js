@@ -45,17 +45,83 @@ export function beginGlobalEditorSession(pixelData) {
     });
     const defaults = [...mostUsed.values()]
         .sort((a, b) => b.count - a.count || String(a.id).localeCompare(String(b.id)))
-        .slice(0, 3);
-    AppState.recentColors = defaults;
-    AppState.lastRecentColorId = defaults[0]?.id || null;
-    if (defaults[0]) {
-        AppState.fillColorId = defaults[0].id;
-        AppState.fillColor = { id: defaults[0].id, r: defaults[0].r, g: defaults[0].g, b: defaults[0].b };
+        .slice(0, 1);
+    if (!AppState.paintColor && defaults[0]) {
+        AppState.paintColor = { id: defaults[0].id, r: defaults[0].r, g: defaults[0].g, b: defaults[0].b };
     }
+    restorePaintColor();
 }
 
 export function setActiveEditorTool(tool) {
     AppState.editor.activeTool = tool || 'brush';
+    if (['brush', 'bucket', 'edge'].includes(tool)) {
+        AppState.lastBrushTool = tool;
+        persistColorSelection();
+    }
+}
+
+const COLOR_SELECTION_KEY = 'perler_beads_color_selection_v1';
+
+export function getColorSelectionSnapshot() {
+    if (!AppState.colorSelectionPatternId) AppState.colorSelectionPatternId = `pattern_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    return {
+        patternId: AppState.colorSelectionPatternId,
+        recentColorIds: AppState.recentColors.map(color => String(color.id)).slice(0, 5),
+        currentColorId: AppState.paintColor?.id || null,
+        lastBrushTool: AppState.lastBrushTool,
+        updatedAt: AppState.colorSelectionUpdatedAt
+    };
+}
+
+function readColorSelections() {
+    try {
+        const entries = JSON.parse(globalThis.localStorage?.getItem(COLOR_SELECTION_KEY) || '{}');
+        return entries && typeof entries === 'object' && !Array.isArray(entries) ? entries : {};
+    } catch { return {}; }
+}
+
+function persistColorSelection() {
+    if (!AppState.colorSelectionPatternId) return;
+    AppState.colorSelectionUpdatedAt = Math.max(Date.now(), AppState.colorSelectionUpdatedAt + 1);
+    try {
+        const entries = readColorSelections();
+        entries[AppState.colorSelectionPatternId] = getColorSelectionSnapshot();
+        const latest = Object.entries(entries).sort((a, b) => b[1].updatedAt - a[1].updatedAt).slice(0, 50);
+        globalThis.localStorage?.setItem(COLOR_SELECTION_KEY, JSON.stringify(Object.fromEntries(latest)));
+    } catch (error) { console.warn('最近颜色暂时无法保存到本地，当前选色仍然有效。', error); }
+}
+
+export function resetPatternColorSelection(snapshot = null, fallbackId = null) {
+    const patternId = typeof snapshot?.patternId === 'string' ? snapshot.patternId : fallbackId;
+    const cached = patternId ? readColorSelections()[patternId] : null;
+    const source = cached && Number(cached.updatedAt) > Number(snapshot?.updatedAt || 0) ? cached : snapshot;
+    const palette = new Map(getCurrentPalette().map(color => [String(color.id), color]));
+    const ids = Array.isArray(source?.recentColorIds) ? source.recentColorIds : [];
+    AppState.recentColors = [...new Set(ids.filter(id => typeof id === 'string'))]
+        .map(id => palette.get(id)).filter(Boolean).slice(0, 5);
+    AppState.paintColor = palette.get(String(source?.currentColorId)) || null;
+    AppState.colorSelectionPatternId = patternId || `pattern_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    AppState.colorSelectionUpdatedAt = Number(source?.updatedAt) || 0;
+    AppState.lastBrushTool = ['brush', 'bucket', 'edge'].includes(source?.lastBrushTool) ? source.lastBrushTool : 'brush';
+    AppState.lastRecentColorId = AppState.recentColors[0]?.id || null;
+    AppState.fillColor = null;
+    AppState.fillColorId = null;
+    AppState.editor.activeTool = 'brush';
+}
+
+export function restorePaintColor() {
+    AppState.fillColor = AppState.paintColor ? { ...AppState.paintColor } : null;
+    AppState.fillColorId = AppState.paintColor?.id || null;
+}
+
+export function rememberPaintColor(color) {
+    if (!color || color.id === 'NONE') return;
+    AppState.paintColor = { id: color.id, r: color.r, g: color.g, b: color.b };
+    restorePaintColor();
+    AppState.recentColors = [AppState.paintColor, ...AppState.recentColors.filter(item => String(item.id) !== String(color.id))].slice(0, 5);
+    AppState.lastRecentColorId = color.id;
+    getColorSelectionSnapshot();
+    persistColorSelection();
 }
 
 function applyPixelAction(pixels, action, useNextColor) {

@@ -5,7 +5,7 @@
  */
 
 import { AppState } from '../state.js';
-import { setActiveEditorTool } from '../editor.js';
+import { setActiveEditorTool, restorePaintColor } from '../editor.js';
 
 import { renderResult } from '../renderer.js';
 
@@ -160,9 +160,7 @@ export function toggleEdgeAdjustMode() {
 
         AppState.fillMode = false;
 
-        AppState.fillColor = null;
-
-        AppState.fillColorId = null;
+        restorePaintColor();
 
         AppState.fillSourceIndex = null;
 

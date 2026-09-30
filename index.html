@@ -146,18 +146,43 @@
                     </div>
                 </div>
 
+                <div id="workbench-figma-brush-toolbar" class="hidden" aria-label="画笔工具栏">
+                    <div class="figma-brush-tools" role="group" aria-label="画笔子工具">
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="brush" aria-label="画笔"><span class="figma-brush-icon" aria-hidden="true"></span><span>画笔</span></button>
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="bucket" aria-label="油漆"><span class="figma-brush-icon figma-brush-bucket-icon" aria-hidden="true"></span><span>油漆</span></button>
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="edge" aria-label="边框"><span class="figma-brush-icon" aria-hidden="true"></span><span>边框</span></button>
+                    </div>
+                    <div class="figma-brush-recent"><span class="figma-brush-recent-label">最近：</span><div class="figma-brush-color-list" aria-label="最近使用颜色">
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="0" disabled>--</button>
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="1" disabled>--</button>
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="2" disabled>--</button>
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="3" disabled>--</button>
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="4" disabled>--</button>
+                    </div></div>
+                </div>
+
+                <div id="workbench-figma-eraser-toolbar" class="hidden" aria-label="橡皮工具栏">
+                    <div class="figma-brush-tools figma-eraser-tools" role="group" aria-label="橡皮子工具">
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="eraser" aria-label="橡皮工具"><span class="figma-eraser-icon figma-eraser-basic-icon" aria-hidden="true"><span class="figma-eraser-outline"></span><span class="figma-eraser-seam"></span></span><span>橡皮工具</span></button>
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="area-erase" aria-label="按区域擦除"><span class="figma-eraser-icon figma-eraser-region-icon" aria-hidden="true"></span><span>按区域擦除</span></button>
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="color-erase" aria-label="按颜色擦除"><span class="figma-eraser-icon figma-eraser-color-icon" aria-hidden="true"></span><span>按颜色擦除</span></button>
+                    </div>
+                </div>
+
                 <div id="workbench-figma-main-toolbar" class="hidden absolute left-1/2 bottom-[67px] -translate-x-1/2 z-30" aria-label="主工具栏">
+                    <div class="figma-main-toolbar-content">
                     <div class="figma-main-tool-group">
-                        <div class="figma-main-tool-wrap workbench-tool-group" id="figma-main-brush-wrap"><button type="button" id="figma-main-brush-btn" data-main-tool="brush" class="figma-main-tool-button" aria-label="画笔" title="画笔（B）"><img src="assets/figma-ui/toolbar-brush.svg" alt=""><span>画笔(B)</span></button></div>
                         <button type="button" id="figma-main-pan-btn" data-main-tool="pan" class="figma-main-tool-button" aria-label="拖动" title="拖动画布（H）"><img src="assets/figma-ui/toolbar-hand.svg" alt=""><span>拖动(H)</span></button>
+                        <div class="figma-main-tool-wrap workbench-tool-group" id="figma-main-brush-wrap"><button type="button" id="figma-main-brush-btn" data-main-tool="brush" class="figma-main-tool-button" aria-label="画笔" title="画笔（B）"><span class="figma-main-brush-icon" aria-hidden="true"></span><span>画笔(B)</span></button></div>
                         <button type="button" id="figma-main-eyedropper-btn" data-main-tool="eyedropper" class="figma-main-tool-button" aria-label="吸管" title="吸管（I）"><img src="assets/figma-ui/toolbar-eyedropper.svg" alt=""><span>吸管(I)</span></button>
                         <button type="button" id="figma-main-palette-btn" data-main-tool="palette" class="figma-main-tool-button" aria-label="色板" title="色板（C）"><img src="assets/figma-ui/toolbar-palette.svg" alt=""><span>色板(C)</span></button>
                         <div class="figma-main-tool-wrap workbench-tool-group" id="figma-main-eraser-wrap"><button type="button" id="figma-main-eraser-btn" data-main-tool="eraser" class="figma-main-tool-button" aria-label="橡皮" title="橡皮（E）"><img src="assets/figma-ui/toolbar-eraser.svg" alt=""><span>橡皮(E)</span></button></div>
                     </div>
-                    <img class="figma-main-divider" src="assets/figma-ui/toolbar-divider.svg" alt="" aria-hidden="true">
+                    <div class="figma-main-divider-slot" aria-hidden="true"><img class="figma-main-divider" src="assets/figma-ui/toolbar-divider.svg" alt=""></div>
                     <div class="figma-main-history-group">
                         <button type="button" id="figma-main-undo-btn" class="figma-main-history-button" aria-label="撤销" title="撤销"><img src="assets/figma-ui/toolbar-undo.svg" alt=""></button>
                         <button type="button" id="figma-main-redo-btn" class="figma-main-history-button" aria-label="重做" title="重做"><img src="assets/figma-ui/toolbar-redo.svg" alt=""></button>
+                    </div>
                     </div>
                 </div>
 
@@ -210,10 +235,15 @@
 
                 <div id="palette-panel"
                     class="hidden absolute right-6 bottom-24 z-40 w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
+                    <div class="figma-palette-tabs" role="tablist" aria-label="色板视图">
+                        <button type="button" data-palette-view="used" role="tab" aria-selected="true">图纸颜色</button>
+                        <button type="button" data-palette-view="all" role="tab" aria-selected="false">全部颜色</button>
+                    </div>
                     <div id="palette-panel-drag-handle" class="p-4 border-b border-gray-100 cursor-move select-none">
                         <div class="flex items-center justify-between gap-3">
                             <h3 class="text-sm font-bold text-gray-900">颜色清单</h3>
                             <p id="palette-panel-summary" class="text-xs text-gray-400 whitespace-nowrap">12色 · 3214颗</p>
+                            <button id="figma-palette-sort" type="button"><span>排序：</span><strong>多到少</strong><img src="assets/figma-ui/palette-sort.svg" alt=""></button>
                             <button id="close-palette-panel-btn" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
                         </div>
                         <input id="palette-search-input" type="search" placeholder="搜索已用色号，例如 C29"
@@ -543,6 +573,10 @@
 
     <div id="all-colors-panel"
         class="hidden fixed left-1/2 top-1/2 z-[100] w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] -translate-x-1/2 bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
+        <div class="figma-palette-tabs" role="tablist" aria-label="色板视图">
+            <button type="button" data-palette-view="used" role="tab" aria-selected="false">图纸颜色</button>
+            <button type="button" data-palette-view="all" role="tab" aria-selected="true">全部颜色</button>
+        </div>
         <div class="p-4 border-b border-gray-100">
             <div class="flex items-center justify-between gap-3">
                 <h3 class="text-sm font-bold text-gray-900">全部颜色</h3>

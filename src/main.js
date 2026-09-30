@@ -85,12 +85,15 @@ import {
 } from './ui.js';
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
-import { setActiveEditorTool } from './editor.js';
+import { setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState } from './editor.js';
+import { renderResult } from './renderer.js';
+import { createEditorShortcuts } from './features/editor-shortcuts.js';
 
 /**
  * 处理图片上传
  */
 const resetProjectForNewImage = () => {
+    resetPatternColorSelection();
     AppState.patternName = '';
     AppState.pendingGridWidth = null;
     AppState.pendingGridHeight = null;
@@ -704,19 +707,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolMenuActions = {
         'brush': () => {
             closeToolOverlays();
-            toggleFillMode();
+            toggleFillMode('brush');
             setActiveEditorTool('brush');
             updateWorkbenchUI();
         },
         'bucket': () => {
             closeToolOverlays();
-            toggleFillMode();
+            toggleFillMode('bucket');
             setActiveEditorTool('bucket');
             updateWorkbenchUI();
         },
         'edge': () => {
             closeToolOverlays();
-            toggleEdgeAdjustMode();
+            if (!AppState.edgeSelectionMode) toggleEdgeAdjustMode();
             setActiveEditorTool('edge');
             updateWorkbenchUI();
         },
@@ -783,12 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('figma-main-brush-btn')?.addEventListener('click', () => {
-        if (AppState.fillMode) {
-            setActiveEditorTool('brush');
-            updateWorkbenchUI();
-            return;
-        }
-        document.getElementById('toggle-fill-btn')?.click();
+        toolMenuActions[AppState.lastBrushTool || 'brush']();
     });
     document.getElementById('figma-main-pan-btn')?.addEventListener('click', () => {
         closeToolOverlays();
@@ -802,7 +800,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('figma-main-palette-btn')?.addEventListener('click', () => {
         document.getElementById('toggle-all-colors-panel-btn')?.click();
-        setActiveEditorTool(AppState.allColorsPanelOpen ? 'palette' : 'brush');
+        if (AppState.palettePanelOpen || AppState.allColorsPanelOpen) setActiveEditorTool('palette');
+        else toolMenuActions[AppState.lastBrushTool || 'brush']();
         updateWorkbenchUI();
     });
     document.getElementById('figma-main-eraser-btn')?.addEventListener('click', () => {
@@ -816,16 +815,100 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('figma-main-undo-btn')?.addEventListener('click', () => topUndoBtn?.click());
     document.getElementById('figma-main-redo-btn')?.addEventListener('click', () => topRedoBtn?.click());
 
-    window.addEventListener('keydown', (event) => {
-        if (event.ctrlKey || event.metaKey || event.altKey) return;
-        const target = event.target;
-        if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
-        const shortcuts = { b: 'figma-main-brush-btn', h: 'figma-main-pan-btn', i: 'figma-main-eyedropper-btn', c: 'figma-main-palette-btn', e: 'figma-main-eraser-btn' };
-        const buttonId = shortcuts[event.key.toLowerCase()];
-        if (!buttonId || !document.getElementById('workbench-figma-main-toolbar')?.classList.contains('hidden')) return;
-        event.preventDefault();
-        document.getElementById(buttonId)?.click();
+    const toolStateKeys = ['editMode', 'fillMode', 'eyedropperMode', 'deleteMode', 'colorEraseMode', 'edgeSelectionMode', 'clearBaseMode', 'fillSourceMode', 'fillColor', 'fillColorId', 'fillSourceIndex', 'fillSourceSample', 'adjustPhase', 'receiverIndex'];
+    const captureTool = () => ({ tool: AppState.editor.activeTool, patternId: AppState.colorSelectionPatternId, state: Object.fromEntries(toolStateKeys.map(key => [key, AppState[key]])) });
+    const restoreTool = (snapshot) => {
+        if (!snapshot || snapshot.patternId !== AppState.colorSelectionPatternId) return;
+        Object.assign(AppState, snapshot.state);
+        AppState.editor.activeTool = snapshot.tool;
+        updateWorkbenchUI();
+    };
+    let palettePreviousTool = null;
+    let pickerPreviousTool = null;
+    let temporaryPanTool = null;
+    document.getElementById('figma-main-palette-btn')?.addEventListener('click', () => {
+        if (!AppState.palettePanelOpen && !AppState.allColorsPanelOpen) palettePreviousTool = captureTool();
+    }, true);
+    document.getElementById('eyedropper-tool-btn')?.addEventListener('click', () => {
+        if (!AppState.eyedropperMode) pickerPreviousTool = captureTool();
+    }, true);
+    const visible = (element) => Boolean(element && !element.classList.contains('hidden') && element.getClientRects().length);
+    const modalOpen = () => visible(document.getElementById('delete-confirm-modal')) || visible(document.getElementById('mobile-settings-modal')) || [...document.querySelectorAll('[role="dialog"], dialog[open]')].some(visible);
+    const shortcutButtons = { brush: 'figma-main-brush-btn', pan: 'figma-main-pan-btn', eyedropper: 'figma-main-eyedropper-btn', palette: 'figma-main-palette-btn', eraser: 'figma-main-eraser-btn' };
+    const keyboard = createEditorShortcuts({
+        context(event) {
+            const target = event?.target;
+            return {
+                enabled: AppState.pixelData.length > 0 && visible(document.getElementById('workbench-figma-main-toolbar')),
+                typing: target instanceof HTMLElement && (target.isContentEditable || Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))),
+                busy: Boolean(AppState.paintStroke || AppState.fillSelection || AppState.zoomState?.isDragging || AppState.comparePreviewDragging || AppState.palettePanelDrag || AppState.cropInteraction),
+                dragging: Boolean(AppState.zoomState?.isDragging || AppState.comparePreviewDragging),
+                modal: modalOpen(),
+                panel: AppState.palettePanelOpen || AppState.allColorsPanelOpen || AppState.draftDrawerOpen || Boolean(AppState.workbenchTabletPanel),
+                palette: AppState.palettePanelOpen || AppState.allColorsPanelOpen,
+                tool: AppState.editor.activeTool
+            };
+        },
+        selectTool(tool) {
+            const previous = captureTool();
+            resetBatchReplaceState();
+            if (tool !== 'palette') closeToolOverlays();
+            document.getElementById(shortcutButtons[tool])?.click();
+            if (tool === 'eyedropper') pickerPreviousTool = previous.tool === 'palette' ? palettePreviousTool : previous;
+        },
+        undo: () => topUndoBtn?.click(),
+        redo: () => topRedoBtn?.click(),
+        beginTemporaryPan() {
+            temporaryPanTool = captureTool();
+            AppState.editor.activeTool = 'pan';
+            updateWorkbenchUI();
+        },
+        endTemporaryPan() {
+            restoreTool(temporaryPanTool);
+            temporaryPanTool = null;
+        },
+        stopPan() {
+            if (!temporaryPanTool) return;
+            AppState.zoomState.isDragging = false;
+            AppState.comparePreviewDragging = false;
+            document.getElementById('result-canvas')?.classList.remove('cursor-grabbing');
+        },
+        defer: callback => window.setTimeout(callback, 0),
+        escape() {
+            if (visible(document.getElementById('delete-confirm-modal'))) {
+                document.getElementById('delete-confirm-no')?.click();
+                return;
+            }
+            if (modalOpen()) return;
+            if (AppState.draftDrawerOpen) {
+                AppState.draftDrawerOpen = false;
+            } else if (AppState.workbenchTabletPanel) {
+                AppState.workbenchTabletPanel = null;
+            } else if (AppState.palettePanelOpen || AppState.allColorsPanelOpen) {
+                closeToolOverlays();
+                restoreTool(palettePreviousTool);
+            } else if (AppState.eyedropperMode || AppState.batchReplace.active || AppState.adjustPhase === 'waiting_donor') {
+                const wasPicker = AppState.eyedropperMode;
+                const wasBatchReplace = AppState.batchReplace.active;
+                resetBatchReplaceState();
+                AppState.highlightedColorId = null;
+                AppState.receiverIndex = null;
+                AppState.adjustPhase = 'waiting_receiver';
+                const previous = wasPicker ? pickerPreviousTool : wasBatchReplace ? palettePreviousTool : null;
+                if (previous && previous.patternId === AppState.colorSelectionPatternId) restoreTool(previous);
+                else toolMenuActions[AppState.lastBrushTool || 'brush']();
+                renderResult(document.getElementById('result-canvas'), AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+            } else if (AppState.editor.activeTool !== 'pan') {
+                document.getElementById('figma-main-pan-btn')?.click();
+            }
+            updateWorkbenchUI();
+        }
     });
+    window.addEventListener('keydown', keyboard.keydown);
+    window.addEventListener('keyup', keyboard.keyup);
+    window.addEventListener('mouseup', keyboard.pointerup);
+    window.addEventListener('blur', keyboard.blur);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) keyboard.blur(); });
 
     const topCancelBtn = document.getElementById('workbench-top-cancel-btn');
     if (topCancelBtn) {
