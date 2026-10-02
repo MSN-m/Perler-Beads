@@ -233,57 +233,171 @@ export function toggleDeleteMode() {
 
  */
 
-export function toggleColorEraseMode() {
-    if (!AppState.deleteMode) toggleDeleteMode();
-    AppState.colorEraseMode = true;
-    AppState.deleteMode = true;
+export function activateEraserTool(tool = 'eraser') {
+    if (AppState.eraserStroke) return;
+    if (!AppState.stagedPixelData) {
+        AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
+        beginGlobalEditorSession(AppState.pixelData);
+    }
     AppState.editMode = 'delete';
-    setActiveEditorTool('color-eraser');
+    AppState.deleteMode = tool !== 'area-erase';
+    AppState.clearBaseMode = tool === 'area-erase';
+    AppState.colorEraseMode = tool === 'color-eraser';
+    AppState.fillMode = false;
+    AppState.eyedropperMode = false;
+    AppState.edgeSelectionMode = false;
+    AppState.selectedEdgeBeadsIndices = [];
+    AppState.fillSelection = null;
+    AppState.receiverIndex = null;
+    AppState.adjustPhase = 'waiting_receiver';
+    AppState.batchReplace.active = false;
+    AppState.batchReplace.mode = null;
+    setActiveEditorTool(tool);
+    redrawErase(document.getElementById('result-canvas'));
 }
 
-export function handleColorDeleteClick(idx, canvas) {
-    const source = AppState.stagedPixelData?.[idx];
-    if (!source || source.id === 'NONE') return;
-    const indices = [];
-    const prevColors = [];
-    AppState.stagedPixelData.forEach((pixel, index) => {
-        if (!pixel || pixel.id !== source.id) return;
-        indices.push(index);
-        prevColors.push({ ...pixel });
-        AppState.stagedPixelData[index] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
-    });
-    recordPixelAction({ indices, prevColors, nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 } });
-    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-    calculateStats();
-    updateAdjustUndoButton();
-    refreshQualityOverlay();
+export function toggleColorEraseMode() {
+    activateEraserTool('color-eraser');
 }
 
-export function handleDeleteClick(idx, canvas) {
+const EMPTY = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
 
-    const targetPixel = AppState.stagedPixelData[idx];
+function occupiedCount(pixels) {
+    return pixels.reduce((count, pixel) => count + Boolean(pixel && pixel.id !== 'NONE'), 0);
+}
 
-    if (!targetPixel || targetPixel.id === 'NONE') return;
+function warnLastBead() {
+    let notice = document.getElementById('eraser-status');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.id = 'eraser-status';
+        notice.setAttribute('role', 'status');
+        notice.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:12px;background:#252936;color:white;z-index:10000;pointer-events:none';
+        document.body.appendChild(notice);
+    }
+    notice.textContent = '图纸至少需要保留一颗豆子';
+    notice.hidden = false;
+    clearTimeout(warnLastBead.timer);
+    warnLastBead.timer = setTimeout(() => { notice.hidden = true; }, 2200);
+}
 
-
-
-    AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
-
-        recordPixelAction({
-
-            index: idx,
-
-            prevColor: { ...targetPixel },
-
-            nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }
-
-        });
-
-        renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-        refreshQualityOverlay();
-
+function redrawErase(canvas, complete = false) {
+    if (!canvas) return;
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+    if (complete) {
         calculateStats();
-
         updateAdjustUndoButton();
+        refreshQualityOverlay();
+    }
+}
 
+export function connectedEraseIndices(pixels, start, width) {
+    const color = pixels[start]?.id;
+    if (!color || color === 'NONE') return [];
+    const queue = [start], seen = new Set([start]), indices = [];
+    for (let head = 0; head < queue.length; head++) {
+        const index = queue[head];
+        if (pixels[index]?.id !== color) continue;
+        indices.push(index);
+        const x = index % width;
+        const neighbors = [index - width, index + width];
+        if (x > 0) neighbors.push(index - 1);
+        if (x < width - 1) neighbors.push(index + 1);
+        for (const next of neighbors) {
+            if (next < 0 || next >= pixels.length || seen.has(next)) continue;
+            seen.add(next);
+            queue.push(next);
+        }
+    }
+    return indices;
+}
+
+export function eraseIndices(indices, canvas) {
+    const pixels = AppState.stagedPixelData;
+    const targets = [...new Set(indices)].filter(index => pixels?.[index]?.id && pixels[index].id !== 'NONE');
+    if (!targets.length) return false;
+    if (targets.length >= occupiedCount(pixels)) { warnLastBead(); return false; }
+    const prevColors = targets.map(index => ({ ...pixels[index] }));
+    targets.forEach(index => { pixels[index] = { ...EMPTY }; });
+    AppState.eraserHoverColorId = null;
+    recordPixelAction({ indices: targets, prevColors, nextColor: { ...EMPTY } });
+    redrawErase(canvas, true);
+    return true;
+}
+
+export function handleAreaDeleteClick(index, canvas) {
+    return eraseIndices(connectedEraseIndices(AppState.stagedPixelData, index, AppState.gridWidth), canvas);
+}
+
+export function handleColorDeleteClick(index, canvas) {
+    const color = AppState.stagedPixelData?.[index]?.id;
+    if (!color || color === 'NONE') return false;
+    const indices = [];
+    AppState.stagedPixelData.forEach((pixel, idx) => { if (pixel.id === color) indices.push(idx); });
+    return eraseIndices(indices, canvas);
+}
+
+export function handleDeleteClick(index, canvas) {
+    return eraseIndices([index], canvas);
+}
+
+export function startEraserStroke(index, canvas) {
+    AppState.eraserClickSuppressedUntil = 0;
+    if (AppState.stagedPixelData?.[index]?.id === 'NONE' || !AppState.stagedPixelData?.[index]) return false;
+    AppState.eraserStroke = {
+        indices: [], prevColors: [], remaining: occupiedCount(AppState.stagedPixelData), lastIndex: index,
+        minX: AppState.renderedMinX, minY: AppState.renderedMinY,
+        width: AppState.renderedContentWidth, height: AppState.renderedContentHeight
+    };
+    moveEraserStroke(index, canvas);
+    return true;
+}
+
+export function moveEraserStroke(index, canvas) {
+    const stroke = AppState.eraserStroke;
+    if (!stroke) return false;
+    // Walk intermediate cells too, so fast pointer movement leaves no gaps.
+    const width = AppState.gridWidth;
+    let x = stroke.lastIndex % width, y = Math.floor(stroke.lastIndex / width);
+    const endX = index % width, endY = Math.floor(index / width);
+    const dx = Math.abs(endX - x), dy = -Math.abs(endY - y);
+    const sx = x < endX ? 1 : -1, sy = y < endY ? 1 : -1;
+    let error = dx + dy;
+    while (true) {
+        const idx = y * width + x, pixel = AppState.stagedPixelData[idx];
+        if (pixel && pixel.id !== 'NONE') {
+            if (stroke.remaining > 1) {
+                stroke.indices.push(idx);
+                stroke.prevColors.push({ ...pixel });
+                AppState.stagedPixelData[idx] = { ...EMPTY };
+                stroke.remaining--;
+            } else if (!stroke.warned) { warnLastBead(); stroke.warned = true; }
+        }
+        if (x === endX && y === endY) break;
+        const doubled = 2 * error;
+        if (doubled >= dy) { error += dy; x += sx; }
+        if (doubled <= dx) { error += dx; y += sy; }
+    }
+    stroke.lastIndex = index;
+    redrawErase(canvas);
+    return true;
+}
+
+export function endEraserStroke(canvas) {
+    const stroke = AppState.eraserStroke;
+    if (!stroke) return false;
+    AppState.eraserStroke = null;
+    // Mouseup is followed by click; the stroke already performed that deletion.
+    AppState.eraserClickSuppressedUntil = Date.now() + 600;
+    if (stroke.indices.length) recordPixelAction({ indices: stroke.indices, prevColors: stroke.prevColors, nextColor: { ...EMPTY } });
+    redrawErase(canvas, true);
+    return true;
+}
+
+export function updateEraserHover(index, canvas) {
+    const color = AppState.editor.activeTool === 'color-eraser' ? AppState.stagedPixelData?.[index]?.id : null;
+    const next = color && color !== 'NONE' ? color : null;
+    if (next === AppState.eraserHoverColorId) return;
+    AppState.eraserHoverColorId = next;
+    redrawErase(canvas);
 }

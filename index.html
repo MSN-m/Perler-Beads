@@ -7,7 +7,23 @@
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
     <link rel="stylesheet" href="css/style.css">
-    <script type="module" src="src/main.js"></script>
+    <!-- Keep updated editor modules on the same release, including relative imports. -->
+    <script type="importmap">
+    {
+        "imports": {
+            "./src/state.js": "./src/state.js?v=20261003-tools-2",
+            "./src/editor.js": "./src/editor.js?v=20261003-tools-2",
+            "./src/renderer.js": "./src/renderer.js?v=20261003-tools-2",
+            "./src/ui.js": "./src/ui.js?v=20261003-tools-2",
+            "./src/utils.js": "./src/utils.js?v=20261003-tools-2",
+            "./src/features/edge.js": "./src/features/edge.js?v=20261003-tools-2",
+            "./src/features/adjust.js": "./src/features/adjust.js?v=20261003-tools-2",
+            "./src/features/delete.js": "./src/features/delete.js?v=20261003-tools-2",
+            "./src/features/zoom.js": "./src/features/zoom.js?v=20261003-tools-2"
+        }
+    }
+    </script>
+    <script type="module" src="src/main.js?v=20261003-tools-2"></script>
 </head>
 
 <body data-layout="workbench"

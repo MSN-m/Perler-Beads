@@ -397,7 +397,7 @@ function hasWorkbenchPattern() {
 
 export function toggleWorkbenchMirror() {
     if (!isWorkbenchLayout() || getWorkbenchViewportMode() !== 'desktop' || !hasWorkbenchPattern()) return;
-    if (AppState.paintStroke) _endFillSelection();
+    if (AppState.paintStroke || AppState.eraserStroke) _endFillSelection();
 
     const width = AppState.gridWidth;
     const mirrorIndex = (index) => Math.floor(index / width) * width + width - 1 - (index % width);

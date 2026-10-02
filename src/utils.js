@@ -55,3 +55,18 @@ export function getThemePrimaryColor(alpha = 1) {
 export function getThemeMutedColor(alpha = 1) {
     return getThemeColor('--pb-color-muted', 'A0A6B3', alpha);
 }
+
+/** Occupied cells next to transparency or the board boundary, regardless of color. */
+export function getEdgeBeadIndices(pixels, width, height) {
+    const indices = [];
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const index = y * width + x;
+            if (!pixels[index] || pixels[index].id === 'NONE') continue;
+            if (x === 0 || y === 0 || x === width - 1 || y === height - 1
+                || [index - 1, index + 1, index - width, index + width]
+                    .some(next => !pixels[next] || pixels[next].id === 'NONE')) indices.push(index);
+        }
+    }
+    return indices;
+}

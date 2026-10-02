@@ -1,6 +1,6 @@
 import { AppState } from './state.js';
 import { renderFixedRuler } from './features/fixed-ruler.js';
-import { getThemePrimaryColor } from './utils.js';
+import { getThemePrimaryColor, getEdgeBeadIndices } from './utils.js';
 
 /**
  * 渲染图纸结果
@@ -11,6 +11,10 @@ import { getThemePrimaryColor } from './utils.js';
  * @param {string|null} highlightedColorId - 高亮的颜色 ID
  */
 export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highlightedColorId = null) {
+    if (canvas.id === 'result-canvas' && AppState.editor.activeTool === 'color-eraser') highlightedColorId = AppState.eraserHoverColorId;
+    if (canvas.id === 'result-canvas' && AppState.edgeSelectionMode) {
+        AppState.selectedEdgeBeadsIndices = getEdgeBeadIndices(pixelArray, gridWidth, gridHeight);
+    }
     const ctx = canvas.getContext('2d');
     const scale = 30; // 预览比例
     
@@ -35,6 +39,12 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         minX = 0; minY = 0; maxX = 0; maxY = 0;
     }
 
+    // Keep the canvas geometry stable until the continuous erase gesture ends.
+    if (canvas.id === 'result-canvas' && AppState.eraserStroke) {
+        const stroke = AppState.eraserStroke;
+        minX = stroke.minX; minY = stroke.minY;
+        maxX = minX + stroke.width - 1; maxY = minY + stroke.height - 1;
+    }
     const contentWidth = maxX - minX + 1;
     const contentHeight = maxY - minY + 1;
 

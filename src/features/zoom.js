@@ -60,6 +60,7 @@ function getGridHitFromPoint(point, resultCanvas) {
 }
 
 function shouldStartPan(e, resultCanvas) {
+    if (AppState.eraserStroke) return false;
     if (AppState.editor?.activeTool === 'pan') return true;
     if (!isEditingMode()) return true;
     if (e.touches && e.touches.length >= 2) return true;
@@ -143,6 +144,7 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
     resultContainer.addEventListener('wheel', (e) => {
 
         e.preventDefault();
+        if (AppState.eraserStroke) return;
 
         const delta = -e.deltaY;
 

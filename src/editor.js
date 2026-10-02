@@ -53,7 +53,26 @@ export function beginGlobalEditorSession(pixelData) {
 }
 
 export function setActiveEditorTool(tool) {
+    if (AppState.eraserStroke) return;
+    const wasHovering = AppState.eraserHoverColorId !== null;
+    const wasEdge = AppState.edgeSelectionMode;
+    // Tool switches must clear every incompatible legacy flag, even with an existing session.
+    if (tool !== 'color-eraser') AppState.colorEraseMode = false;
+    if (!['eraser', 'color-eraser'].includes(tool)) AppState.deleteMode = false;
+    if (tool !== 'area-erase') AppState.clearBaseMode = false;
+    if (!['brush', 'bucket'].includes(tool)) AppState.fillMode = false;
+    if (tool !== 'eyedropper') AppState.eyedropperMode = false;
+    if (tool !== 'edge') {
+        AppState.edgeSelectionMode = false;
+        AppState.selectedEdgeBeadsIndices = [];
+    }
+    AppState.eraserHoverColorId = null;
     AppState.editor.activeTool = tool || 'brush';
+    if (['eraser', 'area-erase', 'color-eraser'].includes(tool)) AppState.lastEraserTool = tool;
+    if (wasHovering || wasEdge !== AppState.edgeSelectionMode) {
+        const canvas = document.getElementById('result-canvas');
+        if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+    }
     if (['brush', 'bucket', 'edge'].includes(tool)) {
         AppState.lastBrushTool = tool;
         persistColorSelection();
@@ -103,6 +122,10 @@ export function resetPatternColorSelection(snapshot = null, fallbackId = null) {
     AppState.colorSelectionPatternId = patternId || `pattern_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     AppState.colorSelectionUpdatedAt = Number(source?.updatedAt) || 0;
     AppState.lastBrushTool = ['brush', 'bucket', 'edge'].includes(source?.lastBrushTool) ? source.lastBrushTool : 'brush';
+    AppState.lastEraserTool = 'eraser';
+    AppState.eraserStroke = null;
+    AppState.eraserHoverColorId = null;
+    AppState.eraserClickSuppressedUntil = 0;
     AppState.lastRecentColorId = AppState.recentColors[0]?.id || null;
     AppState.fillColor = null;
     AppState.fillColorId = null;

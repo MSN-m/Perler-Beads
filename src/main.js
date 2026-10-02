@@ -2,6 +2,7 @@
  * 拼豆图纸生成器 - 主入口与事件绑定
  */
 import { AppState } from './state.js';
+import { activateEraserTool, updateEraserHover } from './features/delete.js';
 import {
     goToStep,
     updateGridDimensions,
@@ -116,6 +117,11 @@ const resetProjectForNewImage = () => {
     AppState.editMode = 'none';
     AppState.adjustPhase = 'waiting_receiver';
     AppState.receiverIndex = null;
+    AppState.eraserStroke = null;
+    AppState.eraserHoverColorId = null;
+    AppState.eraserClickSuppressedUntil = 0;
+    AppState.lastEraserTool = 'eraser';
+    AppState.colorEraseMode = false;
     AppState.deleteMode = false;
     AppState.edgeSelectionMode = false;
     AppState.clearBaseMode = false;
@@ -725,20 +731,17 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         'eraser': () => {
             closeToolOverlays();
-            toggleDeleteMode();
-            setActiveEditorTool('eraser');
+            activateEraserTool('eraser');
             updateWorkbenchUI();
         },
         'area-erase': () => {
             closeToolOverlays();
-            toggleClearBaseMode();
-            setActiveEditorTool('area-erase');
+            activateEraserTool('area-erase');
             updateWorkbenchUI();
         },
         'color-erase': () => {
             closeToolOverlays();
-            toggleColorEraseMode();
-            setActiveEditorTool('color-eraser');
+            activateEraserTool('color-eraser');
             updateWorkbenchUI();
         }
     };
@@ -805,12 +808,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateWorkbenchUI();
     });
     document.getElementById('figma-main-eraser-btn')?.addEventListener('click', () => {
-        if (AppState.deleteMode) {
-            setActiveEditorTool('eraser');
-            updateWorkbenchUI();
-            return;
-        }
-        document.getElementById('toggle-delete-btn')?.click();
+        const tool = AppState.lastEraserTool || 'eraser';
+        toolMenuActions[tool === 'color-eraser' ? 'color-erase' : tool]();
     });
     document.getElementById('figma-main-undo-btn')?.addEventListener('click', () => topUndoBtn?.click());
     document.getElementById('figma-main-redo-btn')?.addEventListener('click', () => topRedoBtn?.click());
@@ -821,6 +820,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!snapshot || snapshot.patternId !== AppState.colorSelectionPatternId) return;
         Object.assign(AppState, snapshot.state);
         AppState.editor.activeTool = snapshot.tool;
+        AppState.eraserHoverColorId = null;
+        const canvas = document.getElementById('result-canvas');
+        if (canvas && AppState.pixelData.length) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
         updateWorkbenchUI();
     };
     let palettePreviousTool = null;
@@ -841,7 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return {
                 enabled: AppState.pixelData.length > 0 && visible(document.getElementById('workbench-figma-main-toolbar')),
                 typing: target instanceof HTMLElement && (target.isContentEditable || Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))),
-                busy: Boolean(AppState.paintStroke || AppState.fillSelection || AppState.zoomState?.isDragging || AppState.comparePreviewDragging || AppState.palettePanelDrag || AppState.cropInteraction),
+                busy: Boolean(AppState.eraserStroke || AppState.paintStroke || AppState.fillSelection || AppState.zoomState?.isDragging || AppState.comparePreviewDragging || AppState.palettePanelDrag || AppState.cropInteraction),
                 dragging: Boolean(AppState.zoomState?.isDragging || AppState.comparePreviewDragging),
                 modal: modalOpen(),
                 panel: AppState.palettePanelOpen || AppState.allColorsPanelOpen || AppState.draftDrawerOpen || Boolean(AppState.workbenchTabletPanel),
@@ -860,7 +862,7 @@ document.addEventListener('DOMContentLoaded', () => {
         redo: () => topRedoBtn?.click(),
         beginTemporaryPan() {
             temporaryPanTool = captureTool();
-            AppState.editor.activeTool = 'pan';
+            setActiveEditorTool('pan');
             updateWorkbenchUI();
         },
         endTemporaryPan() {
@@ -1098,6 +1100,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (resultCanvas) {
+        resultCanvas.addEventListener('mouseleave', () => updateEraserHover(null, resultCanvas));
+        window.addEventListener('blur', () => { if (endFillSelection()) updateWorkbenchUI(); });
         resultCanvas.addEventListener('mousedown', (e) => {
             if (startFillSelection(e)) {
                 e.preventDefault();
@@ -1114,6 +1118,10 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWorkbenchUI();
         });
         resultCanvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length >= 2 && AppState.eraserStroke) {
+                endFillSelection();
+                updateWorkbenchUI();
+            }
             if (startFillSelection(e)) {
                 e.preventDefault();
             }
@@ -1123,6 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
             }
         }, { passive: false });
+        window.addEventListener('touchcancel', () => { if (endFillSelection()) updateWorkbenchUI(); });
         window.addEventListener('touchend', (e) => {
             if (e.touches && e.touches.length > 0) return;
             if (!endFillSelection()) return;

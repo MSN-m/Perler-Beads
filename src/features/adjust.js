@@ -10,7 +10,7 @@ import { getThemePrimaryColor } from '../utils.js';
 
 import { renderResult } from '../renderer.js';
 
-import { handleDeleteClick, handleColorDeleteClick } from './delete.js';
+import { handleDeleteClick, handleColorDeleteClick, handleAreaDeleteClick, startEraserStroke, moveEraserStroke, endEraserStroke, updateEraserHover } from './delete.js';
 
 import { deepClonePixels, calculateStats, getCurrentPalette, performBatchReplace, updateAdjustUndoButton, resetBatchReplaceState, redmeanDistance, beginGlobalEditorSession, setActiveEditorTool, resetGlobalEditorSession, recordPixelAction, undoGlobalEditorOperation, redoGlobalEditorOperation } from '../editor.js';
 
@@ -146,49 +146,6 @@ function applyFillSelection(canvas) {
     updateAdjustUndoButton();
 }
 
-function applyClearSelection(canvas) {
-
-    const selection = AppState.fillSelection;
-
-    if (!selection) return;
-
-    const minX = Math.min(selection.startX, selection.endX);
-
-    const maxX = Math.max(selection.startX, selection.endX);
-
-    const minY = Math.min(selection.startY, selection.endY);
-
-    const maxY = Math.max(selection.startY, selection.endY);
-
-    const indices = [];
-
-    const prevColors = [];
-
-    for (let y = minY; y <= maxY; y++) {
-        for (let x = minX; x <= maxX; x++) {
-            const idx = y * AppState.gridWidth + x;
-            const pixel = AppState.stagedPixelData[idx];
-            if (!pixel || pixel.id === 'NONE') continue;
-            indices.push(idx);
-            prevColors.push({ ...pixel });
-            AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
-        }
-    }
-
-    if (indices.length > 0) {
-        recordPixelAction({
-            indices,
-            prevColors,
-            nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }
-        });
-    }
-
-    AppState.fillSelection = null;
-    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-    calculateStats();
-    updateAdjustUndoButton();
-}
-
 function getNearestPaletteColor(color) {
     const palette = getCurrentPalette();
     if (!palette.length) return color;
@@ -238,80 +195,6 @@ function setFillColorFromSample(sampled) {
     rememberPaintColor(matched);
     AppState.fillSourceIndex = null;
     AppState.fillSelection = null;
-}
-
-
-
-function clearConnectedRegion(startIndex, canvas) {
-
-    const startPixel = AppState.stagedPixelData[startIndex];
-
-    if (!startPixel || startPixel.id === 'NONE') return;
-
-    const targetId = startPixel.id;
-
-    const visited = new Set();
-
-    const queue = [startIndex];
-
-    const indices = [];
-
-    const prevColors = [];
-
-    while (queue.length) {
-
-        const idx = queue.shift();
-
-        if (visited.has(idx)) continue;
-
-        visited.add(idx);
-
-        const pixel = AppState.stagedPixelData[idx];
-
-        if (!pixel || pixel.id !== targetId) continue;
-
-        indices.push(idx);
-
-        prevColors.push({ ...pixel });
-
-        const x = idx % AppState.gridWidth;
-
-        const y = Math.floor(idx / AppState.gridWidth);
-
-        if (x > 0) queue.push(idx - 1);
-
-        if (x < AppState.gridWidth - 1) queue.push(idx + 1);
-
-        if (y > 0) queue.push(idx - AppState.gridWidth);
-
-        if (y < AppState.gridHeight - 1) queue.push(idx + AppState.gridWidth);
-
-    }
-
-    if (!indices.length) return;
-
-    for (const idx of indices) {
-
-        AppState.stagedPixelData[idx] = { id: 'NONE', r: 0, g: 0, b: 0, a: 0 };
-
-    }
-
-    recordPixelAction({
-
-        indices,
-
-        prevColors,
-
-        nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }
-
-    });
-
-    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);
-
-    calculateStats();
-
-    updateAdjustUndoButton();
-
 }
 
 
@@ -693,6 +576,8 @@ export function endWorkbenchCompareDrag() {
 
 
 export function handleResultCanvasClickForAdjust(e) {
+    if (['pan', 'palette'].includes(AppState.editor.activeTool)) return;
+    if (AppState.editor.activeTool === 'eraser' && Date.now() < AppState.eraserClickSuppressedUntil) return;
 
     if (AppState.editMode !== 'adjust' && AppState.editMode !== 'delete') return;
 
@@ -755,11 +640,11 @@ export function handleResultCanvasClickForAdjust(e) {
 
 
 
-    if (AppState.colorEraseMode) {
+    if (AppState.editor.activeTool === 'color-eraser' && AppState.colorEraseMode) {
         handleColorDeleteClick(idx, canvas);
         return;
     }
-    if (AppState.deleteMode) {
+    if (AppState.editor.activeTool === 'eraser' && AppState.deleteMode) {
 
         handleDeleteClick(idx, canvas);
 
@@ -767,7 +652,7 @@ export function handleResultCanvasClickForAdjust(e) {
 
     }
 
-    if (AppState.fillMode) {
+    if (AppState.fillMode && ['brush', 'bucket'].includes(AppState.editor.activeTool)) {
         const pixel = AppState.stagedPixelData[idx];
 
         if (!pixel) return;
@@ -867,22 +752,23 @@ export function handleResultCanvasClickForAdjust(e) {
 
 
 
-    if (AppState.clearBaseMode) {
+    if (AppState.editor.activeTool === 'area-erase' && AppState.clearBaseMode) {
 
-        clearConnectedRegion(idx, canvas);
+        handleAreaDeleteClick(idx, canvas);
 
         return;
 
     }
 
-    if (AppState.edgeSelectionMode) {
+    if (AppState.editor.activeTool === 'edge' && AppState.edgeSelectionMode) {
 
-        const donor = AppState.stagedPixelData[idx];
-
-        if (!donor || donor.id === 'NONE') return;
-
-        const newColor = { id: donor.id, r: donor.r, g: donor.g, b: donor.b };
-
+        if (!AppState.selectedEdgeBeadsIndices.includes(idx)) {
+            window.alert('请点击高亮的边缘豆子，使用当前颜色为整圈边框上色。');
+            return;
+        }
+        const color = AppState.paintColor;
+        if (!color || color.id === 'NONE') return;
+        const newColor = { ...color };
         const prevEntries = [];
 
 
@@ -891,7 +777,7 @@ export function handleResultCanvasClickForAdjust(e) {
 
             const prev = AppState.stagedPixelData[edgeIdx];
 
-            if (prev.id !== newColor.id) {
+            if (prev && prev.id !== 'NONE' && prev.id !== newColor.id) {
 
                 prevEntries.push({ index: edgeIdx, prevColor: { ...prev } });
 
@@ -1031,12 +917,13 @@ export function startFillSelection(e) {
     if (AppState.editor?.activeTool === 'pan') return false;
     if (e.touches && e.touches.length >= 2) return false;
     if (AppState.editor?.activeTool === 'bucket') return false;
-    if (AppState.clearBaseMode) {
+    AppState.eraserClickSuppressedUntil = 0;
+    if (AppState.editor.activeTool === 'eraser') {
+        if (e.button !== undefined && e.button !== 0) return false;
         const hit = getGridHitFromEvent(e);
-        if (!hit) return false;
-        AppState.fillSelection = { startX: hit.gx, startY: hit.gy, endX: hit.gx, endY: hit.gy, didDrag: false };
-        return true;
+        return hit ? startEraserStroke(hit.idx, document.getElementById('result-canvas')) : false;
     }
+    if (AppState.clearBaseMode || AppState.colorEraseMode) return false;
     if (!AppState.fillMode || !AppState.fillColor) return false;
     const hit = getGridHitFromEvent(e);
     if (!hit) return false;
@@ -1062,16 +949,13 @@ function paintStrokeCell(index) {
 export function moveFillSelection(e) {
     if (e.touches && e.touches.length >= 2) return false;
     if (AppState.editor?.activeTool === 'bucket') return false;
-    if (AppState.clearBaseMode && AppState.fillSelection) {
-        const hit = getGridHitFromEvent(e);
-        if (!hit) return false;
-        AppState.fillSelection.endX = hit.gx;
-        AppState.fillSelection.endY = hit.gy;
-        AppState.fillSelection.didDrag = AppState.fillSelection.didDrag
-            || hit.gx !== AppState.fillSelection.startX
-            || hit.gy !== AppState.fillSelection.startY;
-        return true;
+    const eraseHit = getGridHitFromEvent(e);
+    if (AppState.eraserStroke) {
+        if (!eraseHit) { AppState.eraserStroke.lastIndex = null; return true; }
+        if (AppState.eraserStroke.lastIndex === null) AppState.eraserStroke.lastIndex = eraseHit.idx;
+        return moveEraserStroke(eraseHit.idx, document.getElementById('result-canvas'));
     }
+    updateEraserHover(eraseHit?.idx, document.getElementById('result-canvas'));
     if (!AppState.paintStroke) return false;
     const hit = getGridHitFromEvent(e);
     if (!hit) return false;
@@ -1080,12 +964,7 @@ export function moveFillSelection(e) {
 }
 
 export function endFillSelection() {
-    if (AppState.clearBaseMode && AppState.fillSelection) {
-        const selection = AppState.fillSelection;
-        if (!selection.didDrag) return false;
-        applyClearSelection(document.getElementById('result-canvas'));
-        return true;
-    }
+    if (AppState.eraserStroke) return endEraserStroke(document.getElementById('result-canvas'));
     const stroke = AppState.paintStroke;
     if (!stroke) return false;
     AppState.paintStroke = null;

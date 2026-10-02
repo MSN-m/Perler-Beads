@@ -8,128 +8,18 @@ import { AppState } from '../state.js';
 import { setActiveEditorTool, restorePaintColor } from '../editor.js';
 
 import { renderResult } from '../renderer.js';
+import { getEdgeBeadIndices } from '../utils.js';
 
 import { enterEditSession } from './adjust.js';
 
 
 
 export function findAndSelectEdgeBeads() {
-
-    AppState.selectedEdgeBeadsIndices = [];
-
-    if (!AppState.pixelData || AppState.pixelData.length === 0) {
-
-        console.warn('pixelData is empty, cannot find edges.');
-
-        return;
-
-    }
-
-
-
-    const gridWidth = AppState.gridWidth;
-
-    const gridHeight = AppState.gridHeight;
-
-    const pixelData = AppState.pixelData;
-
-
-
-    for (let y = 0; y < gridHeight; y++) {
-
-        for (let x = 0; x < gridWidth; x++) {
-
-            const currentIndex = y * gridWidth + x;
-
-            const currentPixel = pixelData[currentIndex];
-
-
-
-            if (currentPixel && currentPixel.id !== 'NONE') {
-
-                let isEdge = false;
-
-                const neighbors = [
-
-                    { nx: x, ny: y - 1 },
-
-                    { nx: x, ny: y + 1 },
-
-                    { nx: x - 1, ny: y },
-
-                    { nx: x + 1, ny: y }
-
-                ];
-
-
-
-                for (const neighbor of neighbors) {
-
-                    const { nx, ny } = neighbor;
-
-
-
-                    if (nx < 0 || nx >= gridWidth || ny < 0 || ny >= gridHeight) {
-
-                        isEdge = true;
-
-                        break;
-
-                    }
-
-
-
-                    const neighborIndex = ny * gridWidth + nx;
-
-                    const neighborPixel = pixelData[neighborIndex];
-
-                    if (!neighborPixel || neighborPixel.id === 'NONE') {
-
-                        isEdge = true;
-
-                        break;
-
-                    }
-
-                }
-
-
-
-                if (isEdge) {
-
-                    AppState.selectedEdgeBeadsIndices.push(currentIndex);
-
-                }
-
-            }
-
-        }
-
-    }
-
-
-
-    console.log(`Found ${AppState.selectedEdgeBeadsIndices.length} edge beads.`);
-
+    const pixels = AppState.stagedPixelData || AppState.pixelData || [];
+    AppState.selectedEdgeBeadsIndices = getEdgeBeadIndices(pixels, AppState.gridWidth, AppState.gridHeight);
     const resultCanvas = document.getElementById('result-canvas');
-
-    renderResult(
-
-        resultCanvas,
-
-        AppState.stagedPixelData || AppState.pixelData,
-
-        AppState.gridWidth,
-
-        AppState.gridHeight,
-
-        AppState.highlightedColorId
-
-    );
-
+    if (resultCanvas) renderResult(resultCanvas, pixels, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
 }
-
-
 
 export function toggleEdgeAdjustMode() {
 
