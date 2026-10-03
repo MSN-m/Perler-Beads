@@ -76,6 +76,8 @@ export const AppState = {
     colorSelectionUpdatedAt: 0,
     lastBrushTool: 'brush',
     lastRecentColorId: null,
+    paletteToolSnapshot: null,
+    paletteDismissClickUntil: 0,
     palettePanelOpen: false,
     palettePanelQuery: '',
     palettePanelPosition: null,

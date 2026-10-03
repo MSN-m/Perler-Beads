@@ -4,6 +4,9 @@
     --pb-color-primary: #DE5387;
     --pb-color-muted: #A0A6B3;
     --pb-color-stroke: #F4EFF2;
+    --pb-hint-background: rgba(39, 46, 62, .9);
+    --pb-hint-text: #fff;
+    --pb-hint-font: 400 12px/12px "PingFang SC", "Microsoft YaHei", sans-serif;
 
     /* Keep existing Tailwind utility classes aligned with the semantic palette. */
     --color-primary: var(--pb-color-primary);
@@ -192,6 +195,68 @@
 .figma-main-history-button img { display: block; width: 20px; height: 20px; }
 #figma-main-redo-btn img { transform: scaleX(-1); }
 .figma-main-history-button:disabled { opacity: .42; cursor: not-allowed; }
+
+/* PC operation hints: Figma 516:208 (edge), 516:227 (replacement). */
+#workbench-operation-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 207px;
+    translate: -50% 0;
+    z-index: 32;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 4px 12px;
+    box-sizing: border-box;
+    border-radius: 16px;
+    background: var(--pb-hint-background);
+    color: var(--pb-hint-text);
+    font: var(--pb-hint-font);
+    white-space: nowrap;
+    pointer-events: none;
+}
+#workbench-operation-hint.hidden { display: none; }
+#workbench-operation-hint[data-kind="replace"] { bottom: 151px; }
+.operation-hint-icon { flex: 0 0 16px; }
+.operation-hint-current { margin-right: -8px; }
+.operation-hint-color {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
+    box-sizing: border-box;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 10px;
+}
+.operation-hint-close { position: relative; width: 6px; height: 6px; padding: 0; margin-left: 8px; border: 0; background: transparent; cursor: pointer; pointer-events: auto; }
+.operation-hint-close::before { content: ""; position: absolute; inset: -7px; }
+.operation-hint-close img { position: absolute; left: -.5px; top: -.5px; max-width: none; }
+.operation-hint-close:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+@media (max-width: 1023px) { #workbench-operation-hint { display: none; } }
+
+/* A single floating tooltip avoids clipping inside scrollable color palettes. */
+#workbench-hover-tooltip {
+    position: fixed;
+    z-index: 1000;
+    box-sizing: border-box;
+    max-width: calc(100vw - 16px);
+    padding: 8px 12px;
+    border-radius: 16px;
+    background: var(--pb-hint-background);
+    color: var(--pb-hint-text);
+    font: var(--pb-hint-font);
+    white-space: nowrap;
+    pointer-events: none;
+}
+#workbench-hover-tooltip[hidden] { display: none; }
+@media (max-width: 1023px) { #workbench-hover-tooltip { display: none; } }
 
 /* Custom Utilities */
 .step-section {
@@ -2402,5 +2467,24 @@
     #workbench-layout[data-mode="editor"] #palette-panel .figma-palette-tabs { transform: translateX(-50%) !important; }
     body:has(#workbench-layout[data-mode="editor"]) #all-colors-grid .all-colors-swatch:hover {
         background-color: revert; filter: brightness(.97);
+    }
+}
+
+/* The PC edit button follows the same selected appearance as mirror. */
+@media (min-width: 1024px) {
+    #workbench-layout[data-mode="editor"] #show-workbench-settings-panel-btn.is-active {
+        background: var(--pb-color-primary);
+        color: #fff;
+    }
+    #workbench-layout[data-mode="editor"] #show-workbench-settings-panel-btn.is-active img {
+        filter: brightness(0) invert(1);
+    }
+    #workbench-layout[data-mode="editor"] #show-workbench-settings-panel-btn.is-active:hover {
+        background-color: var(--pb-color-primary) !important;
+        color: #fff !important;
+        filter: brightness(.97) !important;
+    }
+    #workbench-layout[data-mode="editor"] #workbench-top-actions #show-workbench-settings-panel-btn.is-active:active {
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .78);
     }
 }

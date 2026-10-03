@@ -3,7 +3,7 @@
  */
 import { AppState } from './state.js';
 import { captureRecentColors, animateRecentColors } from './features/recent-color-motion.js';
-import { getColorSelectionSnapshot, resetPatternColorSelection } from './editor.js';
+import { getColorSelectionSnapshot, resetPatternColorSelection, openPaletteToolSession, restorePaletteToolSession, setActiveEditorTool } from './editor.js';
 import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, generateAlignedPixelArtData, generateDominantPixelArtData, detectPixelArtGrid, detectPixelArtAppearance, mapPixelArtToBeads } from './processor.js';
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
@@ -344,7 +344,7 @@ function getPaletteColorButtonHtml(color) {
     if (getWorkbenchViewportMode() === 'desktop') {
         return `<button type="button" data-palette-color-id="${color.id}" class="figma-palette-card" title="${color.id} · ${color.count}颗">
             <span class="figma-palette-color-details"><span class="figma-palette-dot" style="background:rgb(${color.r},${color.g},${color.b})"></span><span class="figma-palette-code">${color.id}</span><span class="figma-palette-count">${color.count}颗</span></span>
-            <span class="figma-palette-actions"><span role="button" tabindex="0" data-palette-action="secondary" aria-label="选择颜色" class="figma-palette-icon figma-palette-pointer"></span><span role="button" tabindex="0" aria-label="高亮颜色" class="figma-palette-icon figma-palette-eye ${selected ? 'is-active' : ''}"></span><span role="button" tabindex="0" data-palette-action="pick" aria-label="替换颜色" class="figma-palette-icon figma-palette-replace"></span></span>
+            <span class="figma-palette-actions"><span role="button" tabindex="0" data-palette-action="secondary" aria-label="选择颜色" class="figma-palette-icon figma-palette-pointer"></span><span role="button" tabindex="0" data-palette-action="highlight" aria-pressed="${selected}" aria-label="高亮颜色" class="figma-palette-icon figma-palette-eye ${selected ? 'is-active' : ''}"></span><span role="button" tabindex="0" data-palette-action="pick" aria-label="替换颜色" class="figma-palette-icon figma-palette-replace"></span></span>
         </button>`;
     }
     return `
@@ -501,14 +501,29 @@ function renderPalettePanel() {
 
 export function togglePalettePanel() {
     if (!hasWorkbenchPattern()) return;
+    if (getWorkbenchViewportMode() === 'desktop') return toggleAllColorsPanel();
     AppState.palettePanelOpen = !AppState.palettePanelOpen;
     if (AppState.palettePanelOpen) AppState.allColorsPanelOpen = false;
     renderPalettePanel();
     renderAllColorsPanel();
 }
 
-export function closePalettePanel() {
+// The eye highlight is scoped to the open PC palette, not to the next tool.
+function clearPaletteHighlight() {
+    if (getWorkbenchViewportMode() !== 'desktop' || AppState.highlightedColorId === null) return;
+    AppState.highlightedColorId = null;
+    const canvas = document.getElementById('result-canvas');
+    if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, null);
+}
+
+export function closePalettePanel({ restoreTool = true } = {}) {
+    const wasOpen = AppState.palettePanelOpen;
+    if (wasOpen) clearPaletteHighlight();
     AppState.palettePanelOpen = false;
+    if (wasOpen && getWorkbenchViewportMode() === 'desktop' && restoreTool) {
+        restorePaletteToolSession();
+        updateWorkbenchUI();
+    }
     AppState.palettePanelDrag = null;
     renderPalettePanel();
 }
@@ -612,9 +627,11 @@ export function toggleAllColorsPanel() {
     if (!hasWorkbenchPattern()) return;
     if (getWorkbenchViewportMode() === 'desktop') {
         const wasOpen = AppState.palettePanelOpen || AppState.allColorsPanelOpen;
+        if (!wasOpen && !openPaletteToolSession()) return;
+        if (wasOpen) { clearPaletteHighlight(); restorePaletteToolSession(); }
         AppState.palettePanelOpen = !wasOpen;
         AppState.allColorsPanelOpen = false;
-        if (!wasOpen) AppState.editor.activeTool = 'palette';
+        if (!wasOpen) setActiveEditorTool('palette');
         updateWorkbenchUI();
         return;
     }
@@ -626,9 +643,13 @@ export function toggleAllColorsPanel() {
     updateWorkbenchUI();
 }
 
-export function closeAllColorsPanel() {
+export function closeAllColorsPanel({ restoreTool = true } = {}) {
+    const wasOpen = AppState.allColorsPanelOpen;
+    if (wasOpen) clearPaletteHighlight();
     AppState.allColorsPanelOpen = false;
-    if (AppState.editor.activeTool === 'palette') AppState.editor.activeTool = 'brush';
+    if (getWorkbenchViewportMode() === 'desktop') {
+        if (wasOpen && restoreTool) { restorePaletteToolSession(); updateWorkbenchUI(); }
+    } else if (AppState.editor.activeTool === 'palette') AppState.editor.activeTool = 'brush';
     document.getElementById('toggle-all-colors-panel-btn')?.classList.remove('is-active');
     document.getElementById('toggle-all-colors-panel-btn')?.setAttribute('aria-expanded', 'false');
     renderAllColorsPanel();
@@ -644,7 +665,9 @@ export function handleAllColorsSelect(colorId) {
     if (!color) return false;
     AppState.allColorsPanelOpen = false;
     AppState.palettePanelOpen = false;
-    AppState.editor.activeTool = 'brush';
+    AppState.paletteToolSnapshot = null;
+    AppState.highlightedColorId = null;
+    resetBatchReplaceState();
     _selectPaletteFillColor(color);
     updateWorkbenchUI();
     return true;
@@ -656,6 +679,7 @@ export function updatePalettePanelQuery(value) {
 }
 
 export function handlePaletteColorSelect(colorId) {
+    if (getWorkbenchViewportMode() === 'desktop') return handleAllColorsSelect(colorId);
     const color = getCurrentPalette().find((item) => String(item.id) === String(colorId));
     if (!color) return false;
     AppState.highlightedColorId = String(color.id);
@@ -666,10 +690,22 @@ export function handlePaletteColorSelect(colorId) {
 }
 
 export function handlePaletteAction(colorId, action) {
+    if (getWorkbenchViewportMode() === 'desktop') {
+        if (action === 'secondary') return handleAllColorsSelect(colorId);
+        if (action === 'highlight') {
+            AppState.highlightedColorId = AppState.highlightedColorId === String(colorId) ? null : String(colorId);
+            const canvas = document.getElementById('result-canvas');
+            if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+            updateWorkbenchUI();
+            return true;
+        }
+    }
     if (action !== 'pick') return false;
     const color = getCurrentPalette().find((item) => String(item.id) === String(colorId));
     if (!color) return false;
     AppState.highlightedColorId = String(color.id);
+    AppState.palettePanelOpen = false;
+    AppState.allColorsPanelOpen = false;
     _startPaletteBatchReplace(color.id);
     const canvas = document.getElementById('result-canvas');
     if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
@@ -2446,6 +2482,40 @@ export function zoomWorkbenchComparePreview(deltaY) {
 
 let desktopEntryPatternId = null;
 
+// Presentation only: closing a hint never cancels or changes the editing tool.
+let operationHintKey = null;
+let dismissedOperationHintKey = null;
+function syncWorkbenchOperationHint(enabled) {
+    const panel = document.getElementById('workbench-operation-hint');
+    if (!panel) return;
+    const replacing = AppState.batchReplace?.active && AppState.batchReplace.origin === 'palette'
+        && AppState.batchReplace.mode === 'from_canvas' && AppState.editor?.activeTool === 'eyedropper';
+    const edge = AppState.editor?.activeTool === 'edge' && AppState.edgeSelectionMode;
+    const kind = enabled && (replacing ? 'replace' : edge ? 'edge' : null);
+    const key = kind ? `${AppState.colorSelectionPatternId}:${kind}` : null;
+    if (key !== operationHintKey) dismissedOperationHintKey = null;
+    operationHintKey = key;
+    panel.classList.toggle('hidden', !kind || key === dismissedOperationHintKey);
+    if (!kind) return;
+    const color = replacing
+        ? getCurrentPalette().find(item => String(item.id) === String(AppState.batchReplace.sourceColorId))
+        : AppState.paintColor;
+    if (!color || color.id === 'NONE') { panel.classList.add('hidden'); return; }
+    panel.dataset.kind = kind;
+    panel.querySelector('.operation-hint-icon').src = `assets/figma-ui/operation-${kind}.svg`;
+    panel.querySelector('.operation-hint-message').textContent = replacing ? '吸取颜色替换全部' : '点击为边框上色';
+    panel.querySelector('.operation-hint-current').hidden = replacing;
+    panel.querySelector('.operation-hint-escape').hidden = !replacing;
+    const swatch = panel.querySelector('.operation-hint-color');
+    swatch.textContent = color.id;
+    swatch.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    swatch.style.color = getPaletteTextColor(color);
+    panel.querySelector('.operation-hint-close').onclick = () => {
+        dismissedOperationHintKey = operationHintKey;
+        panel.classList.add('hidden');
+    };
+}
+
 export function updateWorkbenchUI() {
     if (!isWorkbenchLayout()) return;
     document.getElementById('precision-mode-select')?.closest('div')?.classList.add('hidden');
@@ -2494,6 +2564,7 @@ export function updateWorkbenchUI() {
     setHidden('workbench-figma-main-toolbar', !hasPattern || !desktopToolbar);
     setHidden('workbench-figma-brush-toolbar', !hasPattern || !desktopToolbar || desktopPaletteVisible || !['brush', 'bucket', 'edge'].includes(AppState.editor?.activeTool || 'brush'));
     setHidden('workbench-figma-eraser-toolbar', !hasPattern || !desktopToolbar || desktopPaletteVisible || !['eraser', 'area-erase', 'color-eraser'].includes(AppState.editor?.activeTool));
+    syncWorkbenchOperationHint(hasPattern && desktopToolbar && !desktopPaletteVisible);
     const brushMenu = document.querySelector('[data-tool-menu="brush"]');
     const eraserMenu = document.querySelector('[data-tool-menu="eraser"]');
     const brushMenuTarget = desktopToolbar
@@ -2548,6 +2619,9 @@ export function updateWorkbenchUI() {
     const colorsTab = document.getElementById('show-workbench-colors-panel-btn');
     if (settingsTab) {
         const active = tabletPanel === 'settings';
+        settingsTab.classList.toggle('is-active', desktopToolbar && hasPattern && active);
+        if (desktopToolbar) settingsTab.setAttribute('aria-pressed', String(hasPattern && active));
+        else settingsTab.removeAttribute('aria-pressed');
         settingsTab.classList.toggle('bg-gray-900', active);
         settingsTab.classList.toggle('text-white', active);
         settingsTab.classList.toggle('bg-gray-100', !active);

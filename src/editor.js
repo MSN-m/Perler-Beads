@@ -79,6 +79,37 @@ export function setActiveEditorTool(tool) {
     }
 }
 
+const PALETTE_TOOL_KEYS = ['editMode', 'fillMode', 'eyedropperMode', 'deleteMode', 'colorEraseMode', 'edgeSelectionMode', 'clearBaseMode', 'fillSourceMode', 'fillColor', 'fillColorId', 'fillSourceIndex', 'fillSourceSample', 'adjustPhase', 'receiverIndex', 'lastBrushTool', 'lastEraserTool'];
+
+export function openPaletteToolSession() {
+    if (AppState.paintStroke || AppState.eraserStroke) return false;
+    if (AppState.batchReplace.origin === 'palette') {
+        AppState.highlightedColorId = null;
+        restorePaletteToolSession();
+    }
+    AppState.paletteToolSnapshot = {
+        patternId: AppState.colorSelectionPatternId,
+        tool: AppState.editor.activeTool,
+        state: Object.fromEntries(PALETTE_TOOL_KEYS.map(key => [key, AppState[key]]))
+    };
+    resetBatchReplaceState();
+    setActiveEditorTool('palette');
+    return true;
+}
+
+export function restorePaletteToolSession() {
+    const snapshot = AppState.paletteToolSnapshot;
+    AppState.paletteToolSnapshot = null;
+    if (!snapshot || snapshot.patternId !== AppState.colorSelectionPatternId) return false;
+    resetBatchReplaceState();
+    Object.assign(AppState, snapshot.state);
+    AppState.editor.activeTool = snapshot.tool;
+    AppState.eraserHoverColorId = null;
+    const canvas = document.getElementById('result-canvas');
+    if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+    return true;
+}
+
 const COLOR_SELECTION_KEY = 'perler_beads_color_selection_v1';
 
 export function getColorSelectionSnapshot() {
@@ -122,6 +153,8 @@ export function resetPatternColorSelection(snapshot = null, fallbackId = null) {
     AppState.colorSelectionPatternId = patternId || `pattern_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     AppState.colorSelectionUpdatedAt = Number(source?.updatedAt) || 0;
     AppState.lastBrushTool = ['brush', 'bucket', 'edge'].includes(source?.lastBrushTool) ? source.lastBrushTool : 'brush';
+    AppState.paletteToolSnapshot = null;
+    AppState.paletteDismissClickUntil = 0;
     AppState.lastEraserTool = 'eraser';
     AppState.eraserStroke = null;
     AppState.eraserHoverColorId = null;
@@ -257,6 +290,7 @@ export function updateAdjustUndoButton() {
 }
 
 export function resetBatchReplaceState() {
+    AppState.batchReplace.origin = null;
     AppState.batchReplace.active = false;
     AppState.batchReplace.mode = null;
     AppState.batchReplace.sourceColorId = null;
@@ -280,18 +314,19 @@ export function getCurrentPalette() {
 
 export function performBatchReplace(sourceId, target) {
     if (!AppState.stagedPixelData) AppState.stagedPixelData = deepClonePixels(AppState.pixelData);
+    if (!target || String(sourceId) === String(target.id)) return;
     const indices = [];
     const prevColors = [];
     for (let i = 0; i < AppState.stagedPixelData.length; i++) {
         const c = AppState.stagedPixelData[i];
         if (c && c.id === sourceId) {
             indices.push(i);
-            prevColors.push({ id: c.id, r: c.r, g: c.g, b: c.b });
-            AppState.stagedPixelData[i] = { id: target.id, r: target.r, g: target.g, b: target.b };
+            prevColors.push({ ...c });
+            AppState.stagedPixelData[i] = { ...target };
         }
     }
     if (indices.length > 0) {
-        recordPixelAction({ indices, prevColors, nextColor: { id: target.id, r: target.r, g: target.g, b: target.b } });
+        recordPixelAction({ indices, prevColors, nextColor: { ...target } });
     }
     const resultCanvas = document.getElementById('result-canvas');
     renderResult(resultCanvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, null);

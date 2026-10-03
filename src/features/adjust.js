@@ -5,7 +5,7 @@
  */
 
 import { AppState } from '../state.js';
-import { rememberPaintColor, restorePaintColor } from '../editor.js';
+import { rememberPaintColor, restorePaintColor, restorePaletteToolSession } from '../editor.js';
 import { getThemePrimaryColor } from '../utils.js';
 
 import { renderResult } from '../renderer.js';
@@ -289,11 +289,14 @@ export function startPaletteBatchReplace(colorId) {
     if (!colorId) return false;
     if (AppState.editMode !== 'adjust') enterEditSession();
     AppState.editMode = 'adjust';
+    setActiveEditorTool('eyedropper');
+    AppState.eyedropperMode = false;
     AppState.adjustPhase = 'waiting_receiver';
     AppState.receiverIndex = null;
     AppState.batchReplace = {
         active: true,
         mode: 'from_canvas',
+        origin: 'palette',
         sourceColorId: String(colorId),
         nearCandidates: [],
         nearBaseline: null,
@@ -576,6 +579,7 @@ export function endWorkbenchCompareDrag() {
 
 
 export function handleResultCanvasClickForAdjust(e) {
+    if (Date.now() < AppState.paletteDismissClickUntil) return;
     if (['pan', 'palette'].includes(AppState.editor.activeTool)) return;
     if (AppState.editor.activeTool === 'eraser' && Date.now() < AppState.eraserClickSuppressedUntil) return;
 
@@ -827,9 +831,13 @@ export function handleResultCanvasClickForAdjust(e) {
 
         const target = palette.find(p => p.id === donor.id) || donor;
 
+        const fromPalette = AppState.batchReplace.origin === 'palette';
         performBatchReplace(AppState.batchReplace.sourceColorId, target);
-
         resetBatchReplaceState();
+        if (fromPalette) {
+            AppState.highlightedColorId = null;
+            restorePaletteToolSession();
+        }
 
         return;
 
@@ -914,6 +922,7 @@ export function handleResultCanvasClickForAdjust(e) {
 }
 
 export function startFillSelection(e) {
+    if (Date.now() < AppState.paletteDismissClickUntil) return false;
     if (AppState.editor?.activeTool === 'pan') return false;
     if (e.touches && e.touches.length >= 2) return false;
     if (AppState.editor?.activeTool === 'bucket') return false;

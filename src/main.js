@@ -2,6 +2,7 @@
  * 拼豆图纸生成器 - 主入口与事件绑定
  */
 import { AppState } from './state.js';
+import { installWorkbenchTooltips } from './features/tooltips.js';
 import { activateEraserTool, updateEraserHover } from './features/delete.js';
 import {
     goToStep,
@@ -86,7 +87,7 @@ import {
 } from './ui.js';
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
-import { setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState } from './editor.js';
+import { setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState, restorePaletteToolSession } from './editor.js';
 import { renderResult } from './renderer.js';
 import { createEditorShortcuts } from './features/editor-shortcuts.js';
 
@@ -193,6 +194,7 @@ const loadExample = (type) => {
 
 // 页面加载完成后绑定事件
 document.addEventListener('DOMContentLoaded', () => {
+    installWorkbenchTooltips();
     document.querySelectorAll('#workbench-edit-toolbar [title], #save-draft-btn[title]').forEach((element) => {
         element.dataset.tooltip = element.getAttribute('title');
         element.classList.add('has-hover-tooltip');
@@ -521,7 +523,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!button) return false;
             return handlePaletteColorSelect(button.getAttribute('data-palette-color-id'));
         };
+        paletteColorGrid.addEventListener('keydown', (e) => {
+            const action = e.target.closest('[data-palette-action]');
+            if (!action || !['Enter', ' '].includes(e.key)) return;
+            const card = action.closest('button[data-palette-color-id]');
+            if (!card) return;
+            e.preventDefault();
+            e.stopPropagation();
+            suppressPaletteClickUntil = Date.now() + 600;
+            handlePaletteAction(card.dataset.paletteColorId, action.dataset.paletteAction);
+        });
         paletteColorGrid.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
             const button = e.target.closest('button[data-palette-color-id]');
             if (!button) return;
             const action = e.target.closest('[data-palette-action]');
@@ -670,8 +683,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toggleFillBtn = document.getElementById('toggle-fill-btn');
     const closeToolOverlays = () => {
-        closePalettePanel();
-        closeAllColorsPanel();
+        closePalettePanel({ restoreTool: false });
+        closeAllColorsPanel({ restoreTool: false });
+        if (AppState.batchReplace.origin === 'palette') resetBatchReplaceState();
     };
     if (toggleFillBtn) {
         toggleFillBtn.addEventListener('click', () => {
@@ -804,7 +818,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('figma-main-palette-btn')?.addEventListener('click', () => {
         document.getElementById('toggle-all-colors-panel-btn')?.click();
         if (AppState.palettePanelOpen || AppState.allColorsPanelOpen) setActiveEditorTool('palette');
-        else toolMenuActions[AppState.lastBrushTool || 'brush']();
         updateWorkbenchUI();
     });
     document.getElementById('figma-main-eraser-btn')?.addEventListener('click', () => {
@@ -887,18 +900,22 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (AppState.workbenchTabletPanel) {
                 AppState.workbenchTabletPanel = null;
             } else if (AppState.palettePanelOpen || AppState.allColorsPanelOpen) {
-                closeToolOverlays();
-                restoreTool(palettePreviousTool);
+                closePalettePanel();
+                closeAllColorsPanel();
             } else if (AppState.eyedropperMode || AppState.batchReplace.active || AppState.adjustPhase === 'waiting_donor') {
                 const wasPicker = AppState.eyedropperMode;
                 const wasBatchReplace = AppState.batchReplace.active;
+                const wasPaletteReplace = AppState.batchReplace.origin === 'palette';
                 resetBatchReplaceState();
                 AppState.highlightedColorId = null;
                 AppState.receiverIndex = null;
                 AppState.adjustPhase = 'waiting_receiver';
                 const previous = wasPicker ? pickerPreviousTool : wasBatchReplace ? palettePreviousTool : null;
-                if (previous && previous.patternId === AppState.colorSelectionPatternId) restoreTool(previous);
-                else toolMenuActions[AppState.lastBrushTool || 'brush']();
+                const restoredPaletteTool = wasPaletteReplace && restorePaletteToolSession();
+                if (!restoredPaletteTool) {
+                    if (previous && previous.patternId === AppState.colorSelectionPatternId) restoreTool(previous);
+                    else toolMenuActions[AppState.lastBrushTool || 'brush']();
+                }
                 renderResult(document.getElementById('result-canvas'), AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
             } else if (AppState.editor.activeTool !== 'pan') {
                 document.getElementById('figma-main-pan-btn')?.click();
@@ -967,7 +984,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const panel = document.getElementById('all-colors-panel');
         const toggleBtn = document.getElementById('toggle-all-colors-panel-btn');
         const target = event.target;
-        if (panel?.contains(target) || toggleBtn?.contains(target)) return;
+        if (panel?.contains(target) || toggleBtn?.contains(target) || document.getElementById('figma-main-palette-btn')?.contains(target)) return;
+        if (document.getElementById('result-container')?.contains(target)) AppState.paletteDismissClickUntil = Date.now() + 600;
         closeAllColorsPanel();
         updateWorkbenchUI();
     });
@@ -977,7 +995,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const panel = document.getElementById('palette-panel');
         const toggleBtn = document.getElementById('toggle-palette-panel-btn');
         const target = event.target;
-        if (panel?.contains(target) || toggleBtn?.contains(target)) return;
+        if (panel?.contains(target) || toggleBtn?.contains(target) || document.getElementById('figma-main-palette-btn')?.contains(target)) return;
+        if (document.getElementById('result-container')?.contains(target)) AppState.paletteDismissClickUntil = Date.now() + 600;
         closePalettePanel();
         updateWorkbenchUI();
     });

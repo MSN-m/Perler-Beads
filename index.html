@@ -6,24 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20261004-palette-close-1">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
         "imports": {
-            "./src/state.js": "./src/state.js?v=20261003-tools-2",
-            "./src/editor.js": "./src/editor.js?v=20261003-tools-2",
-            "./src/renderer.js": "./src/renderer.js?v=20261003-tools-2",
-            "./src/ui.js": "./src/ui.js?v=20261003-tools-2",
-            "./src/utils.js": "./src/utils.js?v=20261003-tools-2",
-            "./src/features/edge.js": "./src/features/edge.js?v=20261003-tools-2",
-            "./src/features/adjust.js": "./src/features/adjust.js?v=20261003-tools-2",
-            "./src/features/delete.js": "./src/features/delete.js?v=20261003-tools-2",
-            "./src/features/zoom.js": "./src/features/zoom.js?v=20261003-tools-2"
+            "./src/state.js": "./src/state.js?v=20261004-palette-close-1",
+            "./src/editor.js": "./src/editor.js?v=20261004-palette-close-1",
+            "./src/renderer.js": "./src/renderer.js?v=20261004-palette-close-1",
+            "./src/ui.js": "./src/ui.js?v=20261004-palette-close-1",
+            "./src/utils.js": "./src/utils.js?v=20261004-palette-close-1",
+            "./src/features/edge.js": "./src/features/edge.js?v=20261004-palette-close-1",
+            "./src/features/adjust.js": "./src/features/adjust.js?v=20261004-palette-close-1",
+            "./src/features/delete.js": "./src/features/delete.js?v=20261004-palette-close-1",
+            "./src/features/zoom.js": "./src/features/zoom.js?v=20261004-palette-close-1",
+            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261004-palette-close-1"
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261003-tools-2"></script>
+    <script type="module" src="src/main.js?v=20261004-palette-close-1"></script>
 </head>
 
 <body data-layout="workbench"
@@ -160,6 +161,15 @@
                             确认范围
                         </button>
                     </div>
+                </div>
+
+                <div id="workbench-operation-hint" class="hidden" role="status" aria-live="polite">
+                    <img class="operation-hint-icon" src="assets/figma-ui/operation-edge.svg" alt="">
+                    <span class="operation-hint-message"></span>
+                    <span class="operation-hint-current">当前：</span>
+                    <span class="operation-hint-color"></span>
+                    <span class="operation-hint-escape">Esc 取消。</span>
+                    <button type="button" class="operation-hint-close" aria-label="关闭操作提示" title="关闭提示"><img src="assets/figma-ui/operation-color-caret.svg" alt=""></button>
                 </div>
 
                 <div id="workbench-figma-brush-toolbar" class="hidden" aria-label="画笔工具栏">
