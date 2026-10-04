@@ -48,7 +48,7 @@ function drawReceiverOutline(canvas, gx, gy) {
 
 }
 
-function getGridHitFromEvent(e) {
+export function getGridHitFromEvent(e) {
 
     const canvas = document.getElementById('result-canvas');
 
@@ -146,7 +146,7 @@ function applyFillSelection(canvas) {
     updateAdjustUndoButton();
 }
 
-function getNearestPaletteColor(color) {
+export function getNearestPaletteColor(color) {
     const palette = getCurrentPalette();
     if (!palette.length) return color;
     return palette
@@ -154,8 +154,8 @@ function getNearestPaletteColor(color) {
         .sort((a, b) => a.d - b.d)[0].p;
 }
 
-function sampleFromOriginalImage(event) {
-    if (AppState.comparePreviewDidDrag) {
+export function sampleFromOriginalImage(event, previewOnly = false) {
+    if (!previewOnly && AppState.comparePreviewDidDrag) {
         AppState.comparePreviewDidDrag = false;
         return null;
     }
@@ -182,6 +182,7 @@ function sampleFromOriginalImage(event) {
     const sourceY = crop.y + Math.max(0, Math.min(crop.height - 1, imgY));
     const sourceCtx = sourceCanvas.getContext('2d');
     const data = sourceCtx.getImageData(sourceX, sourceY, 1, 1).data;
+    if (previewOnly && data[3] === 0) return null;
     return {
         r: data[0],
         g: data[1],
@@ -957,8 +958,9 @@ function paintStrokeCell(index) {
 
 export function moveFillSelection(e) {
     if (e.touches && e.touches.length >= 2) return false;
-    if (AppState.editor?.activeTool === 'bucket') return false;
-    const eraseHit = getGridHitFromEvent(e);
+    const previewCanvas = document.getElementById('result-canvas');
+    const eraseHit = !AppState.eraserStroke && !AppState.paintStroke && e.target && e.target !== previewCanvas
+        ? null : getGridHitFromEvent(e);
     if (AppState.eraserStroke) {
         if (!eraseHit) { AppState.eraserStroke.lastIndex = null; return true; }
         if (AppState.eraserStroke.lastIndex === null) AppState.eraserStroke.lastIndex = eraseHit.idx;

@@ -287,6 +287,17 @@
     }
 }
 
+/* Lucide cursors match the existing 24px / 2.4px editing cursors. */
+body[data-layout="workbench"] #palette-panel-drag-handle {
+    cursor: url("../assets/cursors/move.svg") 12 12, move;
+}
+body[data-layout="workbench"] .crop-edge-handle-y {
+    cursor: url("../assets/cursors/move-vertical.svg") 12 12, ns-resize;
+}
+body[data-layout="workbench"] .crop-edge-handle-x {
+    cursor: url("../assets/cursors/move-horizontal.svg") 12 12, ew-resize;
+}
+
 .crop-handle {
     position: absolute;
     width: 14px;
@@ -2487,4 +2498,95 @@
     #workbench-layout[data-mode="editor"] #workbench-top-actions #show-workbench-settings-panel-btn.is-active:active {
         box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .78);
     }
+}
+
+/* Figma 520:523: original 28px cursor frames, scoped to the PC workbench. */
+@media (min-width: 1024px) {
+    body[data-layout="workbench"] {
+        --pb-cursor-default: url("../assets/cursors/figma/default-cursor.svg") 7 6, default;
+        --pb-cursor-pointer: url("../assets/cursors/figma/pointer-cursor.svg") 12 7, pointer;
+        --pb-cursor-pan: url("../assets/cursors/figma/pan-cursor.svg") 14 14, grab;
+        --pb-cursor-grabbing: url("../assets/cursors/figma/grabbing-cursor.svg") 14 14, grabbing;
+        cursor: var(--pb-cursor-default);
+    }
+    body[data-layout="workbench"] button:not(:disabled),
+    body[data-layout="workbench"] a[href],
+    body[data-layout="workbench"] .cursor-pointer,
+    body[data-layout="workbench"] .figma-palette-icon {
+        cursor: var(--pb-cursor-pointer) !important;
+    }
+    body[data-layout="workbench"] .cursor-grab {
+        cursor: var(--pb-cursor-pan);
+    }
+    body[data-layout="workbench"] .cursor-grabbing {
+        cursor: var(--pb-cursor-grabbing) !important;
+    }
+    body[data-layout="workbench"] button:disabled,
+    body[data-layout="workbench"] .cursor-not-allowed {
+        cursor: not-allowed !important;
+    }
+    body[data-layout="workbench"] .figma-brush-color.is-empty {
+        cursor: var(--pb-cursor-default) !important;
+    }
+}
+
+#workbench-picker-color-preview {
+    position: fixed;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: var(--pb-hint-background);
+    color: var(--pb-hint-text);
+    font: var(--pb-hint-font);
+    white-space: nowrap;
+    pointer-events: none;
+}
+#workbench-picker-color-preview[hidden] { display: none; }
+.picker-preview-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.7);
+}
+
+.draft-save-as-button, .draft-history-toggle, .draft-version-row button {
+    padding: 6px 8px; border: 1px solid var(--pb-color-stroke); border-radius: 8px;
+    background: white; color: var(--pb-color-deep); font-size: 12px; white-space: nowrap;
+}
+.draft-save-as-button[hidden] { display: none; }
+.draft-version-list { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--pb-color-stroke); }
+.draft-version-list p { margin: 0 0 6px; font-size: 11px; color: var(--pb-color-muted); }
+.draft-version-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 11px; }
+#draft-box-list [data-draft-action="restore"] { white-space: nowrap; }
+#draft-box-list .flex.items-center.gap-2.mt-2 { flex-wrap: wrap; }
+
+/* Export view shares the editor's background and button palette. */
+#step-export.export-page {
+    color: var(--pb-color-deep);
+    background-color: #fcfbfd;
+    background-image: linear-gradient(rgba(255, 255, 255, .8), rgba(255, 255, 255, .8)), linear-gradient(243.186deg, #f3edf8 6.047%, #f3f5f6 50.765%, #f3effb 97.236%);
+    overflow-y: auto;
+}
+.export-page-header { display: flex; align-items: center; gap: 16px; padding: 24px 28px; flex: 0 0 auto; }
+.export-page-header h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.export-back-button { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 0; border-radius: 20px; background: var(--pb-color-stroke); cursor: pointer; }
+.export-back-button img { width: 20px; height: 20px; }
+.export-page-content { display: flex; flex: 1; min-height: min-content; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 16px 24px 40px; }
+.export-preview-card { width: 100%; max-width: 384px; padding: 16px; border: 1px solid var(--pb-color-stroke); border-radius: 24px; background: #fff; box-shadow: 0 4px 16px rgba(39, 46, 62, .05); }
+#export-preview { display: block; width: 100%; border-radius: 12px; border: 1px solid var(--pb-color-stroke); }
+.export-preview-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; font-size: 12px; color: var(--pb-color-muted); }
+.export-brand { color: var(--pb-color-primary); font-weight: 500; }
+.export-page-actions { width: 100%; max-width: 384px; display: grid; gap: 12px; }
+.export-page-button { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 40px; padding: 12px 20px; border: 0; border-radius: 24px; color: var(--pb-color-deep); background: var(--pb-color-stroke); font: 500 14px/16px "PingFang SC", "Microsoft YaHei", sans-serif; box-shadow: none; cursor: pointer; transition: background-color .15s, transform .15s; }
+.export-page-button.is-primary { color: #fff; background: var(--pb-color-primary); }
+.export-back-button:hover, .export-page-button:not(.is-primary):hover { background: #ebe4e9; }
+.export-page-button.is-primary:hover { background: #d5487c; }
+.export-page-button:active, .export-back-button:active { transform: scale(.98); }
+.export-page-button:focus-visible, .export-back-button:focus-visible { outline: 2px solid var(--pb-color-primary); outline-offset: 3px; }
+@media (max-width: 767px) {
+    .export-page-header { padding: 16px; }
+    .export-page-content { padding: 8px 20px 24px; }
 }

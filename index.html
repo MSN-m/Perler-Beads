@@ -6,25 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261004-palette-close-1">
+    <link rel="stylesheet" href="css/style.css?v=20261005-export-style-1">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
         "imports": {
-            "./src/state.js": "./src/state.js?v=20261004-palette-close-1",
-            "./src/editor.js": "./src/editor.js?v=20261004-palette-close-1",
-            "./src/renderer.js": "./src/renderer.js?v=20261004-palette-close-1",
-            "./src/ui.js": "./src/ui.js?v=20261004-palette-close-1",
-            "./src/utils.js": "./src/utils.js?v=20261004-palette-close-1",
-            "./src/features/edge.js": "./src/features/edge.js?v=20261004-palette-close-1",
-            "./src/features/adjust.js": "./src/features/adjust.js?v=20261004-palette-close-1",
-            "./src/features/delete.js": "./src/features/delete.js?v=20261004-palette-close-1",
-            "./src/features/zoom.js": "./src/features/zoom.js?v=20261004-palette-close-1",
-            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261004-palette-close-1"
+            "./src/state.js": "./src/state.js?v=20261005-export-style-1",
+            "./src/editor.js": "./src/editor.js?v=20261005-export-style-1",
+            "./src/renderer.js": "./src/renderer.js?v=20261005-export-style-1",
+            "./src/ui.js": "./src/ui.js?v=20261005-export-style-1",
+            "./src/utils.js": "./src/utils.js?v=20261005-export-style-1",
+            "./src/features/edge.js": "./src/features/edge.js?v=20261005-export-style-1",
+            "./src/features/adjust.js": "./src/features/adjust.js?v=20261005-export-style-1",
+            "./src/features/delete.js": "./src/features/delete.js?v=20261005-export-style-1",
+            "./src/features/zoom.js": "./src/features/zoom.js?v=20261005-export-style-1",
+            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261005-export-style-1",
+            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261005-export-style-1"
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261004-palette-close-1"></script>
+    <script type="module" src="src/main.js?v=20261005-export-style-1"></script>
 </head>
 
 <body data-layout="workbench"
@@ -346,14 +347,14 @@
 
                     <div>
                         <div class="flex justify-between items-center mb-2">
-                            <label class="text-sm font-bold text-gray-800">像素密度</label>
+                            <label class="text-sm font-bold text-gray-800">图纸尺寸</label>
                             <span id="grid-size-display"
-                                class="text-xs font-mono bg-gray-100 px-2 py-1 rounded-lg text-primary font-bold">32x32</span>
+                                class="text-xs font-mono bg-gray-100 px-2 py-1 rounded-lg text-primary font-bold">60x60</span>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
                             <span id="board-size-display" class="text-[10px] px-1.5 py-0.5 rounded-md font-bold"></span>
                         </div>
-                        <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="32"
+                        <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="60"
                             class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
                     </div>
 
@@ -418,9 +419,9 @@
                             <div class="flex justify-between items-center">
                                 <span class="text-sm text-gray-500">最大颜色种类</span>
                         <span id="max-colors-display"
-                                    class="text-xs font-mono font-bold text-primary bg-white px-2 py-0.5 rounded border border-primary/20">36</span>
+                                    class="text-xs font-mono font-bold text-primary bg-white px-2 py-0.5 rounded border border-primary/20">20</span>
                             </div>
-                            <input type="range" id="max-colors-slider" min="2" max="64" value="36" step="1"
+                            <input type="range" id="max-colors-slider" min="2" max="64" value="20" step="1"
                                 class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
                             <label class="hidden flex items-start gap-2 text-xs text-gray-500">
                                 <input type="checkbox" id="dithering-toggle" checked
@@ -560,39 +561,25 @@
         </div>
     </div>
 
-    <section id="step-export" class="step-section bg-background">
-        <div class="p-4 flex justify-between items-center z-10">
-            <button id="back-to-step-3" class="p-2 -ml-2 text-gray-500 hover:text-gray-800">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
+    <section id="step-export" class="step-section export-page">
+        <header class="export-page-header">
+            <button id="back-to-step-3" type="button" class="export-back-button" aria-label="返回图纸编辑">
+                <img src="assets/figma-ui/back.svg" alt="">
             </button>
-            <h2 class="font-bold text-lg">保存与分享</h2>
-            <div class="w-6"></div>
-        </div>
-
-        <div class="flex-1 flex flex-col items-center justify-center p-8 space-y-6">
-            <div class="w-full max-w-sm bg-white p-4 rounded-2xl shadow-xl transform rotate-1">
-                <img id="export-preview" class="w-full rounded-lg border border-gray-100 image-pixelated">
-                <div class="mt-4 flex justify-between items-center">
-                    <span class="text-xs text-gray-400" id="export-meta">32x32 · MARD</span>
-                    <span class="text-xs font-bold text-primary">拼豆大师</span>
+            <h2>保存与分享</h2>
+        </header>
+        <div class="export-page-content">
+            <div class="export-preview-card">
+                <img id="export-preview" class="image-pixelated" alt="图纸导出预览">
+                <div class="export-preview-meta">
+                    <span id="export-meta">32x32 · MARD</span>
+                    <span class="export-brand">拼豆大师</span>
                 </div>
             </div>
-
-            <div class="w-full max-w-sm space-y-3">
-                <button id="download-image-btn"
-                    class="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold shadow-lg flex justify-center items-center active:scale-95 transition">
-                    保存图片
-                </button>
-                <button id="download-mirrored-image-btn"
-                    class="w-full py-3.5 bg-white text-gray-900 border border-gray-200 rounded-xl font-bold shadow-sm flex justify-center items-center active:scale-95 transition">
-                    保存镜像图
-                </button>
-                <button id="download-raw-image-btn"
-                    class="w-full py-3.5 bg-white text-gray-900 border border-gray-200 rounded-xl font-bold shadow-sm flex justify-center items-center active:scale-95 transition">
-                    保存原图
-                </button>
+            <div class="export-page-actions">
+                <button id="download-image-btn" type="button" class="export-page-button is-primary">保存图片</button>
+                <button id="download-mirrored-image-btn" type="button" class="export-page-button">保存镜像图</button>
+                <button id="download-raw-image-btn" type="button" class="export-page-button">保存原图</button>
             </div>
         </div>
     </section>
@@ -621,6 +608,36 @@
             <div class="flex justify-center space-x-4">
                 <button id="delete-confirm-yes" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition">确认</button>
                 <button id="delete-confirm-no" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="draft-save-as-modal" role="dialog" aria-modal="true" aria-labelledby="draft-save-as-title"
+        class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-6">
+        <form id="draft-save-as-form" class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h2 id="draft-save-as-title" class="text-lg font-bold text-gray-900">另存为新草稿</h2>
+            <label for="draft-save-as-name" class="mt-4 block text-sm text-gray-600">草稿名称</label>
+            <input id="draft-save-as-name" type="text" maxlength="60" autocomplete="off"
+                aria-describedby="draft-save-as-error"
+                class="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+            <p id="draft-save-as-error" role="status" class="mt-2 min-h-[20px] text-sm text-red-500"></p>
+            <div class="mt-4 flex justify-end gap-3">
+                <button id="draft-save-as-cancel" type="button" class="rounded-xl bg-gray-100 px-5 py-3 text-sm font-bold text-gray-600 disabled:opacity-50">取消</button>
+                <button id="draft-save-as-submit" type="submit" class="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white disabled:opacity-50">保存副本</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="workbench-exit-modal" role="dialog" aria-modal="true" aria-labelledby="workbench-exit-title" aria-describedby="workbench-exit-description"
+        class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-6">
+        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h2 id="workbench-exit-title" class="text-lg font-bold text-gray-900">保存图纸后再返回？</h2>
+            <p id="workbench-exit-description" class="mt-3 text-sm text-gray-600">当前图纸有未保存的内容。不保存返回将丢弃这些内容，已保存的草稿仍会保留。</p>
+            <p id="workbench-exit-error" role="status" class="mt-2 text-sm text-red-500"></p>
+            <div class="mt-6 flex flex-wrap justify-end gap-3">
+                <button id="workbench-exit-cancel" type="button" class="rounded-xl bg-gray-100 px-4 py-3 text-sm font-bold text-gray-600 disabled:opacity-50">取消</button>
+                <button id="workbench-exit-discard" type="button" class="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold text-gray-600 disabled:opacity-50">不保存返回</button>
+                <button id="workbench-exit-save" type="button" class="rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white disabled:opacity-50">保存并返回</button>
             </div>
         </div>
     </div>

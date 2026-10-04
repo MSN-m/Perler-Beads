@@ -320,6 +320,7 @@ export function eraseIndices(indices, canvas) {
     const prevColors = targets.map(index => ({ ...pixels[index] }));
     targets.forEach(index => { pixels[index] = { ...EMPTY }; });
     AppState.eraserHoverColorId = null;
+    AppState.operationHoverIndex = null;
     recordPixelAction({ indices: targets, prevColors, nextColor: { ...EMPTY } });
     redrawErase(canvas, true);
     return true;
@@ -395,9 +396,12 @@ export function endEraserStroke(canvas) {
 }
 
 export function updateEraserHover(index, canvas) {
-    const color = AppState.editor.activeTool === 'color-eraser' ? AppState.stagedPixelData?.[index]?.id : null;
+    const tool = AppState.editor.activeTool;
+    const color = tool === 'color-eraser' ? AppState.stagedPixelData?.[index]?.id : null;
     const next = color && color !== 'NONE' ? color : null;
-    if (next === AppState.eraserHoverColorId) return;
+    const nextIndex = ['area-erase', 'bucket'].includes(tool) && Number.isInteger(index) ? index : null;
+    if (next === AppState.eraserHoverColorId && nextIndex === AppState.operationHoverIndex) return;
     AppState.eraserHoverColorId = next;
+    AppState.operationHoverIndex = nextIndex;
     redrawErase(canvas);
 }

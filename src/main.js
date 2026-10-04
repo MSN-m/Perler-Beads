@@ -2,7 +2,7 @@
  * 拼豆图纸生成器 - 主入口与事件绑定
  */
 import { AppState } from './state.js';
-import { installWorkbenchTooltips } from './features/tooltips.js';
+import { installWorkbenchTooltips, installPickerColorPreview } from './features/tooltips.js';
 import { activateEraserTool, updateEraserHover } from './features/delete.js';
 import {
     goToStep,
@@ -45,6 +45,7 @@ import {
     adjustRedo,
     adjustCancel,
     saveWorkbenchDraft,
+    toggleWorkbenchDraftHistory,
     exportWorkbenchDrafts,
     exportWorkbenchDraft,
     importWorkbenchDraftFile,
@@ -60,6 +61,7 @@ import {
     selectWorkbenchTabletPanel,
     recropMobileWorkbenchImage,
     removeWorkbenchImage,
+    returnFromWorkbench,
     togglePalettePanel,
     closePalettePanel,
     updatePalettePanelQuery,
@@ -95,6 +97,10 @@ import { createEditorShortcuts } from './features/editor-shortcuts.js';
  * 处理图片上传
  */
 const resetProjectForNewImage = () => {
+    AppState.currentDraftId = null;
+    AppState.draftSourceImageDataUrl = null;
+    AppState.currentDraftVersionId = null;
+    AppState.draftRestorePending = false;
     resetPatternColorSelection();
     AppState.patternName = '';
     AppState.pendingGridWidth = null;
@@ -195,6 +201,7 @@ const loadExample = (type) => {
 // 页面加载完成后绑定事件
 document.addEventListener('DOMContentLoaded', () => {
     installWorkbenchTooltips();
+    installPickerColorPreview();
     document.querySelectorAll('#workbench-edit-toolbar [title], #save-draft-btn[title]').forEach((element) => {
         element.dataset.tooltip = element.getAttribute('title');
         element.classList.add('has-hover-tooltip');
@@ -451,9 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const workbenchBackBtn = document.getElementById('workbench-back-btn');
     if (workbenchBackBtn) {
-        workbenchBackBtn.addEventListener('click', () => {
-            goToStep(2);
-        });
+        workbenchBackBtn.addEventListener('click', returnFromWorkbench);
     }
 
     const showWorkbenchColorsPanelBtn = document.getElementById('show-workbench-colors-panel-btn');
@@ -1020,6 +1025,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 restoreWorkbenchDraft(draftId);
                 return;
             }
+            if (action === 'history') { toggleWorkbenchDraftHistory(draftId); return; }
+            if (action === 'restore-version') { restoreWorkbenchDraft(draftId, button.getAttribute('data-version-id')); return; }
             if (action === 'export') {
                 exportWorkbenchDraft(draftId);
                 return;

@@ -10,11 +10,43 @@ import { getThemePrimaryColor, getEdgeBeadIndices } from './utils.js';
  * @param {number} gridHeight - 图案高度
  * @param {string|null} highlightedColorId - 高亮的颜色 ID
  */
+// Read-only operation preview; four-direction connectivity matches bucket/area erase.
+export function getOperationPreviewIndices(pixels, width, height, tool, hoverIndex, colorId, edgeIndices = [], fillColorId = null) {
+    if (tool === 'edge') return edgeIndices;
+    if (tool === 'color-eraser') return colorId == null ? [] : pixels.reduce((result, pixel, index) => {
+        if (pixel?.id === colorId && pixel.id !== 'NONE') result.push(index);
+        return result;
+    }, []);
+    if (!['area-erase', 'bucket'].includes(tool) || !Number.isInteger(hoverIndex) || hoverIndex < 0 || hoverIndex >= width * height) return [];
+    const targetId = pixels[hoverIndex]?.id;
+    if (!targetId || (tool === 'area-erase' && targetId === 'NONE') || (tool === 'bucket' && (!fillColorId || targetId === fillColorId))) return [];
+    const queue = [hoverIndex], visited = new Set([hoverIndex]), result = [];
+    for (let head = 0; head < queue.length; head++) {
+        const index = queue[head];
+        if (pixels[index]?.id !== targetId) continue;
+        result.push(index);
+        const x = index % width;
+        const neighbors = [index - width, index + width];
+        if (x > 0) neighbors.push(index - 1);
+        if (x < width - 1) neighbors.push(index + 1);
+        for (const next of neighbors) {
+            if (next < 0 || next >= width * height || visited.has(next)) continue;
+            visited.add(next); queue.push(next);
+        }
+    }
+    return result;
+}
+
 export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highlightedColorId = null) {
-    if (canvas.id === 'result-canvas' && AppState.editor.activeTool === 'color-eraser') highlightedColorId = AppState.eraserHoverColorId;
+    const previewTool = canvas.id === 'result-canvas' ? AppState.editor.activeTool : null;
+    const operationPreview = ['color-eraser', 'area-erase', 'bucket', 'edge'].includes(previewTool);
+    if (operationPreview) highlightedColorId = null;
     if (canvas.id === 'result-canvas' && AppState.edgeSelectionMode) {
         AppState.selectedEdgeBeadsIndices = getEdgeBeadIndices(pixelArray, gridWidth, gridHeight);
     }
+    const previewIndices = new Set(getOperationPreviewIndices(pixelArray, gridWidth, gridHeight,
+        previewTool, AppState.operationHoverIndex, AppState.eraserHoverColorId,
+        AppState.edgeSelectionMode ? AppState.selectedEdgeBeadsIndices : [], AppState.fillColorId));
     const ctx = canvas.getContext('2d');
     const scale = 30; // 预览比例
     
@@ -79,10 +111,22 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             ctx.fillRect(drawX, drawY, scale, scale);
 
             // 如果是边缘色块，绘制高亮边框
-            if (AppState.edgeSelectionMode && AppState.selectedEdgeBeadsIndices.includes(i)) {
+            if (!operationPreview && AppState.edgeSelectionMode && AppState.selectedEdgeBeadsIndices.includes(i)) {
                 ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)'; // 黄色高亮
                 ctx.lineWidth = 2;
                 ctx.strokeRect(drawX + 1, drawY + 1, scale - 2, scale - 2);
+            }
+        }
+    }
+
+    // Dim only non-selected, occupied cells during the operation preview.
+    if (previewIndices.size) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                const color = pixelArray[y * gridWidth + x];
+                if (!color || color.id === 'NONE' || previewIndices.has(y * gridWidth + x)) continue;
+                ctx.fillRect(gridOffset + (x - minX) * scale, gridOffset + (y - minY) * scale, scale, scale);
             }
         }
     }
@@ -289,6 +333,31 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             ctx.textBaseline = 'middle';
             ctx.fillText(String(issue.issueCount || issue.number), badgeX, badgeY + 0.5);
         }
+        ctx.restore();
+    }
+
+    if (previewIndices.size) {
+        const matches = (x, y) => x >= 0 && y >= 0 && x < gridWidth && y < gridHeight
+            && previewIndices.has(y * gridWidth + x);
+        ctx.save();
+        ctx.strokeStyle = getThemePrimaryColor(1);
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                if (!matches(x, y)) continue;
+                const left = gridOffset + (x - minX) * scale;
+                const top = gridOffset + (y - minY) * scale;
+                // Only exposed edges: adjacent same-color cells share no outline.
+                if (!matches(x, y - 1)) { ctx.moveTo(left, top); ctx.lineTo(left + scale, top); }
+                if (!matches(x + 1, y)) { ctx.moveTo(left + scale, top); ctx.lineTo(left + scale, top + scale); }
+                if (!matches(x, y + 1)) { ctx.moveTo(left + scale, top + scale); ctx.lineTo(left, top + scale); }
+                if (!matches(x - 1, y)) { ctx.moveTo(left, top + scale); ctx.lineTo(left, top); }
+            }
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
         ctx.restore();
     }
 

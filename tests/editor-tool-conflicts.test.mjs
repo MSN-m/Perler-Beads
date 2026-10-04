@@ -13,6 +13,7 @@ let alerts = [];
 const counters = Object.fromEntries(['total-beads-count','color-types-count','color-stats'].map(id => [id, {}]));
 globalThis.document = { addEventListener() {}, getElementById: id => id === 'result-canvas' ? canvas : counters[id] || null };
 globalThis.window = { alert: text => alerts.push(text) };
+globalThis.getComputedStyle = () => ({ getPropertyValue: () => '#DE5387' });
 function setup() {
     Object.assign(AppState, { pixelData: Array.from({ length: 16 }, () => pixel('A')), stagedPixelData: Array.from({ length: 16 }, () => pixel('A')), stagedActions: [], gridWidth: 4, gridHeight: 4, editMode: 'adjust', paintColor: pixel('B'), eraserStroke: null, eraserHoverColorId: null, eraserClickSuppressedUntil: 0, edgeSelectionMode: false, colorEraseMode: false, deleteMode: false, clearBaseMode: false, fillMode: false, eyedropperMode: false, paintStroke: null, fillSelection: null, selectedEdgeBeadsIndices: [], zoomState: { scale: 1 }, qualityOverlayVisible: false });
     Object.assign(AppState.editor, { activeTool: 'brush', undoStack: [], redoStack: [] });

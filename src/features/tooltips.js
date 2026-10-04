@@ -1,3 +1,5 @@
+import { AppState } from '../state.js';
+import { getGridHitFromEvent, getNearestPaletteColor, sampleFromOriginalImage } from './adjust.js';
 /** PC hover help. Reads DOM metadata only; never writes editor or history state. */
 const SCOPE = '#workbench-figma-main-toolbar, #workbench-figma-brush-toolbar, #workbench-figma-eraser-toolbar, #palette-panel, #all-colors-panel';
 const TOOLS = {
@@ -116,4 +118,56 @@ export function installWorkbenchTooltips() {
     new MutationObserver(() => {
         if (target && (!target.isConnected || !target.getClientRects().length)) hide();
     }).observe(document.getElementById('workbench-stage') || document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+}
+
+/** Read-only color readout beside the eyedropper; no selection/history writes. */
+let pickerReadout = null;
+export function hidePickerColorPreview() {
+    if (pickerReadout) pickerReadout.hidden = true;
+}
+
+export function installPickerColorPreview() {
+    if (document.body.dataset.layout !== 'workbench' || pickerReadout) return;
+    pickerReadout = document.createElement('div');
+    pickerReadout.id = 'workbench-picker-color-preview';
+    pickerReadout.hidden = true;
+    const swatch = document.createElement('span');
+    swatch.className = 'picker-preview-swatch';
+    const label = document.createElement('span');
+    pickerReadout.append(swatch, label);
+    document.body.appendChild(pickerReadout);
+    document.addEventListener('pointermove', event => {
+        if (event.pointerType === 'touch' || window.innerWidth < 1024 || AppState.zoomState?.isDragging || AppState.comparePreviewDragging
+            || AppState.palettePanelOpen || AppState.allColorsPanelOpen) { hidePickerColorPreview(); return; }
+        const result = document.getElementById('result-canvas');
+        const original = document.getElementById('compare-source-preview');
+        const isResult = event.target === result;
+        const isOriginal = event.target === original;
+        const picker = AppState.editor.activeTool === 'eyedropper'
+            || (AppState.fillMode && !AppState.fillColor);
+        let color = null;
+        if (isResult && picker) {
+            const hit = getGridHitFromEvent(event);
+            color = hit ? (AppState.stagedPixelData || AppState.pixelData)?.[hit.idx] : null;
+        } else if (isOriginal && (AppState.fillMode || AppState.eyedropperMode)) {
+            const sample = sampleFromOriginalImage(event, true);
+            if (sample) color = getNearestPaletteColor(sample);
+        }
+        if (!color || color.id === 'NONE') { hidePickerColorPreview(); return; }
+        swatch.style.backgroundColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+        label.textContent = String(color.id);
+        pickerReadout.hidden = false;
+        const bounds = pickerReadout.getBoundingClientRect();
+        pickerReadout.style.left = `${Math.max(8, Math.min(window.innerWidth - bounds.width - 8, event.clientX + 22))}px`;
+        pickerReadout.style.top = `${Math.max(8, Math.min(window.innerHeight - bounds.height - 8, event.clientY - bounds.height / 2))}px`;
+    });
+    document.addEventListener('pointerdown', hidePickerColorPreview, true);
+    document.addEventListener('pointerout', event => {
+        if (event.target?.id === 'result-canvas' || event.target?.id === 'compare-source-preview') hidePickerColorPreview();
+    });
+    document.addEventListener('scroll', hidePickerColorPreview, true);
+    document.addEventListener('keydown', hidePickerColorPreview, true);
+    document.addEventListener('visibilitychange', hidePickerColorPreview);
+    window.addEventListener('blur', hidePickerColorPreview);
+    window.addEventListener('resize', hidePickerColorPreview);
 }

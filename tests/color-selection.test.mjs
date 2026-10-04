@@ -15,13 +15,14 @@ globalThis.localStorage = {
 const colors = getCurrentPalette().slice(0, 8);
 const ids = () => AppState.recentColors.map(color => color.id);
 
-test('default uses most-used nontransparent color without changing pixels or seeding recent colors', () => {
+test('default uses most-used nontransparent color and seeds the first recent slot without changing pixels', () => {
     resetPatternColorSelection();
     const pixels = [colors[1], colors[0], colors[1], { id: 'NONE' }];
     const before = JSON.stringify(pixels);
     beginGlobalEditorSession(pixels);
     assert.equal(AppState.fillColorId, colors[1].id);
-    assert.deepEqual(ids(), []);
+    assert.deepEqual(ids(), [colors[1].id]);
+    assert.equal(AppState.lastRecentColorId, colors[1].id);
     assert.equal(JSON.stringify(pixels), before);
     assert.equal(AppState.editor.undoStack.length, 0);
 });

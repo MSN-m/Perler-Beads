@@ -47,7 +47,7 @@ export function beginGlobalEditorSession(pixelData) {
         .sort((a, b) => b.count - a.count || String(a.id).localeCompare(String(b.id)))
         .slice(0, 1);
     if (!AppState.paintColor && defaults[0]) {
-        AppState.paintColor = { id: defaults[0].id, r: defaults[0].r, g: defaults[0].g, b: defaults[0].b };
+        rememberPaintColor(defaults[0]);
     }
     restorePaintColor();
 }
@@ -67,6 +67,7 @@ export function setActiveEditorTool(tool) {
         AppState.selectedEdgeBeadsIndices = [];
     }
     AppState.eraserHoverColorId = null;
+    AppState.operationHoverIndex = null;
     AppState.editor.activeTool = tool || 'brush';
     if (['eraser', 'area-erase', 'color-eraser'].includes(tool)) AppState.lastEraserTool = tool;
     if (wasHovering || wasEdge !== AppState.edgeSelectionMode) {
@@ -105,6 +106,7 @@ export function restorePaletteToolSession() {
     Object.assign(AppState, snapshot.state);
     AppState.editor.activeTool = snapshot.tool;
     AppState.eraserHoverColorId = null;
+    AppState.operationHoverIndex = null;
     const canvas = document.getElementById('result-canvas');
     if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
     return true;
@@ -158,6 +160,7 @@ export function resetPatternColorSelection(snapshot = null, fallbackId = null) {
     AppState.lastEraserTool = 'eraser';
     AppState.eraserStroke = null;
     AppState.eraserHoverColorId = null;
+    AppState.operationHoverIndex = null;
     AppState.eraserClickSuppressedUntil = 0;
     AppState.lastRecentColorId = AppState.recentColors[0]?.id || null;
     AppState.fillColor = null;
