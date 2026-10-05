@@ -5,6 +5,7 @@ import {getCurrentPalette,resetPatternColorSelection} from '../src/editor.js';
 const records=new Map();let fail=false;const alerts=[];
 const db={close(){},transaction(){const tx={objectStore:()=>({
  getAll(){const request={};queueMicrotask(()=>{request.result=[...records.values()].map(x=>structuredClone(x));request.onsuccess();});return request;},
+ delete(id){queueMicrotask(()=>{if(fail){tx.error=new Error('quota');tx.onabort();}else{records.delete(id);tx.oncomplete();}});},
  put(value){queueMicrotask(()=>{if(fail){tx.error=new Error('quota');tx.onabort();}else{records.set(value.id,structuredClone(value));tx.oncomplete();}});}
 })};return tx;}};
 globalThis.window={indexedDB:{open(){const request={};queueMicrotask(()=>{request.result=db;request.onsuccess();});return request;}},alert:message=>alerts.push(message),confirm:()=>true};
@@ -12,9 +13,9 @@ const ctx=new Proxy({}, {get:(o,k)=>o[k]??(()=>{})});
 const canvas={id:'result-canvas',getContext:()=>ctx};const stats=Object.fromEntries(['total-beads-count','color-types-count','color-stats'].map(id=>[id,{}]));
 globalThis.document={body:{dataset:{layout:'test'}},readyState:'loading',getElementById:id=>id==='result-canvas'?canvas:stats[id]||null,querySelectorAll:()=>[],querySelector:()=>({classList:{add(){}},querySelectorAll:()=>[]}),addEventListener(){},createElement:()=>({getContext:()=>ctx,toDataURL:()=> 'thumb'})};
 globalThis.requestAnimationFrame=()=>{};
-const {saveWorkbenchDraft,saveWorkbenchDraftAs,hasUnsavedWorkbenchChanges,returnFromWorkbench,restoreWorkbenchDraft,importWorkbenchDraftFile}=await import('../src/ui.js');
+const {saveWorkbenchDraft,saveWorkbenchDraftAs,hasUnsavedWorkbenchChanges,saveWorkbenchAutomatically,installWorkbenchAutoSave,downloadAndSaveWorkbenchDraft,warnBeforeWorkbenchUnload,returnFromWorkbench,restoreWorkbenchDraft,importWorkbenchDraftFile}=await import('../src/ui.js');
 const colors=getCurrentPalette().slice(0,3).map(p=>({...p,a:255}));
-function setup(){Object.assign(AppState,{pixelData:[{...colors[0]},{...colors[1]}],stagedPixelData:null,stagedActions:[],gridWidth:2,gridHeight:1,currentDraftId:null,currentDraftVersionId:null,draftRestorePending:false,patternName:'测试草稿',drafts:[],paintStroke:null,eraserStroke:null,image:null,edgeSelectionMode:false,qualityOverlayVisible:false,fillSelection:null});resetPatternColorSelection();records.clear();fail=false;alerts.length=0;}
+function setup(){Object.assign(AppState,{pixelData:[{...colors[0]},{...colors[1]}],stagedPixelData:null,stagedActions:[],gridWidth:2,gridHeight:1,currentDraftId:null,currentDraftVersionId:null,draftRestorePending:false,patternName:'测试草稿',drafts:[],autoSaves:[],autoSaveError:false,paintStroke:null,eraserStroke:null,image:null,edgeSelectionMode:false,qualityOverlayVisible:false,fillSelection:null});resetPatternColorSelection();records.clear();fail=false;alerts.length=0;}
 test('save updates one identity, save-as copies, restore version retains newer data; imported history survives',async()=>{
  setup();assert.equal(await saveWorkbenchDraft(),true);const id=AppState.currentDraftId;const first=AppState.drafts[0].versions[0].id;
  assert.equal(await saveWorkbenchDraft(),true);assert.equal(records.size,1);assert.equal(AppState.drafts[0].versions.length,1);
@@ -109,4 +110,51 @@ test('return saves before exiting, discard preserves saved drafts, clean draft e
   const discarded=returnFromWorkbench();await new Promise(resolve=>setImmediate(resolve));await nodes['workbench-exit-discard'].fire();assert.equal(await discarded,true);assert.equal(activated,'#step-settings');assert.equal(records.get(savedId).pixelData[0].id,colors[0].id);assert.equal(AppState.pixelData.length,0);
   document.body.dataset.layout='test';setup();await saveWorkbenchDraft();document.body.dataset.layout='workbench';assert.equal(await returnFromWorkbench(),true);assert.equal(AppState.currentStep,1);assert.equal(activated,'#step-settings');assert.equal(records.size,1);
  } finally {document.getElementById=original;document.body.dataset.layout=layout;document.querySelector=originalQuery;}
+});
+
+test('automatic recovery overwrites one separate record, skips unchanged, and manual save clears it without extra history',async()=>{
+ setup();assert.equal(await saveWorkbenchAutomatically(),true);assert.equal(records.size,1);assert.equal(AppState.drafts.length,0);assert.equal(AppState.currentDraftId,null);
+ const autoId=AppState.autoSaves[0].id,stamp=AppState.autoSaves[0].updatedAt;assert.equal(AppState.autoSaves[0].versions,undefined);
+ await saveWorkbenchAutomatically();assert.equal(AppState.autoSaves[0].updatedAt,stamp);
+ AppState.pixelData[0]={...colors[2]};await saveWorkbenchAutomatically();assert.equal(records.size,1);assert.equal(AppState.autoSaves[0].id,autoId);assert.equal(AppState.autoSaves[0].pixelData[0].id,colors[2].id);
+ await saveWorkbenchDraft();const manualId=AppState.currentDraftId;assert.equal(records.size,1);assert.equal(AppState.autoSaves.length,0);assert.equal(AppState.drafts[0].versions.length,1);
+ AppState.pixelData[0]={...colors[1]};await saveWorkbenchAutomatically();assert.equal(records.size,2);assert.equal(AppState.currentDraftId,manualId);assert.equal(AppState.drafts[0].versions.length,1);
+ const recoveryId=AppState.autoSaves[0].id;AppState.pixelData=[];restoreWorkbenchDraft(recoveryId,null,true);assert.equal(AppState.pixelData[0].id,colors[1].id);assert.equal(AppState.currentDraftId,manualId);assert.equal(AppState.drafts[0].pixelData[0].id,colors[2].id);
+ await saveWorkbenchDraft();assert.equal(records.size,1);assert.equal(AppState.drafts[0].versions.length,2);
+});
+test('automatic save skips live strokes and reports failure while keeping previous recovery data',async()=>{
+ setup();AppState.paintStroke={};assert.equal(await saveWorkbenchAutomatically(),false);assert.equal(records.size,0);AppState.paintStroke=null;
+ await saveWorkbenchAutomatically();const previous=structuredClone(AppState.autoSaves[0]);AppState.pixelData[0]={...colors[2]};fail=true;
+ assert.equal(await saveWorkbenchAutomatically(),false);assert.equal(AppState.autoSaveError,true);assert.deepEqual(AppState.autoSaves[0],previous);assert.equal(AppState.pixelData[0].id,colors[2].id);assert.equal(alerts.length,0);fail=false;
+});
+
+test('five-minute timer installs once, defers busy gestures, and saves after the gesture ends',async()=>{
+ setup();let callback,count=0,now=0;const clock=Date.now,interval=window.setInterval;
+ Date.now=()=>now;window.setInterval=(fn,period)=>{callback=fn;count++;assert.equal(period,15000);return 42;};
+ try{
+  AppState.currentStep=3;installWorkbenchAutoSave();installWorkbenchAutoSave();assert.equal(count,1);
+  now=299999;await callback();assert.equal(records.size,0);
+  AppState.eraserStroke={};now=300000;await callback();assert.equal(records.size,0);
+  AppState.eraserStroke=null;now=315000;await callback();assert.equal(records.size,1);assert.equal(AppState.drafts.length,0);
+  AppState.pixelData[0]={...colors[2]};now=400000;await callback();assert.equal(AppState.autoSaves[0].pixelData[0].id,colors[0].id);
+  now=615000;await callback();assert.equal(records.size,1);assert.equal(AppState.autoSaves[0].pixelData[0].id,colors[2].id);
+ }finally{Date.now=clock;window.setInterval=interval;}
+});
+
+test('undo back to the manual save removes stale automatic recovery on the next check',async()=>{
+ setup();await saveWorkbenchDraft();const baseline=structuredClone(AppState.pixelData);AppState.pixelData[0]={...colors[2]};await saveWorkbenchAutomatically();assert.equal(AppState.autoSaves.length,1);
+ AppState.pixelData=baseline;await saveWorkbenchAutomatically();assert.equal(AppState.autoSaves.length,0);assert.equal(records.size,1);assert.equal(AppState.drafts[0].versions.length,1);
+});
+
+test('export saves the matching staged diagram, repeated export does not duplicate versions, later edits warn on exit',async()=>{
+ setup();let downloads=0;AppState.stagedPixelData=structuredClone(AppState.pixelData);AppState.stagedPixelData[0]={...colors[2]};
+ const initial=AppState.pixelData;assert.equal(await downloadAndSaveWorkbenchDraft(()=>{downloads++;assert.equal(AppState.pixelData[0].id,colors[2].id);}),true);
+ assert.equal(AppState.pixelData,initial);assert.equal(records.size,1);assert.equal(AppState.drafts[0].pixelData[0].id,colors[2].id);assert.equal(hasUnsavedWorkbenchChanges(),false);
+ await downloadAndSaveWorkbenchDraft(()=>downloads++);assert.equal(records.size,1);assert.equal(AppState.drafts[0].versions.length,1);assert.equal(downloads,2);
+ const clean={preventDefault(){this.prevented=true;}};warnBeforeWorkbenchUnload(clean);assert.equal(clean.prevented,undefined);
+ AppState.stagedPixelData[0]={...colors[1]};const dirty={preventDefault(){this.prevented=true;}};warnBeforeWorkbenchUnload(dirty);assert.equal(dirty.prevented,true);assert.equal(dirty.returnValue,'');
+});
+test('failed draft save still triggers download and retains exit warning; failed export does not mark saved',async()=>{
+ setup();fail=true;let downloads=0;assert.equal(await downloadAndSaveWorkbenchDraft(()=>downloads++),false);assert.equal(downloads,1);assert.equal(hasUnsavedWorkbenchChanges(),true);assert.equal(alerts.length,0);fail=false;
+ assert.equal(await downloadAndSaveWorkbenchDraft(()=>{throw new Error('export failed');}),false);assert.equal(records.size,0);assert.equal(hasUnsavedWorkbenchChanges(),true);
 });

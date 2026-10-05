@@ -1040,8 +1040,9 @@ async function loadWorkbenchDrafts() {
             request.onerror = () => reject(request.error);
         });
         db.close();
+        AppState.autoSaves = (Array.isArray(drafts) ? drafts : []).filter(item => item.kind === 'autosave').sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
         AppState.drafts = Array.isArray(drafts)
-            ? drafts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+            ? drafts.filter(item => item.kind !== 'autosave').sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
             : [];
     } catch (error) {
         console.warn('Failed to load drafts.', error);
@@ -1077,6 +1078,7 @@ async function removeWorkbenchDraftFromDb(draftId) {
 
 function renderDraftBox() {
     if (!isWorkbenchLayout()) return;
+    renderAutoSaveRecords();
     const empty = document.getElementById('draft-box-empty');
     const list = document.getElementById('draft-box-list');
     const saveBtn = document.getElementById('save-draft-btn');
@@ -1156,6 +1158,78 @@ function getNextDraftName() {
     return `草稿 ${maxIndex + 1}`;
 }
 
+let autoSaving = false;
+function autoSaveKey() { return `autosave:${AppState.currentDraftId ? `draft:${AppState.currentDraftId}` : AppState.colorSelectionPatternId}`; }
+function autoSaveContent(record) {
+    const { updatedAt, thumbnailDataUrl, colorSelection, ...content } = record;
+    return JSON.stringify(content);
+}
+function renderAutoSaveRecords() {
+    const status = document.getElementById('workbench-autosave-status');
+    if (status) { status.textContent = AppState.autoSaveError ? '自动保存失败，请手动保存' : ''; status.classList.toggle('hidden', !AppState.autoSaveError); }
+    const box = document.getElementById('autosave-records');
+    if (!box) return;
+    const records = AppState.autoSaves || [];
+    box.classList.toggle('hidden', records.length === 0 && !AppState.autoSaveError);
+    box.innerHTML = `<h3 class="text-sm font-bold text-gray-700 mb-2">自动恢复记录</h3><p class="text-xs text-gray-500 mb-2">每张图纸保留一份，不占手动历史版本。</p>${AppState.autoSaveError ? '<p role="status" class="text-xs text-red-500 mb-2">自动保存失败，请手动保存草稿。</p>' : ''}` + records.map(record => `<div class="rounded-xl bg-gray-50 p-3 mb-2"><p class="text-sm font-bold">${escapeHtml(record.name)}</p><p class="text-xs text-gray-500 mt-1">${escapeHtml(getDraftTimestampLabel(record.updatedAt))}</p><button type="button" data-autosave-id="${escapeHtml(record.id)}" ${hasWorkbenchPattern() ? 'disabled' : ''} class="mt-2 text-sm text-primary disabled:opacity-50">${hasWorkbenchPattern() ? '请先保存或退出当前图纸' : '恢复自动进度'}</button></div>`).join('');
+}
+export async function saveWorkbenchAutomatically() {
+    if (autoSaving || savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke || AppState.fillSelection || returningFromWorkbench || draftNamingPending || !hasWorkbenchPattern()) return false;
+    await workbenchDraftsReady;
+    if (autoSaving || savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke || !hasWorkbenchPattern()) return false;
+    autoSaving = true;
+    try {
+        if (!hasUnsavedWorkbenchChanges()) {
+            const key = autoSaveKey();
+            if ((AppState.autoSaves || []).some(item => item.id === key)) {
+                await removeWorkbenchDraftFromDb(key);
+                AppState.autoSaves = AppState.autoSaves.filter(item => item.id !== key);
+            }
+            AppState.autoSaveError = false;
+            renderAutoSaveRecords();
+            return true;
+        }
+        const pixels = getCurrentDraftSourcePixels();
+        const record = {
+            id: autoSaveKey(), kind: 'autosave', baseDraftId: AppState.currentDraftId,
+            sourcePatternId: AppState.colorSelectionPatternId, updatedAt: new Date().toISOString(),
+            name: AppState.patternName || '未命名图纸', patternName: AppState.patternName || '',
+            gridWidth: AppState.gridWidth, gridHeight: AppState.gridHeight, brand: AppState.brand, mardSet: AppState.mardSet,
+            colorCount: new Set(pixels.filter(p => p && p.id !== 'NONE').map(p => p.id)).size,
+            isMirrored: AppState.isMirrored, colorSelection: getColorSelectionSnapshot(),
+            cropRect: AppState.cropRect ? { ...AppState.cropRect } : null, generationSettings: captureDraftGenerationSettings(),
+            sourceImageDataUrl: AppState.image ? getCurrentSourceCanvasSnapshot() || AppState.draftSourceImageDataUrl : AppState.draftSourceImageDataUrl,
+            pixelData: pixels
+        };
+        const previous = (AppState.autoSaves || []).find(item => item.id === record.id);
+        if (previous && autoSaveContent(previous) === autoSaveContent(record)) return true;
+        await upsertWorkbenchDraft(record);
+        AppState.autoSaves = [record, ...(AppState.autoSaves || []).filter(item => item.id !== record.id)];
+        AppState.autoSaveError = false;
+        renderAutoSaveRecords();
+        return true;
+    } catch (error) {
+        console.warn('Automatic draft save failed.', error);
+        AppState.autoSaveError = true;
+        renderAutoSaveRecords();
+        return false;
+    } finally { autoSaving = false; }
+}
+let autoSaveTimer = null;
+export function installWorkbenchAutoSave() {
+    if (autoSaveTimer !== null) return;
+    let dueAt = Date.now() + 5 * 60 * 1000;
+    autoSaveTimer = window.setInterval(async () => {
+        if (Date.now() < dueAt || AppState.currentStep !== 3 || document.hidden) return;
+        if ([...document.querySelectorAll('[role="dialog"]')].some(element => !element.classList.contains('hidden') && element.getClientRects().length)) return;
+        const saved = await saveWorkbenchAutomatically();
+        if (saved || AppState.autoSaveError) dueAt = Date.now() + 5 * 60 * 1000;
+    }, 15000);
+    document.getElementById('autosave-records')?.addEventListener('click', event => {
+        const button = event.target.closest('button[data-autosave-id]');
+        if (button) restoreWorkbenchDraft(button.dataset.autosaveId, null, true);
+    });
+}
 let savingDraft = false;
 const DRAFT_SETTING_IDS = ['color-limit-toggle', 'max-colors-slider', 'dithering-toggle', 'precision-mode-select', 'color-match-mode-select'];
 function captureDraftGenerationSettings() {
@@ -1165,7 +1239,7 @@ function captureDraftGenerationSettings() {
     }));
 }
 export async function saveWorkbenchDraft({ saveAs = false, name = null, inlineError = false } = {}) {
-    if (!hasWorkbenchPattern() || savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
+    if (!hasWorkbenchPattern() || savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
     savingDraft = true;
     try {
         await workbenchDraftsReady;
@@ -1191,11 +1265,17 @@ export async function saveWorkbenchDraft({ saveAs = false, name = null, inlineEr
             thumbnailDataUrl: createDraftThumbnail(pixels, AppState.gridWidth, AppState.gridHeight),
             pixelData: pixels
         }, existing);
+        const autoRecordId = autoSaveKey();
         const savedPatternId = AppState.colorSelectionPatternId;
         if (saveAs) draft.colorSelection.patternId = `draft:${draft.id}`;
         // Apply the copy's independent color-selection identity to its first version too.
         if (saveAs) draft.versions[0].colorSelection.patternId = draft.colorSelection.patternId;
         await upsertWorkbenchDraft(draft);
+        try {
+            await removeWorkbenchDraftFromDb(autoRecordId);
+            AppState.autoSaves = (AppState.autoSaves || []).filter(item => item.id !== autoRecordId);
+            AppState.autoSaveError = false;
+        } catch (error) { console.warn('Automatic recovery cleanup failed.', error); }
         AppState.drafts = [draft, ...(AppState.drafts || []).filter(item => item.id !== draft.id)];
         if (AppState.colorSelectionPatternId !== savedPatternId) { renderDraftBox(); return true; }
         AppState.currentDraftId = draft.id;
@@ -1282,6 +1362,40 @@ export function saveWorkbenchDraftAs() {
     input.select();
     return draftNamingPending;
 }
+let exportSaving = false;
+export async function downloadAndSaveWorkbenchDraft(download) {
+    if (exportSaving || savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke || !hasWorkbenchPattern()) return false;
+    exportSaving = true;
+    const status = document.getElementById('export-save-status');
+    const buttons = ['download-image-btn', 'download-mirrored-image-btn', 'download-raw-image-btn'].map(id => document.getElementById(id)).filter(Boolean);
+    buttons.forEach(button => { button.disabled = true; });
+    try {
+        // Trigger the download synchronously while the user's click is still active.
+        // Export the same staged content that draft saving uses without changing edit history.
+        const original = AppState.pixelData;
+        const patternId = AppState.colorSelectionPatternId;
+        try { AppState.pixelData = AppState.stagedPixelData || original; download(); }
+        finally { AppState.pixelData = original; }
+        if (status) status.textContent = '下载已开始，正在保存草稿…';
+        const saved = await saveWorkbenchDraft({ inlineError: true });
+        if (status && patternId === AppState.colorSelectionPatternId) {
+            status.textContent = saved ? '下载已开始，草稿已保存。' : '下载已开始，草稿保存失败。请返回编辑后重试保存。';
+        }
+        return saved;
+    } catch (error) {
+        console.warn('Pattern export failed.', error);
+        if (status) status.textContent = '导出失败，当前图纸仍然保留，请重试。';
+        return false;
+    } finally {
+        exportSaving = false;
+        buttons.forEach(button => { button.disabled = false; });
+    }
+}
+export function warnBeforeWorkbenchUnload(event) {
+    if (!hasUnsavedWorkbenchChanges()) return;
+    event.preventDefault();
+    event.returnValue = '';
+}
 // Compare saved content, not undo count: undoing back to the saved diagram is clean.
 export function hasUnsavedWorkbenchChanges() {
     if (!hasWorkbenchPattern()) return false;
@@ -1327,9 +1441,9 @@ function exitWorkbenchToUpload() {
 }
 export async function returnFromWorkbench() {
     if (returningFromWorkbench) return returningFromWorkbench;
-    if (savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
+    if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
     await workbenchDraftsReady;
-    if (savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
+    if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
     if (!hasUnsavedWorkbenchChanges()) { exitWorkbenchToUpload(); return true; }
     const modal = document.getElementById('workbench-exit-modal');
     const save = document.getElementById('workbench-exit-save');
@@ -1461,9 +1575,10 @@ export async function importWorkbenchDraftFile(file) {
     window.alert(`已导入 ${importedDrafts.length} 个草稿。`);
 }
 
-export function restoreWorkbenchDraft(draftId, versionId = null) {
-    if (savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return;
-    let draft = (AppState.drafts || []).find((item) => item.id === draftId);
+export function restoreWorkbenchDraft(draftId, versionId = null, automatic = false) {
+    if (automatic && hasWorkbenchPattern()) return;
+    if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return;
+    let draft = (automatic ? AppState.autoSaves || [] : AppState.drafts || []).find((item) => item.id === draftId);
     if (!draft) return;
 
     if (!isValidDraftPayload(draft)) {
@@ -1479,7 +1594,7 @@ export function restoreWorkbenchDraft(draftId, versionId = null) {
         try { draft = unpackDraftVersion(parentDraft, version); }
         catch { window.alert('恢复失败：历史版本数据不完整。'); return; }
     }
-    AppState.currentDraftId = parentDraft.id;
+    AppState.currentDraftId = automatic ? parentDraft.baseDraftId || null : parentDraft.id;
     AppState.draftSourceImageDataUrl = draft.sourceImageDataUrl || null;
     AppState.currentDraftVersionId = versionId || parentDraft.versions?.[0]?.id || null;
     AppState.draftRestorePending = true;
@@ -1535,7 +1650,7 @@ export function restoreWorkbenchDraft(draftId, versionId = null) {
     AppState.workbenchToolbarCollapsed = false;
     AppState.draftDrawerOpen = false;
     resetBatchReplaceState();
-    resetPatternColorSelection(draft.colorSelection, `draft:${draft.id}`);
+    resetPatternColorSelection(draft.colorSelection, automatic ? draft.sourcePatternId : `draft:${draft.id}`);
 
     const gridSizeSlider = document.getElementById('grid-size-slider');
     if (gridSizeSlider) {
@@ -3697,6 +3812,8 @@ export function expandWorkbenchEditToolbar() {
  * 初始化导出页（Step 4）
  */
 function initExportView() {
+    const status = document.getElementById('export-save-status');
+    if (status) status.textContent = '导出图纸或镜像图时，将同时保存当前草稿。';
     const resultCanvas = document.getElementById('result-canvas');
     const exportImg = document.getElementById('export-preview');
     exportImg.src = resultCanvas.toDataURL();

@@ -45,6 +45,9 @@ import {
     adjustRedo,
     adjustCancel,
     saveWorkbenchDraft,
+    downloadAndSaveWorkbenchDraft,
+    warnBeforeWorkbenchUnload,
+    installWorkbenchAutoSave,
     toggleWorkbenchDraftHistory,
     exportWorkbenchDrafts,
     exportWorkbenchDraft,
@@ -1095,12 +1098,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const downloadImgBtn = document.getElementById('download-image-btn');
     if (downloadImgBtn) {
-        downloadImgBtn.addEventListener('click', downloadImage);
+        downloadImgBtn.addEventListener('click', () => downloadAndSaveWorkbenchDraft(downloadImage));
     }
 
     const downloadMirroredImgBtn = document.getElementById('download-mirrored-image-btn');
     if (downloadMirroredImgBtn) {
-        downloadMirroredImgBtn.addEventListener('click', downloadMirroredImage);
+        downloadMirroredImgBtn.addEventListener('click', () => downloadAndSaveWorkbenchDraft(downloadMirroredImage));
     }
 
     const downloadRawImgBtn = document.getElementById('download-raw-image-btn');
@@ -1180,5 +1183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateWorkbenchUI();
     });
 
+    window.addEventListener('beforeunload', warnBeforeWorkbenchUnload);
+    installWorkbenchAutoSave();
     updateWorkbenchUI();
 });

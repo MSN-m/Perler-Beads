@@ -104,6 +104,8 @@ export const AppState = {
     comparePreviewLastY: 0,
     comparePreviewVisible: false,
     drafts: [],
+    autoSaves: [],
+    autoSaveError: false,
     currentDraftId: null,
     draftSourceImageDataUrl: null,
     currentDraftVersionId: null,

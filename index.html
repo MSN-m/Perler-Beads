@@ -4,28 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png?v=20261006-1">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=20261006-1">
+    <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261005-export-style-1">
+    <link rel="stylesheet" href="css/style.css?v=20261005-export-save-exit-1">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
         "imports": {
-            "./src/state.js": "./src/state.js?v=20261005-export-style-1",
-            "./src/editor.js": "./src/editor.js?v=20261005-export-style-1",
-            "./src/renderer.js": "./src/renderer.js?v=20261005-export-style-1",
-            "./src/ui.js": "./src/ui.js?v=20261005-export-style-1",
-            "./src/utils.js": "./src/utils.js?v=20261005-export-style-1",
-            "./src/features/edge.js": "./src/features/edge.js?v=20261005-export-style-1",
-            "./src/features/adjust.js": "./src/features/adjust.js?v=20261005-export-style-1",
-            "./src/features/delete.js": "./src/features/delete.js?v=20261005-export-style-1",
-            "./src/features/zoom.js": "./src/features/zoom.js?v=20261005-export-style-1",
-            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261005-export-style-1",
-            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261005-export-style-1"
+            "./src/state.js": "./src/state.js?v=20261005-export-save-exit-1",
+            "./src/editor.js": "./src/editor.js?v=20261005-export-save-exit-1",
+            "./src/renderer.js": "./src/renderer.js?v=20261005-export-save-exit-1",
+            "./src/ui.js": "./src/ui.js?v=20261005-export-save-exit-1",
+            "./src/utils.js": "./src/utils.js?v=20261005-export-save-exit-1",
+            "./src/features/edge.js": "./src/features/edge.js?v=20261005-export-save-exit-1",
+            "./src/features/adjust.js": "./src/features/adjust.js?v=20261005-export-save-exit-1",
+            "./src/features/delete.js": "./src/features/delete.js?v=20261005-export-save-exit-1",
+            "./src/features/zoom.js": "./src/features/zoom.js?v=20261005-export-save-exit-1",
+            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261005-export-save-exit-1",
+            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261005-export-save-exit-1"
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261005-export-style-1"></script>
+    <script type="module" src="src/main.js?v=20261005-export-save-exit-1"></script>
 </head>
 
 <body data-layout="workbench"
@@ -45,6 +48,7 @@
                     <button id="workbench-back-btn" type="button" class="workbench-header-icon" aria-label="返回" title="返回"><img class="workbench-header-back-icon" src="assets/figma-ui/back.svg" alt=""></button>
                     <div class="min-w-0">
                         <span id="workbench-pattern-title" class="block min-w-0 truncate text-base font-black text-gray-900">未命名图纸</span>
+                        <span id="workbench-autosave-status" role="status" class="hidden text-xs text-red-500"></span>
                         <span id="workbench-pattern-meta" class="block mt-0.5 text-[10px] text-gray-400">32x32 · MARD 221色</span>
                     </div>
                     <button id="show-workbench-settings-panel-btn" type="button"
@@ -508,6 +512,7 @@
                             </label>
                             <input id="import-drafts-file" type="file" accept="application/json,.json" class="hidden">
                         </div>
+                        <div id="autosave-records" class="hidden max-h-48 overflow-y-auto mb-3"></div>
                         <div id="draft-box-empty" class="text-sm text-gray-500 px-2 py-3">
                             暂无草稿
                         </div>
@@ -577,6 +582,7 @@
                 </div>
             </div>
             <div class="export-page-actions">
+                <p id="export-save-status" role="status" class="text-xs text-gray-500 text-center">导出图纸或镜像图时，将同时保存当前草稿。</p>
                 <button id="download-image-btn" type="button" class="export-page-button is-primary">保存图片</button>
                 <button id="download-mirrored-image-btn" type="button" class="export-page-button">保存镜像图</button>
                 <button id="download-raw-image-btn" type="button" class="export-page-button">保存原图</button>
