@@ -158,3 +158,26 @@ test('failed draft save still triggers download and retains exit warning; failed
  setup();fail=true;let downloads=0;assert.equal(await downloadAndSaveWorkbenchDraft(()=>downloads++),false);assert.equal(downloads,1);assert.equal(hasUnsavedWorkbenchChanges(),true);assert.equal(alerts.length,0);fail=false;
  assert.equal(await downloadAndSaveWorkbenchDraft(()=>{throw new Error('export failed');}),false);assert.equal(records.size,0);assert.equal(hasUnsavedWorkbenchChanges(),true);
 });
+
+test('editor automatic recovery requires confirmation and rejects another document record',async()=>{
+ setup();await saveWorkbenchDraft();const id=AppState.currentDraftId;
+ AppState.pixelData[0]={...colors[2]};await saveWorkbenchAutomatically();
+ const own=structuredClone(AppState.autoSaves[0]);
+ AppState.pixelData[0]={...colors[1]};const before=structuredClone(AppState.pixelData);
+ assert.equal(restoreWorkbenchDraft(own.id,null,true),false);assert.deepEqual(AppState.pixelData,before);
+ AppState.autoSaves.push({...own,id:'other-auto',baseDraftId:'another-draft'});
+ assert.equal(restoreWorkbenchDraft('other-auto',null,true,{confirmed:true}),false);assert.deepEqual(AppState.pixelData,before);
+ assert.equal(restoreWorkbenchDraft(own.id,null,true,{confirmed:true}),true);
+ assert.equal(AppState.currentDraftId,id);assert.equal(AppState.pixelData[0].id,colors[2].id);
+ assert.equal(records.get(id).versions.length,1);assert.equal(AppState.autoSaves.some(record=>record.id===own.id),true);
+ assert.equal(hasUnsavedWorkbenchChanges(),true);
+ await saveWorkbenchDraft();assert.equal(records.get(id).versions.length,2);assert.equal(AppState.autoSaves.some(record=>record.id===own.id),false);
+});
+test('failed changed save does not trim an existing ten-version history',async()=>{
+ setup();await saveWorkbenchDraft();const saved=AppState.drafts[0];
+ saved.versions=Array.from({length:10},(_,i)=>({...structuredClone(saved.versions[0]),id:`old-${i}`}));
+ records.set(saved.id,structuredClone(saved));
+ const previous=structuredClone(saved);AppState.pixelData[0]={...colors[2]};fail=true;
+ assert.equal(await saveWorkbenchDraft(),false);assert.deepEqual(AppState.drafts[0],previous);assert.deepEqual(records.get(saved.id),previous);
+ fail=false;assert.equal(await saveWorkbenchDraft(),true);assert.equal(AppState.drafts[0].versions.length,5);assert.equal(records.get(saved.id).versions.length,5);
+});

@@ -96,6 +96,7 @@ import { setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState
 import { renderResult } from './renderer.js';
 import { createEditorShortcuts } from './features/editor-shortcuts.js';
 import { createWorkbenchExportModal } from './features/export-modal.js';
+import { installWorkbenchHistory } from './features/history-modal.js';
 
 /**
  * 处理图片上传
@@ -956,6 +957,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resetPatternBtn.addEventListener('click', resetPatternToGenerated);
     }
 
+    installWorkbenchHistory({ updateUI: updateWorkbenchUI, restore: restoreWorkbenchDraft });
     const saveDraftBtn = document.getElementById('save-draft-btn');
     if (saveDraftBtn) {
         saveDraftBtn.addEventListener('click', async (event) => {
@@ -987,7 +989,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const saveDraftBtn = document.getElementById('save-draft-btn');
         const toggleDraftDrawerBtn = document.getElementById('toggle-draft-drawer-btn');
         const target = event.target;
-        if (draftDrawer?.contains(target) || saveDraftBtn?.contains(target) || toggleDraftDrawerBtn?.contains(target)) return;
+        if (document.getElementById('workbench-history-modal')?.contains(target) || draftDrawer?.contains(target) || saveDraftBtn?.contains(target) || toggleDraftDrawerBtn?.contains(target)) return;
         AppState.draftDrawerOpen = false;
         updateWorkbenchUI();
     });

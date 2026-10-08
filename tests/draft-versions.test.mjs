@@ -15,11 +15,11 @@ test('legacy draft is retained as first historical version',()=>{
  const saved=buildDraftWithVersions(draft('B'),draft('A'));assert.equal(saved.versions.length,2);
  assert.equal(unpackDraftVersion(saved,saved.versions[1]).pixelData[0].id,'A');
 });
-test('ten-version cap and restoring old state preserves newer versions',()=>{
+test('five-version cap and restoring old state preserves newer versions',()=>{
  let saved=null;for(let i=0;i<15;i++) saved=buildDraftWithVersions(draft(String(i)),saved);
- assert.equal(saved.versions.length,10);const newest=saved.versions[0].id;
+ assert.equal(saved.versions.length,5);const newest=saved.versions[0].id;
  const historical=unpackDraftVersion(saved,saved.versions[3]);saved=buildDraftWithVersions({...historical,updatedAt:new Date().toISOString()},saved);
- assert.equal(saved.versions.length,10);assert.equal(saved.versions[1].id,newest);assert.equal(unpackDraftVersion(saved,saved.versions[0]).pixelData[0].id,'11');
+ assert.equal(saved.versions.length,5);assert.equal(saved.versions[1].id,newest);assert.equal(unpackDraftVersion(saved,saved.versions[0]).pixelData[0].id,'11');
 });
 test('shared current image occurs once; changed source images remain recoverable',()=>{
  let saved=buildDraftWithVersions(draft('A'));saved=buildDraftWithVersions(draft('B'),saved);assert.deepEqual(saved.versionSources,{});
@@ -31,4 +31,18 @@ test('shared current image occurs once; changed source images remain recoverable
 });
 test('corrupt compact data is rejected',()=>{
  const saved=buildDraftWithVersions(draft());assert.throws(()=>unpackDraftVersion(saved,{...saved.versions[0],indices:[999,0]}));
+});
+
+test('old ten-version history survives unchanged saving and trims only after changed save',()=>{
+ const legacy=draft('9');
+ legacy.versions=Array.from({length:10},(_,i)=>({ ...buildDraftWithVersions(draft(String(9-i))).versions[0], id:`old-${i}`, sourceRef:'current' }));
+ legacy.versionSources={};
+ const untouched=structuredClone(legacy);
+ const same=buildDraftWithVersions({...legacy,updatedAt:new Date().toISOString()},legacy);
+ assert.equal(same.versions.length,10);
+ assert.deepEqual(legacy,untouched);
+ const changed=buildDraftWithVersions(draft('new'),same);
+ assert.equal(changed.versions.length,5);
+ assert.equal(changed.versions[1].id,'old-0');
+ assert.equal(same.versions.length,10);
 });

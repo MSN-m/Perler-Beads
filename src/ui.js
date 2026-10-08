@@ -3,6 +3,7 @@
  */
 import { AppState } from './state.js';
 import { buildDraftWithVersions, unpackDraftVersion } from './features/draft-versions.js';
+import { renderWorkbenchHistory, getCurrentPatternHistory } from './features/history-modal.js';
 import { hidePickerColorPreview } from './features/tooltips.js';
 import { captureRecentColors, animateRecentColors } from './features/recent-color-motion.js';
 import { getColorSelectionSnapshot, resetPatternColorSelection, openPaletteToolSession, restorePaletteToolSession, setActiveEditorTool } from './editor.js';
@@ -1087,24 +1088,20 @@ function renderDraftBox() {
     if (!empty || !list || !saveBtn || !drawer || !toggleBtn) return;
 
     const hasPattern = hasWorkbenchPattern();
-    const isMobileTopBar = AppState.workbenchViewportMode === 'mobile' && hasPattern;
-    const isDesktopEditor = AppState.workbenchViewportMode === 'desktop' && hasPattern;
+    renderWorkbenchHistory();
+
     saveBtn.disabled = false;
     saveBtn.classList.toggle('opacity-40', false);
     saveBtn.classList.toggle('cursor-not-allowed', false);
 
     const drafts = Array.isArray(AppState.drafts) ? AppState.drafts : [];
-    const desktopDraftCount = drafts.length > 9 ? '9+' : String(drafts.length);
-    const desktopDraftLabel = drafts.length === 0 ? '保存草稿' : `保存草稿(${desktopDraftCount})`;
-    const draftLabel = hasPattern
-        ? (isMobileTopBar ? `草稿（${drafts.length}）` : isDesktopEditor ? desktopDraftLabel : `保存为草稿（${drafts.length}）`)
-        : `草稿箱（${drafts.length}）`;
+    const draftLabel = hasPattern ? '保存草稿' : `草稿箱（${drafts.length}）`;
     // Keep the click target stable while panels and editor state refresh.
     const saveLabel = saveBtn.querySelector('.draft-save-label');
     if (saveLabel && saveLabel.textContent !== draftLabel) saveLabel.textContent = draftLabel;
-    drawer.classList.toggle('hidden', !AppState.draftDrawerOpen);
+    drawer.classList.toggle('hidden', hasPattern || !AppState.draftDrawerOpen);
     toggleBtn.classList.toggle('is-open', AppState.draftDrawerOpen);
-    toggleBtn.setAttribute('aria-label', AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表');
+    toggleBtn.setAttribute('aria-label', hasPattern ? (AppState.draftDrawerOpen ? '关闭草稿记录' : '查看草稿记录') : (AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表'));
     toggleBtn.classList.toggle('hidden', !hasPattern);
     empty.classList.toggle('hidden', drafts.length > 0);
     list.classList.toggle('hidden', drafts.length === 0);
@@ -1138,7 +1135,7 @@ function renderDraftBox() {
                         <button type="button" data-draft-action="export" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-primary hover:text-primary">导出</button>
                         <button type="button" data-draft-action="delete" data-draft-id="${draft.id}" class="px-2.5 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-500 hover:border-red-300 hover:text-red-500">删除</button>
                     </div>
-                    ${historyOpen ? `<div class="draft-version-list"><p>保留最近 10 个保存版本；恢复不会删除较新版本。</p>${versions.length ? versions.map((version, index) => `<div class="draft-version-row"><span>${escapeHtml(getDraftTimestampLabel(version.savedAt))}${index === 0 ? ' · 最新' : ''}</span><button type="button" data-draft-action="restore-version" data-draft-id="${escapeHtml(draft.id)}" data-version-id="${escapeHtml(version.id)}">恢复此版本</button></div>`).join('') : '<p>旧草稿将在下次保存时开始记录版本。</p>'}</div>` : ''}
+                    ${historyOpen ? `<div class="draft-version-list"><p>保留最近 5 个保存版本；恢复不会删除较新版本。</p>${versions.length ? versions.map((version, index) => `<div class="draft-version-row"><span>${escapeHtml(getDraftTimestampLabel(version.savedAt))}${index === 0 ? ' · 最新' : ''}</span><button type="button" data-draft-action="restore-version" data-draft-id="${escapeHtml(draft.id)}" data-version-id="${escapeHtml(version.id)}">恢复此版本</button></div>`).join('') : '<p>旧草稿将在下次保存时开始记录版本。</p>'}</div>` : ''}
                 </div>
             </div>
         </div>
@@ -1165,6 +1162,7 @@ function autoSaveContent(record) {
     return JSON.stringify(content);
 }
 function renderAutoSaveRecords() {
+    renderWorkbenchHistory();
     const status = document.getElementById('workbench-autosave-status');
     if (status) { status.textContent = AppState.autoSaveError ? '自动保存失败，请手动保存' : ''; status.classList.toggle('hidden', !AppState.autoSaveError); }
     const box = document.getElementById('autosave-records');
@@ -1575,24 +1573,24 @@ export async function importWorkbenchDraftFile(file) {
     window.alert(`已导入 ${importedDrafts.length} 个草稿。`);
 }
 
-export function restoreWorkbenchDraft(draftId, versionId = null, automatic = false) {
-    if (automatic && hasWorkbenchPattern()) return;
-    if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return;
+export function restoreWorkbenchDraft(draftId, versionId = null, automatic = false, { confirmed = false } = {}) {
+    if (automatic && hasWorkbenchPattern() && (!confirmed || getCurrentPatternHistory().automatic?.id !== draftId)) return false;
+    if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
     let draft = (automatic ? AppState.autoSaves || [] : AppState.drafts || []).find((item) => item.id === draftId);
-    if (!draft) return;
+    if (!draft) return false;
 
     if (!isValidDraftPayload(draft)) {
         window.alert('恢复失败：草稿数据不完整。');
-        return;
+        return false;
     }
 
     const parentDraft = draft;
     if (versionId) {
         const version = draft.versions?.find(item => item.id === versionId);
-        if (!version) return;
-        if (!window.confirm('恢复此保存版本？当前未保存修改将被替换，较新的保存版本仍会保留。')) return;
+        if (!version) return false;
+        if (!confirmed && !window.confirm('恢复此保存版本？当前未保存修改将被替换，较新的保存版本仍会保留。')) return false;
         try { draft = unpackDraftVersion(parentDraft, version); }
-        catch { window.alert('恢复失败：历史版本数据不完整。'); return; }
+        catch { window.alert('恢复失败：历史版本数据不完整。'); return false; }
     }
     AppState.currentDraftId = automatic ? parentDraft.baseDraftId || null : parentDraft.id;
     AppState.draftSourceImageDataUrl = draft.sourceImageDataUrl || null;
@@ -1712,6 +1710,7 @@ export function restoreWorkbenchDraft(draftId, versionId = null, automatic = fal
     };
 
     finishRestore();
+    return true;
 }
 
 export async function deleteWorkbenchDraft(draftId) {

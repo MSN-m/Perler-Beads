@@ -1,5 +1,5 @@
 /** Compact saved versions. Images are shared; editing undo history stays separate. */
-export const DRAFT_VERSION_LIMIT = 10;
+export const DRAFT_VERSION_LIMIT = 5;
 const clone = value => JSON.parse(JSON.stringify(value));
 const fields = ['name', 'patternName', 'gridWidth', 'gridHeight', 'brand', 'mardSet', 'colorCount', 'isMirrored', 'colorSelection', 'cropRect', 'generationSettings'];
 export function packDraftVersion(draft) {
@@ -44,11 +44,12 @@ export function buildDraftWithVersions(next, previous = null) {
         }
     }
     const newest = packDraftVersion(next);
-    if (!past.length || comparable(past[0].version) !== comparable(newest) || past[0].source !== (next.sourceImageDataUrl || null)) {
+    const changed = !past.length || comparable(past[0].version) !== comparable(newest) || past[0].source !== (next.sourceImageDataUrl || null);
+    if (changed) {
         past.unshift({ version: newest, source: next.sourceImageDataUrl || null });
     }
     const versionSources = {}, known = new Map();
-    const versions = past.slice(0, DRAFT_VERSION_LIMIT).map(({ version, source }) => {
+    const versions = past.slice(0, changed ? DRAFT_VERSION_LIMIT : past.length).map(({ version, source }) => {
         let sourceRef = null;
         if (source === (next.sourceImageDataUrl || null) && source) sourceRef = 'current';
         else if (source) {

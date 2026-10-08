@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261008-export-result-style-3">
+    <link rel="stylesheet" href="css/style.css?v=20261008-history-5">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
@@ -18,21 +18,22 @@
             "./src/editor.js": "./src/editor.js?v=20261008-ruler-performance-1",
             "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261008-ruler-performance-1",
             "./src/renderer.js": "./src/renderer.js?v=20261008-single-grid-1",
-            "./src/ui.js": "./src/ui.js?v=20261008-ruler-performance-1",
+            "./src/ui.js": "./src/ui.js?v=20261008-history-2",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
             "./src/features/edge.js": "./src/features/edge.js?v=20261008-ruler-performance-1",
             "./src/features/adjust.js": "./src/features/adjust.js?v=20261008-ruler-performance-1",
             "./src/features/delete.js": "./src/features/delete.js?v=20261008-ruler-performance-1",
             "./src/features/zoom.js": "./src/features/zoom.js?v=20261008-ruler-performance-1",
-            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261008-ruler-performance-1",
+            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261008-history-1",
             "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261008-ruler-performance-1",
             "./src/exporter.js": "./src/exporter.js?v=20261008-export-filenames-1",
+            "./src/features/history-modal.js": "./src/features/history-modal.js?v=20261008-history-2",
             "./src/features/export-modal.js": "./src/features/export-modal.js?v=20261008-zip-export-1",
             "./src/features/export-files.js": "./src/features/export-files.js?v=20261008-export-filenames-1"
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261008-export-modal-1"></script>
+    <script type="module" src="src/main.js?v=20261008-history-1"></script>
 </head>
 
 <body data-layout="workbench"
@@ -527,7 +528,7 @@
                             <svg class="draft-save-icon" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.8833.75c.3517.005.6872.1488.9334.4l2.5333 2.5333c.2512.2462.395.5817.4.9334v6.8c0 .3536-.1405.6927-.3905.9428-.25.25-.5892.3905-.9428.3905H2.0833c-.3536 0-.6928-.1405-.9428-.3905-.25-.25-.3905-.5892-.3905-.9428V2.0833c0-.3536.1405-.6928.3905-.9428.25-.25.5892-.3905.9428-.3905zM10.0833 12.7503V8.0837c0-.1768-.0702-.3464-.1953-.4714-.125-.1251-.2946-.1953-.4714-.1953H4.0833c-.1768 0-.3464.0702-.4714.1953-.1251.125-.1953.2946-.1953.4714v4.6666M3.4166.75v2.6667c0 .1768.0703.3464.1953.4714.1251.1251.2947.1953.4714.1953H8.75"/></svg><span class="draft-save-label">保存为草稿（0）</span>
                         </button>
                         <button id="toggle-draft-drawer-btn" class="py-4 bg-white text-gray-900 border border-gray-200 text-sm font-bold hover:text-primary active:scale-95 transition" aria-label="展开草稿列表">
-                            <svg class="draft-toggle-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M.5.5 2.5 2.5 4.5.5"/></svg><img class="draft-toggle-pc-caret" src="assets/figma-ui/save-caret.svg" alt="">
+                            <svg class="draft-toggle-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M.5.5 2.5 2.5 4.5.5"/></svg><span class="draft-toggle-pc-caret" aria-hidden="true"><span class="draft-toggle-pc-divider"><img src="assets/figma-ui/save-caret.svg" alt=""></span><span class="draft-toggle-pc-arrow"><img src="assets/figma-ui/save-caret.svg" alt=""></span></span>
                         </button>
                     </div>
                     <button id="next-to-step-4" aria-label="导出图纸" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">
@@ -568,6 +569,32 @@
                 </div>
             </aside>
         </div>
+    </div>
+
+    <div id="workbench-history-modal" class="history-overlay" hidden>
+        <section id="history-main-dialog" class="history-dialog" role="dialog" aria-modal="true" aria-labelledby="history-title" tabindex="-1">
+            <button type="button" class="history-close" data-history-close aria-label="关闭草稿记录"><img src="assets/figma-ui/history-close.svg" alt=""></button>
+            <header class="history-header"><h2 id="history-title">草稿记录</h2><p>仅保存在当前浏览器</p></header>
+            <section class="history-saved-section" aria-labelledby="history-saved-heading">
+                <h3 id="history-saved-heading">保存版本</h3>
+                <div id="history-version-list" class="history-version-list"></div>
+            </section>
+            <section class="history-auto-section" aria-labelledby="history-auto-heading">
+                <div class="history-auto-heading"><h3 id="history-auto-heading">自动保存</h3><p>有未保存修改时，每5分钟自动保存</p></div>
+                <div id="history-automatic-record" class="history-automatic-record"></div>
+            </section>
+            <p id="history-error" class="history-error" role="status" hidden></p>
+        </section>
+        <section id="history-preview-dialog" class="history-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="history-preview-caption" tabindex="-1" hidden>
+            <button type="button" class="history-close" data-history-back aria-label="关闭版本大图"><img src="assets/figma-ui/history-close.svg" alt=""></button>
+            <h2 id="history-preview-caption"></h2>
+            <div class="history-preview-scroll"><img id="history-preview-image" alt="保存版本的完整图纸"></div>
+        </section>
+        <section id="history-confirm-dialog" class="history-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="history-confirm-title" aria-describedby="history-confirm-description" tabindex="-1" hidden>
+            <h2 id="history-confirm-title">恢复此保存版本？</h2>
+            <p id="history-confirm-description">当前未保存修改将被替换，已保存的版本仍会保留。</p>
+            <div class="history-confirm-actions"><button id="history-confirm-cancel" type="button" data-history-back>取消</button><button id="history-confirm-restore" type="button">确认恢复</button></div>
+        </section>
     </div>
 
     <div id="workbench-export-modal" class="export-modal-overlay" hidden>
