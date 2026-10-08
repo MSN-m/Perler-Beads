@@ -4,6 +4,8 @@ import { getThemeMutedColor } from '../utils.js';
 const CELL_SIZE = 30;
 const TOP_RULER_HEIGHT = 33;
 const LEFT_RULER_WIDTH = 32;
+const MIN_DOT_SPACING = 8;
+let rulerFramePending = false;
 
 function isDesktopWorkbench() {
     return document.getElementById('workbench-layout')?.dataset.viewport === 'desktop';
@@ -29,7 +31,8 @@ function lastVisibleCell(origin, cellSize, viewportEnd) {
 
 function drawGrid(ctx, width, height, originX, originY, cellSize) {
     const gridStep = getGridStep(cellSize);
-    const dotStep = gridStep / 2;
+    // Keep dots on grid/half-grid coordinates, with at least 8 CSS pixels between them.
+    const dotStep = Math.max(gridStep / 2, Math.ceil(MIN_DOT_SPACING / (cellSize / 2)) / 2);
     const startX = firstVisibleCell(originX, cellSize, LEFT_RULER_WIDTH);
     const endX = lastVisibleCell(originX, cellSize, width);
     const startY = firstVisibleCell(originY, cellSize, TOP_RULER_HEIGHT);
@@ -40,20 +43,23 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
     ctx.rect(LEFT_RULER_WIDTH, TOP_RULER_HEIGHT, width - LEFT_RULER_WIDTH, height - TOP_RULER_HEIGHT);
     ctx.clip();
 
-    // 用均匀点阵代替逐格浅色实线，缩小时沿用网格降采样避免过密。
+    // Batch the independent circles into one fill; anchor sampling to the grid origin.
     const dotRadius = Math.max(0.6, Math.min(1.15, cellSize * 0.035));
     ctx.fillStyle = 'rgba(206, 146, 168, 0.4)';
-    for (let x = startX; x <= endX; x += dotStep) {
+    ctx.beginPath();
+    const dotStartX = Math.ceil(startX / dotStep) * dotStep;
+    const dotStartY = Math.ceil(startY / dotStep) * dotStep;
+    for (let x = dotStartX; x <= endX; x += dotStep) {
         const dotX = originX + x * cellSize;
         if (dotX < LEFT_RULER_WIDTH || dotX > width) continue;
-        for (let y = startY; y <= endY; y += dotStep) {
+        for (let y = dotStartY; y <= endY; y += dotStep) {
             const dotY = originY + y * cellSize;
             if (dotY < TOP_RULER_HEIGHT || dotY > height) continue;
-            ctx.beginPath();
+            ctx.moveTo(dotX + dotRadius, dotY);
             ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
-            ctx.fill();
         }
     }
+    ctx.fill();
 
     // 继续保留每 5 格虚线和每 10 格深色实线。
     for (let x = startX; x <= endX; x += gridStep) {
@@ -167,6 +173,16 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
 }
 
 export function renderFixedRuler() {
+    if (!document.getElementById('fixed-ruler-canvas')) return;
+    if (rulerFramePending) return;
+    rulerFramePending = true;
+    requestAnimationFrame(() => {
+        rulerFramePending = false;
+        drawFixedRuler();
+    });
+}
+
+function drawFixedRuler() {
     const rulerCanvas = document.getElementById('fixed-ruler-canvas');
     const resultCanvas = document.getElementById('result-canvas');
     const resultContainer = document.getElementById('result-container');
@@ -188,8 +204,10 @@ export function renderFixedRuler() {
     if (!width || !height) return;
 
     const dpr = window.devicePixelRatio || 1;
-    rulerCanvas.width = Math.round(width * dpr);
-    rulerCanvas.height = Math.round(height * dpr);
+    const pixelWidth = Math.round(width * dpr);
+    const pixelHeight = Math.round(height * dpr);
+    if (rulerCanvas.width !== pixelWidth) rulerCanvas.width = pixelWidth;
+    if (rulerCanvas.height !== pixelHeight) rulerCanvas.height = pixelHeight;
     const ctx = rulerCanvas.getContext('2d');
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);

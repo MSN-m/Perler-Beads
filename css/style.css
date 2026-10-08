@@ -2592,3 +2592,59 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 }
 
 .export-page-button:disabled { opacity: .5; cursor: wait; }
+
+/* PC export dialogs: Figma 547:411 / 547:473. Keep editor state underneath. */
+.export-modal-overlay { position: fixed; inset: 0; z-index: 190; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(39,46,62,.25); color: var(--pb-color-deep); font-family: "PingFang SC", "Microsoft YaHei", sans-serif; }
+.export-modal-overlay[hidden], .export-modal-overlay [hidden] { display: none !important; }
+.export-choice-dialog { position: relative; width: 923px; max-width: 100%; height: 559px; max-height: calc(100dvh - 48px); overflow: auto; padding: 36px 32px 44px; border-radius: 23px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,.1); outline: none; }
+.export-choice-dialog h2 { margin: 0 0 28px; font-size: 24px; font-weight: 600; line-height: 24px; }
+.export-modal-close { position: absolute; top: 20px; right: 20px; padding: 0; border: 0; background: transparent; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; }
+.export-modal-close img { width: 20px; height: 20px; }
+.export-dialog-body { display: grid; grid-template-columns: minmax(0,427px) minmax(0,396px); gap: 36px; }
+.export-dialog-preview { position: relative; display: flex; align-items: center; justify-content: center; height: 427px; padding: 24px; border-radius: 24px; background: var(--pb-color-stroke); }
+.export-dialog-paper { display: flex; align-items: center; justify-content: center; max-width: 100%; max-height: 100%; padding: 16px; border: 1px solid var(--pb-color-stroke); border-radius: 12px; background: white; box-shadow: 0 4px 5px rgba(0,0,0,.1); }
+#export-dialog-preview-image { display: block; max-width: 100%; max-height: 342px; width: auto; height: auto; object-fit: contain; }
+#export-preview-enlarge { position: absolute; bottom: 16px; right: 16px; width: 20px; height: 20px; border-radius: 4px; background: rgba(39,46,62,.5); border: 0; padding: 0; display: flex; align-items: center; justify-content: center; }
+#export-preview-enlarge img { width: 10.9996px; height: 11px; }
+.export-dialog-settings { min-width: 0; padding-top: 39px; }
+.export-dialog-settings h3 { margin: 0; font-size: 20px; font-weight: 400; line-height: 20px; overflow-wrap: anywhere; }
+.export-dialog-meta { display: flex; flex-wrap: wrap; gap: 8px 12px; margin-top: 8px; font-size: 12px; line-height: 12px; }
+.export-dialog-section-label { margin: 36px 0 16px; color: var(--pb-color-muted); font-size: 12px; line-height: 12px; }
+.export-dialog-options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.export-option { position: relative; display: flex; align-items: center; gap: 12px; min-width: 0; height: 52px; padding: 12px; text-align: left; border: 1px solid var(--pb-color-muted); border-radius: 8px; background: white; color: var(--pb-color-deep); }
+.export-option[aria-pressed="true"] { background: #FFECF3; border-color: var(--pb-color-primary); }
+.export-option-icon { flex: 0 0 24px; width: 24px; height: 24px; }
+.export-option-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 12px; line-height: 12px; white-space: nowrap; }
+.export-option-copy small { color: var(--pb-color-muted); font-size: 10px; line-height: 10px; }
+.export-option-check, .export-option-unchecked { position: absolute; top: -1px; right: -1px; width: 16px; height: 16px; }
+.export-option-unchecked { display: none; }
+.export-option[aria-pressed="false"] .export-option-check { display: none; }
+.export-option[aria-pressed="false"] .export-option-unchecked { display: block; }
+.export-dialog-actions { position: absolute; bottom: 44px; right: 32px; display: flex; gap: 20px; }
+.export-modal-button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-height: 36px; padding: 11px 16px; border: 1px solid var(--pb-color-stroke); border-radius: 26px; background: white; color: var(--pb-color-deep); font: 400 12px/12px "PingFang SC", "Microsoft YaHei", sans-serif; white-space: nowrap; }
+.export-modal-button.is-primary { border-color: transparent; color: white; background: var(--pb-color-primary); }
+.export-modal-button.is-primary:disabled { background: rgba(222,83,135,.5); opacity: 1; }
+.export-modal-overlay button { transition: filter .15s, box-shadow .15s; }
+.export-modal-overlay button:hover:not(:disabled) { filter: brightness(.98); }
+.export-modal-overlay button:active:not(:disabled) { box-shadow: inset 0 0 0 2px rgba(222,83,135,.18); }
+.export-modal-overlay button:focus-visible { outline: 2px solid var(--pb-color-primary); outline-offset: 3px; }
+.export-dialog-error { margin-top: 20px; color: #b83d69; font-size: 12px; line-height: 20px; }
+.export-result-dialog { position: relative; flex-shrink: 0; box-sizing: border-box; width: 309px; max-width: 100%; min-height: 153px; padding: 36px 0 20px; border-radius: 8px; background: linear-gradient(90.3246deg,rgba(251,251,251,.98) 8.3682%,rgba(255,242,247,.98) 29.954%,rgba(242,250,255,.98) 50.994%,rgba(255,255,255,.98) 69.732%,rgba(255,245,249,.98) 100%),linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.1)); box-shadow: 0 0 8px #e2eaf0; outline: none; }
+.export-result-dialog .export-modal-close { top: 16px; right: 16px; }
+.export-result-message { display: grid; grid-template-columns: 36px minmax(0,1fr); align-items: start; gap: 8px; min-height: 36px; padding: 0 57px; }
+.export-result-message img { width: 36px; height: 36px; }
+.export-result-message > div { min-width: 0; padding-top: 3px; }
+.export-result-message h2 { margin: 0 0 4px; font-size: 16px; font-weight: 500; line-height: 16px; white-space: nowrap; }
+.export-result-message p { margin: 0; font-size: 10px; font-weight: 400; line-height: 10px; overflow-wrap: anywhere; }
+/* Keep Figma's short-copy geometry; longer ZIP copy wraps without shifting the icon.
+   Grow the dialog instead of compressing its message/action or bottom spacing. */
+.export-modal-overlay[data-export-save-mode="zip"] .export-result-message p { line-height: 14px; }
+.export-result-actions { display: flex; justify-content: center; gap: 16px; margin-top: 25px; }
+.export-result-actions .export-modal-button { box-sizing: border-box; width: 80px; height: 36px; padding: 0; }
+.export-preview-dialog { position: relative; width: min(1100px,calc(100vw - 48px)); height: calc(100dvh - 48px); padding: 52px 24px 24px; border-radius: 23px; background: var(--pb-color-stroke); outline: none; }
+.export-preview-scroll { height: 100%; overflow: auto; text-align: center; }
+#export-dialog-large-image { display: block; width: max(100%,900px); max-width: none; margin: 0 auto; border-radius: 12px; background: white; }
+@media (max-height: 650px) {
+    .export-choice-dialog { height: auto; }
+    .export-dialog-actions { position: static; justify-content: flex-end; margin-top: 24px; }
+}

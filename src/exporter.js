@@ -15,12 +15,19 @@ function makeSafeFileBase(value, fallback = 'perler-pattern') {
         .slice(0, 48) || fallback;
 }
 
+const EXPORT_TYPE_NAMES = { pattern: '拼豆图纸', mirrored: '镜像图纸', raw: '无标注图', archive: '图纸合集' };
+
+function getExportFilename(type, title = getPatternTitle()) {
+    return `${makeSafeFileBase(title)}-${EXPORT_TYPE_NAMES[type]}.${type === 'archive' ? 'zip' : 'png'}`;
+}
+
 /**
  * 下载 PNG 图片
  */
-export function downloadImage() {
+export function downloadImage(options = {}) {
+    const pixels = options.pixelData || AppState.pixelData;
     const stats = {};
-    AppState.pixelData.forEach(p => {
+    pixels.forEach(p => {
         if (p.id === 'NONE') return;
         if (!stats[p.id]) stats[p.id] = { ...p, count: 0 };
         stats[p.id].count++;
@@ -40,7 +47,7 @@ export function downloadImage() {
     for (let y = 0; y < AppState.gridHeight; y++) {
         for (let x = 0; x < AppState.gridWidth; x++) {
             const i = (y * AppState.gridWidth + x);
-            if (AppState.pixelData[i].id !== 'NONE') {
+            if (pixels[i].id !== 'NONE') {
                 if (x < minX) minX = x;
                 if (x > maxX) maxX = x;
                 if (y < minY) minY = y;
@@ -101,7 +108,7 @@ export function downloadImage() {
     for (let y = minY; y <= maxY; y++) {
         for (let x = minX; x <= maxX; x++) {
             const i = (y * AppState.gridWidth + x);
-            const color = AppState.pixelData[i];
+            const color = pixels[i];
             if (color.id === 'NONE') continue;
             const drawX = gridOffset + (x - minX) * exportScale;
             const drawY = boardTop + gridOffset + (y - minY) * exportScale;
@@ -245,26 +252,27 @@ export function downloadImage() {
         exportCtx.fillText(`(${c.count})`, x + cardWidth - 30, y + cardHeight / 2);
     });
 
+    if (options.renderOnly) return exportCanvas;
     const link = document.createElement('a');
-    link.download = `${makeSafeFileBase(getPatternTitle())}-${AppState.gridWidth}x${AppState.gridHeight}-${Date.now()}.png`;
+    link.download = getExportFilename('pattern');
     link.href = exportCanvas.toDataURL('image/png');
     link.click();
 }
 
 /**
- * 下载镜像拼豆图片 (不含色号、辅助线、清单)
+ * 下载相对当前方向左右翻转的图纸（含网格、色号及清单）
  */
-export function downloadMirroredImage() {
-    console.log('downloadMirroredImage function called.');
+export function downloadMirroredImage(options = {}) {
+    const pixels = options.pixelData || AppState.pixelData;
     const stats = {};
     // 使用镜像后的像素数据来统计颜色
-    const mirroredPixelData = new Array(AppState.pixelData.length);
+    const mirroredPixelData = new Array(pixels.length);
     for (let y = 0; y < AppState.gridHeight; y++) {
         for (let x = 0; x < AppState.gridWidth; x++) {
             const originalIndex = y * AppState.gridWidth + x;
             const mirroredX = AppState.gridWidth - 1 - x; // 水平镜像
             const mirroredIndex = y * AppState.gridWidth + mirroredX;
-            mirroredPixelData[mirroredIndex] = AppState.pixelData[originalIndex];
+            mirroredPixelData[mirroredIndex] = pixels[originalIndex];
         }
     }
 
@@ -492,8 +500,9 @@ export function downloadMirroredImage() {
         exportCtx.fillText(`(${c.count})`, x + cardWidth - 30, y + cardHeight / 2);
     });
 
+    if (options.renderOnly) return exportCanvas;
     const link = document.createElement('a');
-    link.download = `${makeSafeFileBase(`${getPatternTitle()}-mirrored`)}-${AppState.gridWidth}x${AppState.gridHeight}-${Date.now()}.png`;
+    link.download = getExportFilename('mirrored');
     link.href = exportCanvas.toDataURL('image/png');
     link.click();
 }
@@ -501,8 +510,8 @@ export function downloadMirroredImage() {
 /**
  * 下载原始拼豆图片 (不含色号、辅助线、清单)
  */
-export function downloadRawImage() {
-    console.log('downloadRawImage function called.');
+export function downloadRawImage(options = {}) {
+    const pixels = options.pixelData || AppState.pixelData;
     const scale = 20; // 原始图片不需要太大的缩放，保持像素感
     const width = AppState.gridWidth * scale;
     const height = AppState.gridHeight * scale;
@@ -516,7 +525,7 @@ export function downloadRawImage() {
     // 默认填充透明背景
     exportCtx.clearRect(0, 0, width, height);
 
-    AppState.pixelData.forEach((color, i) => {
+    pixels.forEach((color, i) => {
         const x = (i % AppState.gridWidth) * scale;
         const y = Math.floor(i / AppState.gridWidth) * scale;
 
@@ -527,10 +536,35 @@ export function downloadRawImage() {
         // 如果是 'NONE'，则保持透明，因为默认背景已是透明
     });
 
+    if (options.renderOnly) return exportCanvas;
     const link = document.createElement('a');
-    link.download = `perler-raw-pattern-${AppState.gridWidth}x${AppState.gridHeight}-${Date.now()}.png`;
+    link.download = getExportFilename('raw');
     link.href = exportCanvas.toDataURL('image/png');
     link.click();
+}
+
+export const EXPORT_TYPES = ['pattern', 'mirrored', 'raw'];
+
+/** Render every selected file before starting any download; never mutate editor data. */
+export function preparePatternExports(types, pixels = AppState.stagedPixelData || AppState.pixelData) {
+    const renderers = { pattern: downloadImage, mirrored: downloadMirroredImage, raw: downloadRawImage };
+    const title = getPatternTitle();
+    const archiveFilename = getExportFilename('archive', title);
+    return EXPORT_TYPES.filter(type => types.includes(type)).map(type => {
+        const canvas = renderers[type]({ renderOnly: true, pixelData: pixels });
+        const href = canvas.toDataURL('image/png');
+        if (!href.startsWith('data:image/png')) throw new Error('无法生成导出图片');
+        return { type, href, filename: getExportFilename(type, title), archiveFilename };
+    });
+}
+
+export function startPatternDownloads(files) {
+    files.forEach(file => {
+        const link = document.createElement('a');
+        link.download = file.filename;
+        link.href = file.href;
+        link.click();
+    });
 }
 
 

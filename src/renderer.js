@@ -197,9 +197,14 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         }
     }
 
+    // PC editing uses the fixed overlay for 5/10-cell guides; retain other canvases.
+    const useFixedGrid = canvas.id === 'result-canvas'
+        && AppState.currentStep === 3
+        && document.getElementById('fixed-ruler-canvas')
+        && document.getElementById('workbench-layout')?.dataset.viewport === 'desktop';
     // 5.3 辅助线 (基于全局坐标计算是否为 5/10 倍数)
     // 垂直辅助线
-    for (let x = minX + 1; x <= maxX; x++) {
+    for (let x = minX + 1; !useFixedGrid && x <= maxX; x++) {
         // 只有当全局坐标是 5 的倍数时才画辅助线
         const isMajorLine = (x % 10 === 0);
         const isMinorLine = (x % 5 === 0);
@@ -224,7 +229,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         }
     }
     // 水平辅助线
-    for (let y = minY + 1; y <= maxY; y++) {
+    for (let y = minY + 1; !useFixedGrid && y <= maxY; y++) {
         const isMajorLine = (y % 10 === 0);
         const isMinorLine = (y % 5 === 0);
 

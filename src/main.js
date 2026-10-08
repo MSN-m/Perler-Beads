@@ -95,6 +95,7 @@ import { initZoomEvents, resetZoom } from './features/zoom.js';
 import { setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState, restorePaletteToolSession } from './editor.js';
 import { renderResult } from './renderer.js';
 import { createEditorShortcuts } from './features/editor-shortcuts.js';
+import { createWorkbenchExportModal } from './features/export-modal.js';
 
 /**
  * 处理图片上传
@@ -678,8 +679,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const nextToStep4 = document.getElementById('next-to-step-4');
+    const exportModal = createWorkbenchExportModal({ saveDraft: saveWorkbenchDraft, returnHome: returnFromWorkbench });
     if (nextToStep4) {
-        nextToStep4.addEventListener('click', () => goToStep(4));
+        nextToStep4.addEventListener('click', () => {
+            if (AppState.workbenchViewportMode === 'desktop') exportModal.open();
+            else goToStep(4);
+        });
     }
 
     document.getElementById('workbench-top-mirror-visual')?.addEventListener('click', toggleWorkbenchMirror);

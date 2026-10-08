@@ -9,26 +9,30 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261005-export-save-exit-1">
+    <link rel="stylesheet" href="css/style.css?v=20261008-export-result-style-3">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
         "imports": {
-            "./src/state.js": "./src/state.js?v=20261005-export-save-exit-1",
-            "./src/editor.js": "./src/editor.js?v=20261005-export-save-exit-1",
-            "./src/renderer.js": "./src/renderer.js?v=20261005-export-save-exit-1",
-            "./src/ui.js": "./src/ui.js?v=20261005-export-save-exit-1",
-            "./src/utils.js": "./src/utils.js?v=20261005-export-save-exit-1",
-            "./src/features/edge.js": "./src/features/edge.js?v=20261005-export-save-exit-1",
-            "./src/features/adjust.js": "./src/features/adjust.js?v=20261005-export-save-exit-1",
-            "./src/features/delete.js": "./src/features/delete.js?v=20261005-export-save-exit-1",
-            "./src/features/zoom.js": "./src/features/zoom.js?v=20261005-export-save-exit-1",
-            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261005-export-save-exit-1",
-            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261005-export-save-exit-1"
+            "./src/state.js": "./src/state.js?v=20261008-ruler-performance-1",
+            "./src/editor.js": "./src/editor.js?v=20261008-ruler-performance-1",
+            "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261008-ruler-performance-1",
+            "./src/renderer.js": "./src/renderer.js?v=20261008-single-grid-1",
+            "./src/ui.js": "./src/ui.js?v=20261008-ruler-performance-1",
+            "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
+            "./src/features/edge.js": "./src/features/edge.js?v=20261008-ruler-performance-1",
+            "./src/features/adjust.js": "./src/features/adjust.js?v=20261008-ruler-performance-1",
+            "./src/features/delete.js": "./src/features/delete.js?v=20261008-ruler-performance-1",
+            "./src/features/zoom.js": "./src/features/zoom.js?v=20261008-ruler-performance-1",
+            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261008-ruler-performance-1",
+            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261008-ruler-performance-1",
+            "./src/exporter.js": "./src/exporter.js?v=20261008-export-filenames-1",
+            "./src/features/export-modal.js": "./src/features/export-modal.js?v=20261008-zip-export-1",
+            "./src/features/export-files.js": "./src/features/export-files.js?v=20261008-export-filenames-1"
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261005-export-save-exit-1"></script>
+    <script type="module" src="src/main.js?v=20261008-export-modal-1"></script>
 </head>
 
 <body data-layout="workbench"
@@ -563,6 +567,64 @@
                     <button id="pattern-preview-confirm-btn" class="py-3 rounded-xl bg-gray-900 text-white text-sm font-bold active:scale-95 transition">使用这个效果</button>
                 </div>
             </aside>
+        </div>
+    </div>
+
+    <div id="workbench-export-modal" class="export-modal-overlay" hidden>
+        <div id="export-choice-dialog" class="export-choice-dialog" role="dialog" aria-modal="true" aria-labelledby="export-dialog-title" tabindex="-1">
+            <button type="button" class="export-modal-close" data-export-close aria-label="关闭导出弹窗"><img src="assets/figma-ui/export-close.svg" alt=""></button>
+            <h2 id="export-dialog-title">导出图纸</h2>
+            <div class="export-dialog-body">
+                <div class="export-dialog-preview">
+                    <div class="export-dialog-paper"><img id="export-dialog-preview-image" alt="当前图纸导出预览"></div>
+                    <button id="export-preview-enlarge" type="button" aria-label="放大图纸预览"><img src="assets/figma-ui/export-expand.svg" alt=""></button>
+                </div>
+                <div class="export-dialog-settings">
+                    <h3 id="export-dialog-name"></h3>
+                    <div class="export-dialog-meta"><span id="export-dialog-spec"></span><span id="export-dialog-stats"></span></div>
+                    <p class="export-dialog-section-label">导出设置</p>
+                    <div class="export-dialog-options" role="group" aria-label="选择导出图纸，可多选">
+                        <button type="button" class="export-option" data-export-type="pattern" aria-pressed="true">
+                            <img class="export-option-icon" src="assets/figma-ui/export-grid.svg" alt="">
+                            <span class="export-option-copy"><span>拼豆图纸</span><small>含网格与色号，方便对照拼豆</small></span>
+                            <img class="export-option-check" src="assets/figma-ui/export-check.svg" alt="">
+                            <img class="export-option-unchecked" src="assets/figma-ui/export-unchecked.svg" alt="">
+                        </button>
+                        <button type="button" class="export-option" data-export-type="mirrored" aria-pressed="true">
+                            <img class="export-option-icon" src="assets/figma-ui/export-mirror.svg" alt="">
+                            <span class="export-option-copy"><span>镜像图纸</span><small>左右翻转，含网格与色号</small></span>
+                            <img class="export-option-check" src="assets/figma-ui/export-check.svg" alt="">
+                            <img class="export-option-unchecked" src="assets/figma-ui/export-unchecked.svg" alt="">
+                        </button>
+                        <button type="button" class="export-option" data-export-type="raw" aria-pressed="true">
+                            <img class="export-option-icon" src="assets/figma-ui/export-raw.svg" alt="">
+                            <span class="export-option-copy"><span>无标注图</span><small>不含网格与色号，适合展示</small></span>
+                            <img class="export-option-check" src="assets/figma-ui/export-check.svg" alt="">
+                            <img class="export-option-unchecked" src="assets/figma-ui/export-unchecked.svg" alt="">
+                        </button>
+                    </div>
+                    <p id="export-dialog-error" class="export-dialog-error" role="status" hidden></p>
+                </div>
+            </div>
+            <div class="export-dialog-actions">
+                <button type="button" class="export-modal-button" data-export-close>取消导出</button>
+                <button id="export-selected-btn" type="button" class="export-modal-button is-primary">导出3张图纸</button>
+            </div>
+        </div>
+        <div id="export-preview-dialog" class="export-preview-dialog" role="dialog" aria-modal="true" aria-label="放大图纸预览" tabindex="-1" hidden>
+            <button type="button" class="export-modal-close" id="export-preview-shrink" aria-label="关闭放大预览"><img src="assets/figma-ui/export-close.svg" alt=""></button>
+            <div class="export-preview-scroll"><img id="export-dialog-large-image" alt="当前图纸放大预览"></div>
+        </div>
+        <div id="export-result-dialog" class="export-result-dialog" role="dialog" aria-modal="true" aria-labelledby="export-result-title" tabindex="-1" hidden>
+            <button type="button" class="export-modal-close" data-export-close aria-label="关闭下载提示，继续编辑"><img src="assets/figma-ui/export-result-close.svg" alt=""></button>
+            <div class="export-result-message">
+                <img src="assets/figma-ui/export-started.svg" alt="">
+                <div><h2 id="export-result-title">已发起下载</h2><p id="export-result-description">请确认浏览器下载结果。</p></div>
+            </div>
+            <div class="export-result-actions">
+                <button type="button" class="export-modal-button" data-export-close>继续编辑</button>
+                <button type="button" class="export-modal-button is-primary" id="export-return-home">返回首页</button>
+            </div>
         </div>
     </div>
 
