@@ -2,6 +2,7 @@
  * 拼豆图纸生成器 - UI 与页面流程
  */
 import { AppState } from './state.js';
+import { syncWorkbenchRename } from './features/pattern-rename.js';
 import { buildDraftWithVersions, unpackDraftVersion } from './features/draft-versions.js';
 import { renderWorkbenchHistory, getCurrentPatternHistory } from './features/history-modal.js';
 import { hidePickerColorPreview } from './features/tooltips.js';
@@ -1090,7 +1091,7 @@ function renderDraftBox() {
     const hasPattern = hasWorkbenchPattern();
     renderWorkbenchHistory();
 
-    saveBtn.disabled = false;
+    saveBtn.disabled = draftSaveFeedback?.phase === 'saving' && draftSaveFeedback.patternId === AppState.colorSelectionPatternId;
     saveBtn.classList.toggle('opacity-40', false);
     saveBtn.classList.toggle('cursor-not-allowed', false);
 
@@ -1099,6 +1100,7 @@ function renderDraftBox() {
     // Keep the click target stable while panels and editor state refresh.
     const saveLabel = saveBtn.querySelector('.draft-save-label');
     if (saveLabel && saveLabel.textContent !== draftLabel) saveLabel.textContent = draftLabel;
+    syncDraftSaveFeedback();
     drawer.classList.toggle('hidden', hasPattern || !AppState.draftDrawerOpen);
     toggleBtn.classList.toggle('is-open', AppState.draftDrawerOpen);
     toggleBtn.setAttribute('aria-label', hasPattern ? (AppState.draftDrawerOpen ? '关闭草稿记录' : '查看草稿记录') : (AppState.draftDrawerOpen ? '收起草稿列表' : '展开草稿列表'));
@@ -1229,6 +1231,22 @@ export function installWorkbenchAutoSave() {
     });
 }
 let savingDraft = false;
+let draftSaveFeedback = null;
+let draftSaveFeedbackTimer = null;
+function syncDraftSaveFeedback() {
+    const button = document.getElementById('save-draft-btn');
+    const label = button?.querySelector('.draft-save-label');
+    if (!button || !label) return;
+    label.setAttribute?.('aria-live', 'polite');
+    label.setAttribute?.('aria-atomic', 'true');
+    const active = AppState.workbenchViewportMode === 'desktop' && hasWorkbenchPattern()
+        && draftSaveFeedback?.patternId === AppState.colorSelectionPatternId;
+    button.disabled = Boolean(active && draftSaveFeedback.phase === 'saving');
+    button.setAttribute('aria-busy', button.disabled ? 'true' : 'false');
+    button.classList?.toggle('is-saving', button.disabled);
+    if (active) label.textContent = draftSaveFeedback.phase === 'saving' ? '保存中…' : '已保存';
+    else if (hasWorkbenchPattern()) label.textContent = '保存草稿';
+}
 const DRAFT_SETTING_IDS = ['color-limit-toggle', 'max-colors-slider', 'dithering-toggle', 'precision-mode-select', 'color-match-mode-select'];
 function captureDraftGenerationSettings() {
     return Object.fromEntries(DRAFT_SETTING_IDS.map(id => {
@@ -1293,6 +1311,47 @@ export async function saveWorkbenchDraft({ saveAs = false, name = null, inlineEr
         return false;
     } finally { savingDraft = false; }
 }
+/** PC save and history are separate actions; touch layouts retain the existing flow. */
+export async function saveWorkbenchDraftFromButton() {
+    if (!AppState.pixelData?.length) { toggleDraftDrawer(); return false; }
+    if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
+    if (draftSaveFeedback?.phase === 'saving' && draftSaveFeedback.patternId === AppState.colorSelectionPatternId) return false;
+    const desktop = AppState.workbenchViewportMode === 'desktop';
+    const patternId = AppState.colorSelectionPatternId;
+    const feedbackStartedAt = Date.now();
+    const feedback = desktop ? { patternId, phase: 'saving' } : null;
+    if (desktop) {
+        clearTimeout(draftSaveFeedbackTimer);
+        draftSaveFeedback = feedback;
+        syncDraftSaveFeedback();
+    }
+    try {
+        const saved = await saveWorkbenchDraft();
+        if (saved && feedback && AppState.colorSelectionPatternId === patternId) {
+            const remaining = 1500 - (Date.now() - feedbackStartedAt);
+            if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
+        }
+        if (feedback && draftSaveFeedback === feedback) {
+            draftSaveFeedback = saved ? { ...feedback, phase: 'saved' } : null;
+            syncDraftSaveFeedback();
+            if (saved) draftSaveFeedbackTimer = setTimeout(() => {
+                draftSaveFeedback = null;
+                syncDraftSaveFeedback();
+            }, 2000);
+        }
+        if (!desktop && AppState.colorSelectionPatternId === patternId) {
+            AppState.draftDrawerOpen = true;
+            updateWorkbenchUI();
+        }
+        return saved;
+    } finally {
+        if (draftSaveFeedback === feedback) {
+            draftSaveFeedback = null;
+            syncDraftSaveFeedback();
+        }
+    }
+}
+
 let draftNamingPending = null;
 export function saveWorkbenchDraftAs() {
     if (draftNamingPending) return draftNamingPending;
@@ -2637,12 +2696,14 @@ export function toggleWorkbenchComparePreview() {
 
 export function toggleWorkbenchSettingsPanel() {
     if (!isWorkbenchLayout() || !hasWorkbenchPattern()) return;
+    if (getWorkbenchViewportMode() === 'desktop') return;
     AppState.workbenchTabletPanel = AppState.workbenchTabletPanel === 'settings' ? null : 'settings';
     updateWorkbenchUI();
 }
 
 export function selectWorkbenchTabletPanel(panel) {
     if (!['settings', 'colors'].includes(panel)) return;
+    if (panel === 'settings' && getWorkbenchViewportMode() === 'desktop' && hasWorkbenchPattern()) return;
     AppState.workbenchTabletPanel = AppState.workbenchTabletPanel === panel ? null : panel;
     updateWorkbenchUI();
 }
@@ -2934,6 +2995,7 @@ export function updateWorkbenchUI() {
     applyWorkbenchLayoutMode(hasPattern);
     const isTablet = isWorkbenchTabletLayout();
     const toolbarCollapsed = false;
+    if (hasPattern && getWorkbenchViewportMode() === 'desktop' && AppState.workbenchTabletPanel === 'settings') AppState.workbenchTabletPanel = null;
     const tabletPanel = ['settings', 'colors'].includes(AppState.workbenchTabletPanel)
         ? AppState.workbenchTabletPanel
         : null;
@@ -3001,6 +3063,7 @@ export function updateWorkbenchUI() {
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
     setText('workbench-settings-toggle-label', settingsCollapsed ? '展开' : '收起');
     setText('workbench-pattern-title', String(AppState.patternName || '').trim() || '未命名图纸');
+    syncWorkbenchRename();
     setText('workbench-pattern-meta', `${AppState.gridWidth}x${AppState.gridHeight} · ${AppState.brand === 'mard' ? `MARD ${AppState.mardSet}色` : AppState.brand.toUpperCase()}`);
     const patternNameInput = document.getElementById('pattern-name-input');
     if (patternNameInput && document.activeElement !== patternNameInput) {

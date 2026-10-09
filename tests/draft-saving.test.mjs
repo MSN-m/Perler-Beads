@@ -14,6 +14,7 @@ const canvas={id:'result-canvas',getContext:()=>ctx};const stats=Object.fromEntr
 globalThis.document={body:{dataset:{layout:'test'}},readyState:'loading',getElementById:id=>id==='result-canvas'?canvas:stats[id]||null,querySelectorAll:()=>[],querySelector:()=>({classList:{add(){}},querySelectorAll:()=>[]}),addEventListener(){},createElement:()=>({getContext:()=>ctx,toDataURL:()=> 'thumb'})};
 globalThis.requestAnimationFrame=()=>{};
 const {saveWorkbenchDraft,saveWorkbenchDraftAs,hasUnsavedWorkbenchChanges,saveWorkbenchAutomatically,installWorkbenchAutoSave,downloadAndSaveWorkbenchDraft,warnBeforeWorkbenchUnload,returnFromWorkbench,restoreWorkbenchDraft,importWorkbenchDraftFile}=await import('../src/ui.js');
+const {saveWorkbenchDraftFromButton}=await import('../src/ui.js');
 const colors=getCurrentPalette().slice(0,3).map(p=>({...p,a:255}));
 function setup(){Object.assign(AppState,{pixelData:[{...colors[0]},{...colors[1]}],stagedPixelData:null,stagedActions:[],gridWidth:2,gridHeight:1,currentDraftId:null,currentDraftVersionId:null,draftRestorePending:false,patternName:'测试草稿',drafts:[],autoSaves:[],autoSaveError:false,paintStroke:null,eraserStroke:null,image:null,edgeSelectionMode:false,qualityOverlayVisible:false,fillSelection:null});resetPatternColorSelection();records.clear();fail=false;alerts.length=0;}
 test('save updates one identity, save-as copies, restore version retains newer data; imported history survives',async()=>{
@@ -180,4 +181,61 @@ test('failed changed save does not trim an existing ten-version history',async()
  const previous=structuredClone(saved);AppState.pixelData[0]={...colors[2]};fail=true;
  assert.equal(await saveWorkbenchDraft(),false);assert.deepEqual(AppState.drafts[0],previous);assert.deepEqual(records.get(saved.id),previous);
  fail=false;assert.equal(await saveWorkbenchDraft(),true);assert.equal(AppState.drafts[0].versions.length,5);assert.equal(records.get(saved.id).versions.length,5);
+});
+
+test('PC save button saves without opening history or creating duplicate versions',async()=>{
+ setup();AppState.workbenchViewportMode='desktop';AppState.draftDrawerOpen=false;
+ assert.equal(await saveWorkbenchDraftFromButton(),true);assert.equal(AppState.draftDrawerOpen,false);
+ const id=AppState.currentDraftId;assert.equal(await saveWorkbenchDraftFromButton(),true);
+ assert.equal(AppState.currentDraftId,id);assert.equal(AppState.drafts[0].versions.length,1);assert.equal(records.size,1);
+});
+test('PC save failure keeps history closed and preserves unsaved diagram',async()=>{
+ setup();AppState.workbenchViewportMode='desktop';AppState.draftDrawerOpen=false;fail=true;
+ const before=structuredClone(AppState.pixelData);
+ assert.equal(await saveWorkbenchDraftFromButton(),false);assert.equal(AppState.draftDrawerOpen,false);
+ assert.deepEqual(AppState.pixelData,before);assert.equal(records.size,0);assert.equal(alerts.length,1);
+});
+test('PAD/mobile save buttons retain save-then-open behavior',async()=>{
+ for(const mode of ['tablet','mobile']){
+  setup();AppState.workbenchViewportMode=mode;AppState.draftDrawerOpen=false;
+  assert.equal(await saveWorkbenchDraftFromButton(),true);assert.equal(AppState.draftDrawerOpen,true);
+ }
+});
+
+test('PC button reports saving and saved, rejects repeat clicks, then restores its label',async()=>{
+ setup();AppState.workbenchViewportMode='desktop';AppState.draftDrawerOpen=false;
+ const label={textContent:'保存草稿'},attributes={};
+ const classes=new Set();
+ const button={disabled:false,querySelector:()=>label,setAttribute:(key,value)=>attributes[key]=value,classList:{toggle:(name,on)=>on?classes.add(name):classes.delete(name)}};
+ const original=document.getElementById,timer=globalThis.setTimeout;let finishFeedback,finishMinimum;
+ document.getElementById=id=>id==='save-draft-btn'?button:original(id);
+ globalThis.setTimeout=(callback,delay)=>{if(delay===2000) finishFeedback=callback;else {assert.ok(delay>0 && delay<=1500);finishMinimum=callback;}return null;};
+ try {
+  const pending=saveWorkbenchDraftFromButton();
+  assert.equal(label.textContent,'保存中…');assert.equal(button.disabled,true);assert.equal(attributes['aria-busy'],'true');
+  assert.equal(classes.has('is-saving'),true);
+  assert.equal(await saveWorkbenchDraftFromButton(),false);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(records.size,1);assert.equal(label.textContent,'保存中…');assert.equal(button.disabled,true);
+  assert.equal(await saveWorkbenchDraftFromButton(),false);finishMinimum();
+  assert.equal(await pending,true);assert.equal(label.textContent,'已保存');assert.equal(button.disabled,false);
+  assert.equal(classes.has('is-saving'),false);
+  assert.equal(records.size,1);assert.equal(AppState.draftDrawerOpen,false);
+  finishFeedback();assert.equal(label.textContent,'保存草稿');assert.equal(attributes['aria-busy'],'false');
+ } finally {document.getElementById=original;globalThis.setTimeout=timer;}
+});
+
+test('PC failed save restores button without reporting saved; delayed feedback does not cross documents',async()=>{
+ setup();AppState.workbenchViewportMode='desktop';
+ const label={textContent:'保存草稿'},button={disabled:false,querySelector:()=>label,setAttribute(){}};
+ const original=document.getElementById,timer=globalThis.setTimeout;let finishFeedback;
+ document.getElementById=id=>id==='save-draft-btn'?button:original(id);
+ globalThis.setTimeout=callback=>{finishFeedback=callback;return null;};
+ try {
+  fail=true;assert.equal(await saveWorkbenchDraftFromButton(),false);
+  assert.equal(label.textContent,'保存草稿');assert.equal(button.disabled,false);assert.equal(alerts.length,1);assert.equal(records.size,0);
+  fail=false;const pending=saveWorkbenchDraftFromButton();await Promise.resolve();AppState.colorSelectionPatternId='another-document';
+  assert.equal(await pending,true);assert.equal(label.textContent,'保存草稿');assert.equal(AppState.currentDraftId,null);
+  finishFeedback();assert.equal(label.textContent,'保存草稿');
+ } finally {document.getElementById=original;globalThis.setTimeout=timer;}
 });

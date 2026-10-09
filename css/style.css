@@ -395,7 +395,9 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 
 #workbench-top-mirror-visual,
 .draft-export-pc-label,
-.draft-toggle-pc-caret {
+.draft-toggle-pc-caret,
+.draft-save-pc-icon,
+.draft-records-pc {
     display: none;
 }
 
@@ -2739,4 +2741,122 @@ body[data-layout="workbench"] .crop-edge-handle-x {
     .history-version-info p { font-size: 11px; }
     .history-restore { flex-basis: 64px; padding: 0 12px; }
     .history-preview-dialog { padding: 32px 20px 20px; }
+}
+.draft-save-pc-icon img { max-width: none; }
+.draft-save-bead-loader { display: none; }
+#workbench-rename-btn, #workbench-rename-form { display: none; }
+@media (min-width: 1024px) {
+    #workbench-layout[data-mode="editor"] #show-workbench-settings-panel-btn { display: none !important; }
+    #workbench-name-editor { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    #workbench-name-editor #workbench-pattern-title { cursor: pointer; }
+    #workbench-name-editor button { cursor: pointer; border: 0; }
+    #workbench-layout[data-mode="editor"] #workbench-rename-btn {
+        display: flex; align-items: center; justify-content: center; flex: 0 0 28px;
+        width: 28px; height: 28px; border-radius: 14px; background: transparent;
+    }
+    #workbench-rename-btn img { width: 16px; height: 16px; }
+    #workbench-rename-btn:hover { background: var(--pb-color-stroke); }
+    #workbench-name-editor.is-renaming #workbench-pattern-title,
+    #workbench-layout[data-mode="editor"] #workbench-name-editor.is-renaming #workbench-rename-btn { display: none; }
+    #workbench-rename-form:not([hidden]) { display: flex; align-items: center; gap: 6px; }
+    #workbench-rename-input {
+        width: clamp(120px, 18vw, 260px); height: 32px; padding: 4px 8px;
+        border: 1px solid var(--pb-color-primary); border-radius: 8px;
+        background: #fff; color: var(--pb-color-deep); font: inherit; font-size: 16px;
+    }
+    #workbench-rename-form button { height: 28px; padding: 0 10px; border-radius: 14px; font-size: 12px; background: var(--pb-color-stroke); color: var(--pb-color-deep); white-space: nowrap; }
+    #workbench-rename-form .workbench-rename-confirm { background: var(--pb-color-primary); color: #fff; }
+    #workbench-rename-form button:hover { filter: brightness(.97); }
+    #workbench-name-editor :focus-visible { outline: 2px solid var(--pb-color-primary); outline-offset: 2px; }
+}
+@keyframes draft-save-bead-pulse {
+    0%, 65%, 100% { border-color: var(--pb-color-muted); }
+    15%, 40% { border-color: var(--pb-color-primary); }
+}
+@media (min-width: 1024px) {
+    /* Figma 569:208: save 100x40, independent records 40x40, gap 20. */
+    #workbench-layout[data-mode="editor"] #draft-primary-control {
+        min-width: 0;
+        gap: 20px;
+        background: transparent;
+        border-radius: 0;
+        overflow: visible;
+    }
+    #workbench-layout[data-mode="editor"] #save-draft-btn {
+        min-width: 100px;
+        padding: 12px 16px;
+        border-radius: 26px;
+        background: var(--pb-color-stroke);
+    }
+    #workbench-layout[data-mode="editor"] #save-draft-btn::before { display: none; }
+    #workbench-layout[data-mode="editor"] .draft-save-pc-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        flex: 0 0 16px;
+    }
+    #workbench-layout[data-mode="editor"] #save-draft-btn.is-saving .draft-save-pc-icon > img { display: none; }
+    #workbench-layout[data-mode="editor"] #save-draft-btn.is-saving .draft-save-bead-loader {
+        display: grid;
+        grid-template-columns: repeat(2, 6px);
+        grid-template-rows: repeat(2, 6px);
+        gap: 2px;
+    }
+    .draft-save-bead-loader i {
+        box-sizing: border-box;
+        width: 6px;
+        height: 6px;
+        border: 2px solid var(--pb-color-muted);
+        border-radius: 50%;
+        animation: draft-save-bead-pulse 1.2s ease-in-out infinite;
+    }
+    /* Clockwise: top-left, top-right, bottom-right, bottom-left. */
+    .draft-save-bead-loader i:nth-child(2) { animation-delay: .3s; }
+    .draft-save-bead-loader i:nth-child(3) { animation-delay: .9s; }
+    .draft-save-bead-loader i:nth-child(4) { animation-delay: .6s; }
+    @media (prefers-reduced-motion: reduce) {
+        .draft-save-bead-loader i { animation: none; border-color: var(--pb-color-primary); }
+    }
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn {
+        width: 40px;
+        min-width: 40px;
+        padding: 7px 12px;
+        border-radius: 20px;
+        background: var(--pb-color-stroke);
+    }
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn .draft-toggle-pc-caret { display: none; }
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn.is-open,
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn.is-open:hover {
+        background-color: var(--pb-color-primary) !important;
+        color: #fff !important;
+    }
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn.is-open:hover {
+        filter: brightness(0.97) !important;
+    }
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn.is-open:active {
+        box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.78);
+    }
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn.is-open .draft-records-pc-label {
+        color: #fff;
+    }
+    #workbench-layout[data-mode="editor"] #toggle-draft-drawer-btn.is-open .draft-records-pc-icon img {
+        filter: brightness(0) invert(1);
+    }
+    #workbench-layout[data-mode="editor"] .draft-records-pc {
+        display: flex;
+        flex: 0 0 auto;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    .draft-records-pc-icon { display: block; position: relative; margin-left: 2px; width: 16px; height: 16px; overflow: hidden; }
+    .draft-records-pc-icon img { position: absolute; max-width: none; }
+    .draft-records-dot { left: 1.5px; }
+    .draft-records-line { left: 4.83333px; }
+    .draft-records-pc-icon .row-one { top: 2.83333px; }
+    .draft-records-pc-icon .row-two { top: 7.5px; }
+    .draft-records-pc-icon .row-three { top: 12.16667px; }
+    .draft-records-pc-label { color: var(--pb-color-deep); font: 400 10px/10px "PingFang SC", "Microsoft YaHei", sans-serif; white-space: nowrap; }
 }

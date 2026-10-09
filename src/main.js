@@ -2,6 +2,7 @@
  * 拼豆图纸生成器 - 主入口与事件绑定
  */
 import { AppState } from './state.js';
+import { installWorkbenchRename } from './features/pattern-rename.js';
 import { installWorkbenchTooltips, installPickerColorPreview } from './features/tooltips.js';
 import { activateEraserTool, updateEraserHover } from './features/delete.js';
 import {
@@ -45,6 +46,7 @@ import {
     adjustRedo,
     adjustCancel,
     saveWorkbenchDraft,
+    saveWorkbenchDraftFromButton,
     downloadAndSaveWorkbenchDraft,
     warnBeforeWorkbenchUnload,
     installWorkbenchAutoSave,
@@ -205,6 +207,7 @@ const loadExample = (type) => {
 
 // 页面加载完成后绑定事件
 document.addEventListener('DOMContentLoaded', () => {
+    installWorkbenchRename({ updateUI: updateWorkbenchUI });
     installWorkbenchTooltips();
     installPickerColorPreview();
     document.querySelectorAll('#workbench-edit-toolbar [title], #save-draft-btn[title]').forEach((element) => {
@@ -963,13 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveDraftBtn.addEventListener('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
-            if (!AppState.pixelData || !AppState.pixelData.length) {
-                toggleDraftDrawer();
-                return;
-            }
-            await saveWorkbenchDraft();
-            AppState.draftDrawerOpen = true;
-            updateWorkbenchUI();
+            await saveWorkbenchDraftFromButton();
         });
     }
 

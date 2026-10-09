@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261008-history-5">
+    <link rel="stylesheet" href="css/style.css?v=20261009-pattern-rename-1">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
@@ -18,7 +18,7 @@
             "./src/editor.js": "./src/editor.js?v=20261008-ruler-performance-1",
             "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261008-ruler-performance-1",
             "./src/renderer.js": "./src/renderer.js?v=20261008-single-grid-1",
-            "./src/ui.js": "./src/ui.js?v=20261008-history-2",
+            "./src/ui.js": "./src/ui.js?v=20261009-pattern-rename-1",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
             "./src/features/edge.js": "./src/features/edge.js?v=20261008-ruler-performance-1",
             "./src/features/adjust.js": "./src/features/adjust.js?v=20261008-ruler-performance-1",
@@ -33,7 +33,7 @@
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261008-history-1"></script>
+    <script type="module" src="src/main.js?v=20261009-pattern-rename-1"></script>
 </head>
 
 <body data-layout="workbench"
@@ -52,7 +52,15 @@
                 <div id="workbench-top-title" class="min-w-0 flex-1 flex items-center gap-3">
                     <button id="workbench-back-btn" type="button" class="workbench-header-icon" aria-label="返回" title="返回"><img class="workbench-header-back-icon" src="assets/figma-ui/back.svg" alt=""></button>
                     <div class="min-w-0">
-                        <span id="workbench-pattern-title" class="block min-w-0 truncate text-base font-black text-gray-900">未命名图纸</span>
+                        <div id="workbench-name-editor">
+                            <span id="workbench-pattern-title" class="block min-w-0 truncate text-base font-black text-gray-900">未命名图纸</span>
+                            <button id="workbench-rename-btn" type="button" aria-label="修改图纸名称" title="修改图纸名称"><img src="assets/figma-ui/edit.svg" alt=""></button>
+                            <form id="workbench-rename-form" hidden aria-label="修改图纸名称">
+                                <input id="workbench-rename-input" type="text" maxlength="40" aria-label="图纸名称" placeholder="未命名图纸" autocomplete="off">
+                                <button type="submit" class="workbench-rename-confirm">确认</button>
+                                <button id="workbench-rename-cancel" type="button">取消</button>
+                            </form>
+                        </div>
                         <span id="workbench-autosave-status" role="status" class="hidden text-xs text-red-500"></span>
                         <span id="workbench-pattern-meta" class="block mt-0.5 text-[10px] text-gray-400">32x32 · MARD 221色</span>
                     </div>
@@ -525,9 +533,11 @@
                     </div>
                     <div id="draft-primary-control" class="grid grid-cols-[minmax(0,1fr)_48px] rounded-2xl overflow-hidden shadow-sm">
                         <button id="save-draft-btn" type="button" title="保存当前图纸和设置为草稿" class="py-4 bg-white text-gray-900 text-sm font-bold border border-gray-200 border-r-0 active:scale-[0.99] transition">
+                            <span class="draft-save-pc-icon" aria-hidden="true"><img src="assets/figma-ui/draft-save-569.svg" alt=""><span class="draft-save-bead-loader"><i></i><i></i><i></i><i></i></span></span>
                             <svg class="draft-save-icon" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.8833.75c.3517.005.6872.1488.9334.4l2.5333 2.5333c.2512.2462.395.5817.4.9334v6.8c0 .3536-.1405.6927-.3905.9428-.25.25-.5892.3905-.9428.3905H2.0833c-.3536 0-.6928-.1405-.9428-.3905-.25-.25-.3905-.5892-.3905-.9428V2.0833c0-.3536.1405-.6928.3905-.9428.25-.25.5892-.3905.9428-.3905zM10.0833 12.7503V8.0837c0-.1768-.0702-.3464-.1953-.4714-.125-.1251-.2946-.1953-.4714-.1953H4.0833c-.1768 0-.3464.0702-.4714.1953-.1251.125-.1953.2946-.1953.4714v4.6666M3.4166.75v2.6667c0 .1768.0703.3464.1953.4714.1251.1251.2947.1953.4714.1953H8.75"/></svg><span class="draft-save-label">保存为草稿（0）</span>
                         </button>
                         <button id="toggle-draft-drawer-btn" class="py-4 bg-white text-gray-900 border border-gray-200 text-sm font-bold hover:text-primary active:scale-95 transition" aria-label="展开草稿列表">
+                            <span class="draft-records-pc" aria-hidden="true"><span class="draft-records-pc-icon"><img class="draft-records-dot row-one" src="assets/figma-ui/draft-list-dot-569.svg" alt=""><img class="draft-records-dot row-two" src="assets/figma-ui/draft-list-dot-569.svg" alt=""><img class="draft-records-dot row-three" src="assets/figma-ui/draft-list-dot-569.svg" alt=""><img class="draft-records-line row-one" src="assets/figma-ui/draft-list-line-569.svg" alt=""><img class="draft-records-line row-two" src="assets/figma-ui/draft-list-line-569.svg" alt=""><img class="draft-records-line row-three" src="assets/figma-ui/draft-list-line-569.svg" alt=""></span><span class="draft-records-pc-label">草稿</span></span>
                             <svg class="draft-toggle-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M.5.5 2.5 2.5 4.5.5"/></svg><span class="draft-toggle-pc-caret" aria-hidden="true"><span class="draft-toggle-pc-divider"><img src="assets/figma-ui/save-caret.svg" alt=""></span><span class="draft-toggle-pc-arrow"><img src="assets/figma-ui/save-caret.svg" alt=""></span></span>
                         </button>
                     </div>
