@@ -2,6 +2,7 @@
  * 拼豆图纸生成器 - UI 与页面流程
  */
 import { AppState } from './state.js';
+import { IMAGE_ADJUSTMENT_KEYS, normalizeImageAdjustments, applyImageAdjustments } from './features/image-adjustments.js';
 import { syncWorkbenchRename } from './features/pattern-rename.js';
 import { buildDraftWithVersions, unpackDraftVersion } from './features/draft-versions.js';
 import { renderWorkbenchHistory, getCurrentPatternHistory } from './features/history-modal.js';
@@ -1249,10 +1250,16 @@ function syncDraftSaveFeedback() {
 }
 const DRAFT_SETTING_IDS = ['color-limit-toggle', 'max-colors-slider', 'dithering-toggle', 'precision-mode-select', 'color-match-mode-select'];
 function captureDraftGenerationSettings() {
-    return Object.fromEntries(DRAFT_SETTING_IDS.map(id => {
+    const settings = Object.fromEntries(DRAFT_SETTING_IDS.map(id => {
         const element = document.getElementById(id);
         return [id, element?.type === 'checkbox' ? element.checked : element?.value];
     }));
+    const adjustments = normalizeImageAdjustments(AppState.generatedImageAdjustments);
+    // Optional scalar fields preserve old neutral drafts and existing comparisons.
+    for (const key of IMAGE_ADJUSTMENT_KEYS) {
+        if (adjustments[key]) settings['image-' + key] = adjustments[key];
+    }
+    return settings;
 }
 export async function saveWorkbenchDraft({ saveAs = false, name = null, inlineError = false } = {}) {
     if (!hasWorkbenchPattern() || savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
@@ -1651,6 +1658,12 @@ export function restoreWorkbenchDraft(draftId, versionId = null, automatic = fal
         try { draft = unpackDraftVersion(parentDraft, version); }
         catch { window.alert('恢复失败：历史版本数据不完整。'); return false; }
     }
+    AppState.imageAdjustments = normalizeImageAdjustments(Object.fromEntries(
+        IMAGE_ADJUSTMENT_KEYS.map(key => [key, draft.generationSettings?.['image-' + key]])
+    ));
+    AppState.generatedImageAdjustments = { ...AppState.imageAdjustments };
+    AppState.patternPreviewImageAdjustments = null;
+    syncImageAdjustmentControls();
     AppState.currentDraftId = automatic ? parentDraft.baseDraftId || null : parentDraft.id;
     AppState.draftSourceImageDataUrl = draft.sourceImageDataUrl || null;
     AppState.currentDraftVersionId = versionId || parentDraft.versions?.[0]?.id || null;
@@ -2390,14 +2403,64 @@ export function endWorkbenchCropInteraction() {
     updateGridDimensions();
 }
 
-function getSourceImageDataForGeneration() {
+function getSourceImageDataForGeneration(adjusted = true) {
     const sourceCanvas = document.getElementById('source-canvas');
     const ctx = sourceCanvas.getContext('2d');
-    if (!isWorkbenchLayout() || !AppState.image) {
-        return ctx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+    const rect = isWorkbenchLayout() && AppState.image
+        ? ensureCropRect() : { x: 0, y: 0, width: sourceCanvas.width, height: sourceCanvas.height };
+    const source = ctx.getImageData(rect.x, rect.y, rect.width, rect.height);
+    return adjusted ? applyImageAdjustments(source, AppState.imageAdjustments) : source;
+}
+
+function syncImageAdjustmentControls() {
+    const values = normalizeImageAdjustments(AppState.imageAdjustments);
+    for (const key of IMAGE_ADJUSTMENT_KEYS) {
+        const slider = document.getElementById('image-' + key + '-slider');
+        if (slider) slider.value = String(values[key]);
+        setText('image-' + key + '-display', values[key] > 0 ? '+' + values[key] : String(values[key]));
     }
-    const rect = ensureCropRect();
-    return ctx.getImageData(rect.x, rect.y, rect.width, rect.height);
+}
+
+let imageAdjustmentFrame = null;
+export function updateImageAdjustments() {
+    if (hasWorkbenchPattern()) return;
+    AppState.imageAdjustments = normalizeImageAdjustments(Object.fromEntries(
+        IMAGE_ADJUSTMENT_KEYS.map(key => [key, document.getElementById('image-' + key + '-slider')?.value])
+    ));
+    syncImageAdjustmentControls();
+    AppState.pixelArtData = null;
+    AppState.patternPreviewPixelData = null;
+    AppState.patternPreviewPixelArtData = null;
+    AppState.patternPreviewImageAdjustments = null;
+    AppState.patternPreviewVisible = false;
+    if (imageAdjustmentFrame !== null) return;
+    imageAdjustmentFrame = requestAnimationFrame(() => {
+        imageAdjustmentFrame = null;
+        if (!AppState.image || hasWorkbenchPattern()) return;
+        updateWorkbenchSourcePreview();
+        renderMobileSettingsThumbnail();
+    });
+}
+
+export function resetImageAdjustments() {
+    if (hasWorkbenchPattern()) return;
+    AppState.imageAdjustments = normalizeImageAdjustments();
+    syncImageAdjustmentControls();
+    updateImageAdjustments();
+}
+
+// Use a display-sized copy while dragging; full-resolution pixels feed generation.
+function drawAdjustedSourcePreview(ctx, crop, width, height) {
+    const source = document.getElementById('source-canvas');
+    const image = source?.width ? source : AppState.image;
+    const copy = document.createElement('canvas');
+    const scale = Math.min(1, 1000 / Math.max(width, height));
+    copy.width = Math.max(1, Math.round(width * scale));
+    copy.height = Math.max(1, Math.round(height * scale));
+    const copyCtx = copy.getContext('2d');
+    copyCtx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, copy.width, copy.height);
+    copyCtx.putImageData(applyImageAdjustments(copyCtx.getImageData(0, 0, copy.width, copy.height), AppState.imageAdjustments), 0, 0);
+    ctx.drawImage(copy, 0, 0, width, height);
 }
 
 function getPixelArtSettingsFromUI() {
@@ -2438,7 +2501,11 @@ function updateWorkbenchSourcePreview() {
 
     const ctx = previewCanvas.getContext('2d');
     ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    if (crop) {
+    const adjusting = Object.values(normalizeImageAdjustments(AppState.imageAdjustments)).some(Boolean)
+        && !(isWorkbenchMobileLayout() && AppState.mobileSetupStep === 'crop');
+    if (adjusting) {
+        drawAdjustedSourcePreview(ctx, crop || { x: 0, y: 0, width: img.width, height: img.height }, sourceWidth, sourceHeight);
+    } else if (crop) {
         ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
     } else {
         ctx.drawImage(img, 0, 0);
@@ -2468,7 +2535,7 @@ function renderMobileSettingsThumbnail() {
     canvas.style.height = `${height}px`;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(AppState.image, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
+    drawAdjustedSourcePreview(ctx, crop, width, height);
     if (summary) {
         const gridWidth = AppState.pendingGridWidth || AppState.gridWidth;
         const gridHeight = AppState.pendingGridHeight || AppState.gridHeight;
@@ -2588,9 +2655,10 @@ function renderPatternPreviewLayer() {
 }
 
 function buildPatternPreview(style = 'photo') {
-    const sourceImageData = getSourceImageDataForGeneration();
-    AppState.patternPreviewPixelGridDetection = detectPixelArtGrid(sourceImageData);
-    AppState.patternPreviewLooksLikePixelArt = detectPixelArtAppearance(sourceImageData);
+    const rawSourceImageData = getSourceImageDataForGeneration(false);
+    const sourceImageData = applyImageAdjustments(rawSourceImageData, AppState.imageAdjustments);
+    AppState.patternPreviewPixelGridDetection = detectPixelArtGrid(rawSourceImageData);
+    AppState.patternPreviewLooksLikePixelArt = detectPixelArtAppearance(rawSourceImageData);
     if (style === 'pixel' && (getWorkbenchViewportMode() !== 'desktop' || (!AppState.patternPreviewPixelGridDetection && !AppState.patternPreviewLooksLikePixelArt))) {
         style = 'photo';
     }
@@ -2630,6 +2698,7 @@ function buildPatternPreview(style = 'photo') {
         skipSmallRegionCleanup: style === 'pixel'
     });
 
+    AppState.patternPreviewImageAdjustments = normalizeImageAdjustments(AppState.imageAdjustments);
     AppState.patternPreviewStyle = style;
     AppState.patternPreviewPixelArtData = pixelArtData;
     AppState.patternPreviewPixelData = pixelData;
@@ -2727,6 +2796,9 @@ export function removeWorkbenchImage() {
     AppState.pendingGridWidth = null;
     AppState.pendingGridHeight = null;
     AppState.image = null;
+    AppState.imageAdjustments = normalizeImageAdjustments();
+    AppState.generatedImageAdjustments = normalizeImageAdjustments();
+    AppState.patternPreviewImageAdjustments = null;
     AppState.originalImageData = null;
     AppState.history = [];
     AppState.pixelData = [];
@@ -2978,6 +3050,8 @@ export function updateWorkbenchUI() {
     document.getElementById('dithering-toggle')?.closest('label')?.classList.add('hidden');
     const hasImage = Boolean(AppState.image);
     const hasPattern = hasWorkbenchPattern();
+    setHidden('image-adjustments-panel', hasPattern || !hasImage);
+    syncImageAdjustmentControls();
     if (!hasPattern) desktopEntryPatternId = null;
     if (hasPattern && getWorkbenchViewportMode() === 'desktop' && desktopEntryPatternId !== AppState.colorSelectionPatternId) {
         desktopEntryPatternId = AppState.colorSelectionPatternId;
@@ -3662,6 +3736,7 @@ export function handleGeneratePatternLegacy() {
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.generatedImageAdjustments = normalizeImageAdjustments(AppState.imageAdjustments);
     AppState.isMirrored = false;
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchTabletPanel = null;
@@ -3714,6 +3789,7 @@ export function handleGeneratePattern() {
         palettes: PALETTES
     });
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);
+    AppState.generatedImageAdjustments = normalizeImageAdjustments(AppState.imageAdjustments);
     AppState.isMirrored = false;
     AppState.workbenchSettingsCollapsed = isWorkbenchLayout();
     AppState.workbenchTabletPanel = null;
@@ -3766,6 +3842,7 @@ export function confirmPatternPreview() {
     if (!Array.isArray(AppState.patternPreviewPixelData)) return;
 
     AppState.highlightedColorId = null;
+    AppState.generatedImageAdjustments = normalizeImageAdjustments(AppState.patternPreviewImageAdjustments);
     AppState.pixelArtData = AppState.patternPreviewPixelArtData;
     AppState.pixelData = deepClonePixels(AppState.patternPreviewPixelData);
     AppState.generatedPixelData = deepClonePixels(AppState.pixelData);

@@ -2860,3 +2860,24 @@ body[data-layout="workbench"] .crop-edge-handle-x {
     .draft-records-pc-icon .row-three { top: 12.16667px; }
     .draft-records-pc-label { color: var(--pb-color-deep); font: 400 10px/10px "PingFang SC", "Microsoft YaHei", sans-serif; white-space: nowrap; }
 }
+
+
+/* Generation-only, shared source-image controls. */
+#image-adjustments-panel { padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; }
+.image-adjustments-heading, .image-adjustment-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.image-adjustments-heading { margin-bottom: 14px; font-size: 14px; font-weight: 700; color: #1f2937; }
+#image-adjustments-reset { padding: 4px 8px; border-radius: 8px; font-size: 12px; color: var(--pb-color-primary); }
+#image-adjustments-reset:hover { background: color-mix(in srgb, var(--pb-color-primary) 8%, white); }
+.image-adjustment-control + .image-adjustment-control { margin-top: 10px; }
+.image-adjustment-label { font-size: 12px; color: #6b7280; }
+.image-adjustment-label output { color: var(--pb-color-primary); font-variant-numeric: tabular-nums; }
+.image-adjustment-control input { display: block; width: 100%; height: 28px; margin: 2px 0 0; accent-color: var(--pb-color-primary); cursor: pointer; touch-action: pan-y; }
+.image-adjustments-help { margin-top: 8px; font-size: 11px; line-height: 1.5; color: #6b7280; }
+#workbench-layout[data-viewport="mobile"][data-mode="setup"] #image-adjustments-panel { padding: 12px 14px; border: 0; border-bottom: 1px solid #e5e7eb; border-radius: 0; background: transparent; }
+
+.image-adjustment-control input { appearance: none; background: transparent; }
+.image-adjustment-control input::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: #e5e7eb; }
+.image-adjustment-control input::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: var(--pb-color-primary); border: 2px solid white; box-shadow: 0 1px 4px #0002; }
+.image-adjustment-control input::-moz-range-track { height: 6px; border-radius: 999px; background: #e5e7eb; }
+.image-adjustment-control input::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--pb-color-primary); border: 2px solid white; }
+.image-adjustment-control input:focus-visible { outline: 2px solid var(--pb-color-primary); outline-offset: 2px; border-radius: 8px; }

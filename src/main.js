@@ -8,6 +8,8 @@ import { activateEraserTool, updateEraserHover } from './features/delete.js';
 import {
     goToStep,
     updateGridDimensions,
+    updateImageAdjustments,
+    resetImageAdjustments,
     toggleBgRemovalMode,
     undoBgRemoval,
     handleCleanFragments,
@@ -124,6 +126,9 @@ const resetProjectForNewImage = () => {
     AppState.patternPreviewLooksLikePixelArt = false;
     AppState.generatedPixelData = null;
     AppState.originalImageData = null;
+    AppState.imageAdjustments = { brightness: 0, contrast: 0, saturation: 0 };
+    AppState.generatedImageAdjustments = { ...AppState.imageAdjustments };
+    AppState.patternPreviewImageAdjustments = null;
     AppState.history = [];
     AppState.stagedPixelData = null;
     AppState.stagedActions = [];
@@ -272,6 +277,11 @@ document.addEventListener('DOMContentLoaded', () => {
             updateTolerance(e.target.value);
         });
     }
+
+    ['brightness', 'contrast', 'saturation'].forEach(key => {
+        document.getElementById('image-' + key + '-slider')?.addEventListener('input', updateImageAdjustments);
+    });
+    document.getElementById('image-adjustments-reset')?.addEventListener('click', resetImageAdjustments);
 
     const gridSizeSlider = document.getElementById('grid-size-slider');
     if (gridSizeSlider) {

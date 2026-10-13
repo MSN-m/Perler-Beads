@@ -9,16 +9,16 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261009-pattern-rename-1">
+    <link rel="stylesheet" href="css/style.css?v=20261013-image-adjustments-1">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
         "imports": {
-            "./src/state.js": "./src/state.js?v=20261008-ruler-performance-1",
+            "./src/state.js": "./src/state.js?v=20261013-image-adjustments-1",
             "./src/editor.js": "./src/editor.js?v=20261008-ruler-performance-1",
             "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261008-ruler-performance-1",
             "./src/renderer.js": "./src/renderer.js?v=20261008-single-grid-1",
-            "./src/ui.js": "./src/ui.js?v=20261009-pattern-rename-1",
+            "./src/ui.js": "./src/ui.js?v=20261013-image-adjustments-1",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
             "./src/features/edge.js": "./src/features/edge.js?v=20261008-ruler-performance-1",
             "./src/features/adjust.js": "./src/features/adjust.js?v=20261008-ruler-performance-1",
@@ -33,7 +33,7 @@
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261009-pattern-rename-1"></script>
+    <script type="module" src="src/main.js?v=20261013-image-adjustments-1"></script>
 </head>
 
 <body data-layout="workbench"
@@ -373,6 +373,35 @@
                         </div>
                         <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="60"
                             class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    </div>
+
+                    <div id="image-adjustments-panel">
+                        <div class="image-adjustments-heading">
+                            <span>图片调整</span>
+                            <button id="image-adjustments-reset" type="button">重置</button>
+                        </div>
+                        <div class="image-adjustment-control">
+                            <div class="image-adjustment-label">
+                                <label for="image-brightness-slider">亮度</label>
+                                <output id="image-brightness-display" for="image-brightness-slider">0</output>
+                            </div>
+                            <input type="range" id="image-brightness-slider" min="-10" max="10" step="1" value="0">
+                        </div>
+                        <div class="image-adjustment-control">
+                            <div class="image-adjustment-label">
+                                <label for="image-contrast-slider">对比度</label>
+                                <output id="image-contrast-display" for="image-contrast-slider">0</output>
+                            </div>
+                            <input type="range" id="image-contrast-slider" min="-10" max="10" step="1" value="0">
+                        </div>
+                        <div class="image-adjustment-control">
+                            <div class="image-adjustment-label">
+                                <label for="image-saturation-slider">饱和度</label>
+                                <output id="image-saturation-display" for="image-saturation-slider">0</output>
+                            </div>
+                            <input type="range" id="image-saturation-slider" min="-10" max="10" step="1" value="0">
+                        </div>
+                        <p class="image-adjustments-help">实时预览图片，生成后查看拼豆效果</p>
                     </div>
 
                     <div class="bg-gray-50 p-4 space-y-4 rounded-xl border border-gray-100">

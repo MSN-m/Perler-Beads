@@ -239,3 +239,38 @@ test('PC failed save restores button without reporting saved; delayed feedback d
   finishFeedback();assert.equal(label.textContent,'保存草稿');
  } finally {document.getElementById=original;globalThis.setTimeout=timer;}
 });
+
+test('drafts save confirmed image adjustments, restore versions and default old drafts to neutral', async () => {
+ setup();
+ AppState.imageAdjustments = { brightness: 9, contrast: 8, saturation: 7 };
+ AppState.generatedImageAdjustments = { brightness: 2, contrast: -3, saturation: 0 };
+ await saveWorkbenchDraft();
+ const id = AppState.currentDraftId, first = AppState.drafts[0].versions[0].id;
+ assert.equal(AppState.drafts[0].generationSettings['image-brightness'], 2);
+ assert.equal(AppState.drafts[0].generationSettings['image-contrast'], -3);
+ assert.equal(AppState.drafts[0].generationSettings['image-saturation'], undefined);
+ assert.equal(hasUnsavedWorkbenchChanges(), false, 'pending controls must not change saved diagram metadata');
+ AppState.generatedImageAdjustments = { brightness: -2, contrast: 0, saturation: 4 };
+ assert.equal(hasUnsavedWorkbenchChanges(), true);
+ await saveWorkbenchDraft();
+ assert.equal(AppState.drafts[0].versions.length, 2);
+ restoreWorkbenchDraft(id, first);
+ assert.deepEqual(AppState.imageAdjustments, { brightness: 2, contrast: -3, saturation: 0 });
+ assert.deepEqual(AppState.generatedImageAdjustments, AppState.imageAdjustments);
+ await saveWorkbenchDraft({ saveAs: true });
+ const old = AppState.drafts[0];
+ delete old.generationSettings;
+ old.versions = [];
+ restoreWorkbenchDraft(old.id);
+ assert.deepEqual(AppState.imageAdjustments, { brightness: 0, contrast: 0, saturation: 0 });
+ assert.deepEqual(AppState.generatedImageAdjustments, AppState.imageAdjustments);
+});
+test('automatic records capture confirmed adjustments without storing pending controls', async () => {
+ setup();
+ AppState.imageAdjustments = { brightness: 10, contrast: 10, saturation: 10 };
+ AppState.generatedImageAdjustments = { brightness: -4, contrast: 0, saturation: 3 };
+ await saveWorkbenchAutomatically();
+ assert.equal(AppState.autoSaves[0].generationSettings['image-brightness'], -4);
+ assert.equal(AppState.autoSaves[0].generationSettings['image-saturation'], 3);
+ assert.equal(AppState.autoSaves[0].generationSettings['image-contrast'], undefined);
+});
