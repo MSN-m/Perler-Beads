@@ -96,6 +96,7 @@ import {
 } from './ui.js';
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
+import { initCanvasContextMenu } from './features/canvas-context-menu.js';
 import { setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState, restorePaletteToolSession } from './editor.js';
 import { renderResult } from './renderer.js';
 import { createEditorShortcuts } from './features/editor-shortcuts.js';
@@ -944,6 +945,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     else toolMenuActions[AppState.lastBrushTool || 'brush']();
                 }
                 renderResult(document.getElementById('result-canvas'), AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+            } else if (AppState.highlightedColorId !== null) {
+                AppState.highlightedColorId = null;
+                renderResult(document.getElementById('result-canvas'), AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, null);
             } else if (AppState.editor.activeTool !== 'pan') {
                 document.getElementById('figma-main-pan-btn')?.click();
             }
@@ -1140,6 +1144,11 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshQualityOverlay();
             updateWorkbenchUI();
         }
+    });
+
+    initCanvasContextMenu(resultContainer, resultCanvas, () => {
+        refreshQualityOverlay();
+        updateWorkbenchUI();
     });
 
     if (resultCanvas) {

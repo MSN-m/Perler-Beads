@@ -2881,3 +2881,12 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 .image-adjustment-control input::-moz-range-track { height: 6px; border-radius: 999px; background: #e5e7eb; }
 .image-adjustment-control input::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--pb-color-primary); border: 2px solid white; }
 .image-adjustment-control input:focus-visible { outline: 2px solid var(--pb-color-primary); outline-offset: 2px; border-radius: 8px; }
+
+/* PC canvas context menu */
+.canvas-context-menu { position: fixed; z-index: 10020; min-width: 196px; padding: 6px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; box-shadow: 0 8px 28px #25293626; color: #374151; font-size: 13px; }
+.canvas-context-menu[hidden] { display: none; }
+.canvas-context-menu button { display: block; width: 100%; padding: 9px 12px; border: 0; border-radius: 7px; background: transparent; text-align: left; cursor: pointer; }
+.canvas-context-menu button:hover, .canvas-context-menu button:focus-visible { background: #fdf0f5; outline: 2px solid transparent; color: #be467b; }
+.canvas-context-menu button.is-danger { color: #dc3545; }
+.canvas-context-color { display: flex; align-items: center; gap: 8px; padding: 8px 10px 10px; margin-bottom: 4px; border-bottom: 1px solid #eee; font-size: 12px; line-height: 1.6; white-space: pre-line; }
+.canvas-context-color > span:first-child { width: 24px; height: 24px; flex-shrink: 0; border: 1px solid #0002; border-radius: 6px; }

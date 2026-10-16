@@ -187,13 +187,16 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             const i = (y * gridWidth + x);
             const color = pixelArray[i];
             if (color.id === 'NONE') continue;
-            if (highlightedColorId === null || highlightedColorId === color.id) {
-                const drawX = gridOffset + (x - minX) * scale;
-                const drawY = gridOffset + (y - minY) * scale;
-                const yiq = ((color.r * 299) + (color.g * 587) + (color.b * 114)) / 1000;
-                ctx.fillStyle = yiq >= 128 ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)';
-                ctx.fillText(color.id, drawX + scale / 2, drawY + scale / 2);
-            }
+            const drawX = gridOffset + (x - minX) * scale;
+            const drawY = gridOffset + (y - minY) * scale;
+            const muted = highlightedColorId !== null && highlightedColorId !== color.id;
+            const yiq = ((color.r * 299) + (color.g * 587) + (color.b * 114)) / 1000;
+            // Keep every occupied cell's label readable against its dimmed background.
+            const textLuminance = muted ? yiq * 0.6 : yiq;
+            ctx.fillStyle = textLuminance >= 128
+                ? (muted ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.6)')
+                : (muted ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.7)');
+            ctx.fillText(color.id, drawX + scale / 2, drawY + scale / 2);
         }
     }
 
