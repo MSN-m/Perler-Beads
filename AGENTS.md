@@ -136,7 +136,7 @@ touchend:   if (editMode === 'adjust' || editMode === 'delete') return;
 
 ## 5. 撤回栈的数据格式
 
-`stagedActions` 支持两种格式，`adjustUndo` 通过 `Array.isArray(action.indices)` 区分：
+`stagedActions` 支持以下格式，`adjustUndo` 通过 `Array.isArray(action.indices)` 区分：
 
 ```js
 // 单格操作（颜色调整单格替换、删除色块）
@@ -144,6 +144,9 @@ touchend:   if (editMode === 'adjust' || editMode === 'delete') return;
 
 // 批量操作（from_canvas 批量替换、边缘调整）
 { indices: number[], prevColors: [{id,r,g,b},...], nextColor: {id,r,g,b} }
+
+// 2026-11-03：单格排查的混合修复批次，逐格颜色与 indices 一一对应（仅内存历史）
+{ indices: number[], prevColors: [{id,r,g,b},...], nextColors: [{id,r,g,b},...] }
 ```
 
 ---
@@ -271,3 +274,10 @@ The warning must state affected flow, affected device(s), data-loss or behavior 
 ### Archive Synchronization
 
 When the user says “一键归档”, also review and update `docs/PROJECT_CORE.md` and `docs/PRODUCT_GUARDRAILS.md` whenever the session establishes a lasting product fact, workflow decision, formal/experimental boundary, or new protected rule. The development archive must state whether these two documents were updated.
+
+
+## 12. 浏览器验证偏好（2026-11-03）
+
+- 用户要求使用后台内置浏览器验证，避免打扰个人Chrome。未经用户明确要求，不自动切换到Chrome或操作个人浏览器。
+- 内置浏览器某个工具入口失败时，优先尝试其他可用的内置浏览器连接方式；仍失败则报告限制，不以失败作为自动操作Chrome的授权。
+- 不刷新或替换用户含未保存内容的页面。可使用隔离端口/临时测试页与临时图纸，结束后清理，不保存或覆盖用户草稿。

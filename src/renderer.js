@@ -131,31 +131,28 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         }
     }
 
-    // 4. 高亮处理
+    // 4. 同色查看：压暗其他实际格，双层描边保证深浅目标色都清晰。
+    const highlightDimOpacity = 0.72;
     if (highlightedColorId !== null) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.fillRect(gridOffset, gridOffset, contentWidth * scale, contentHeight * scale);
-
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 4;
-
         for (let y = minY; y <= maxY; y++) {
             for (let x = minX; x <= maxX; x++) {
-                const i = (y * gridWidth + x);
-                const color = pixelArray[i];
-                if (color.id === highlightedColorId) {
-                    const drawX = gridOffset + (x - minX) * scale;
-                    const drawY = gridOffset + (y - minY) * scale;
-                    ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
-                    ctx.fillRect(drawX + 1, drawY + 1, scale - 2, scale - 2);
+                const color = pixelArray[y * gridWidth + x];
+                if (color.id === 'NONE') continue;
+                const drawX = gridOffset + (x - minX) * scale;
+                const drawY = gridOffset + (y - minY) * scale;
+                if (color.id !== highlightedColorId) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${highlightDimOpacity})`;
+                    ctx.fillRect(drawX, drawY, scale, scale);
+                    continue;
                 }
+                ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(drawX + 2, drawY + 2, scale - 4, scale - 4);
+                ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(drawX + 2, drawY + 2, scale - 4, scale - 4);
             }
         }
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
     }
 
     // 5. 网格线、辅助线和 ID
@@ -192,7 +189,7 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
             const muted = highlightedColorId !== null && highlightedColorId !== color.id;
             const yiq = ((color.r * 299) + (color.g * 587) + (color.b * 114)) / 1000;
             // Keep every occupied cell's label readable against its dimmed background.
-            const textLuminance = muted ? yiq * 0.6 : yiq;
+            const textLuminance = muted ? yiq * (1 - highlightDimOpacity) : yiq;
             ctx.fillStyle = textLuminance >= 128
                 ? (muted ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.6)')
                 : (muted ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.7)');
@@ -276,70 +273,28 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         ctx.restore();
     }
 
-    if (AppState.qualityOverlayVisible && AppState.qualityIssues && AppState.qualityIssues.length) {
+    if (canvas.id === 'result-canvas' && AppState.qualityOverlayVisible && AppState.qualityIssues?.length) {
         ctx.save();
         for (const issue of AppState.qualityIssues) {
-            const bounds = issue.bounds;
-            if (!bounds) continue;
-
-            const drawX = gridOffset + (bounds.minX - minX) * scale;
-            const drawY = gridOffset + (bounds.minY - minY) * scale;
-            const drawW = (bounds.maxX - bounds.minX + 1) * scale;
-            const drawH = (bounds.maxY - bounds.minY + 1) * scale;
-            const badgeX = Math.min(canvas.width - 14, Math.max(gridOffset + 14, drawX + drawW - 6));
-            const badgeY = Math.min(canvas.height - 14, Math.max(gridOffset + 14, drawY + 6));
-
-            ctx.fillStyle = getThemePrimaryColor(0.025);
-            ctx.fillRect(drawX, drawY, drawW, drawH);
-
-            if (issue.suspectIndices && issue.suspectIndices.length) {
-                for (const idx of issue.suspectIndices) {
-                    const sx = idx % gridWidth;
-                    const sy = Math.floor(idx / gridWidth);
-                    if (sx < bounds.minX || sx > bounds.maxX || sy < bounds.minY || sy > bounds.maxY) continue;
-                    const cellX = gridOffset + (sx - minX) * scale;
-                    const cellY = gridOffset + (sy - minY) * scale;
-                    const inset = 3;
-                    const centerX = cellX + scale / 2;
-                    const centerY = cellY + scale / 2;
-
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.24)';
-                    ctx.fillRect(cellX + inset, cellY + inset, scale - inset * 2, scale - inset * 2);
-
-                    ctx.strokeStyle = 'rgba(220, 38, 38, 0.95)';
-                    ctx.lineWidth = 3;
-                    ctx.setLineDash([]);
-                    ctx.strokeRect(cellX + 2, cellY + 2, scale - 4, scale - 4);
-
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, 4.5, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(220, 38, 38, 0.95)';
-                    ctx.fill();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
+            const index = issue.index;
+            if (!Number.isInteger(index) || pixelArray[index]?.id === 'NONE') continue;
+            const x = gridOffset + (index % gridWidth - minX) * scale;
+            const y = gridOffset + (Math.floor(index / gridWidth) - minY) * scale;
+            ctx.setLineDash(issue.active ? [6, 3] : []);
+            ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 6;
+            ctx.strokeRect(x + 2, y + 2, scale - 4, scale - 4);
+            ctx.strokeStyle = issue.ignored ? '#7b8493' : issue.selected === false ? '#c77713' : getThemePrimaryColor(1);
+            ctx.lineWidth = 3; ctx.strokeRect(x + 2, y + 2, scale - 4, scale - 4);
+            if (issue.suggestion) {
+                ctx.setLineDash([]);
+                ctx.beginPath(); ctx.arc(x + scale - 5, y + 5, 4, 0, Math.PI * 2);
+                ctx.fillStyle = issue.suggestion.id === 'NONE' ? '#ffffff' : `rgb(${issue.suggestion.r},${issue.suggestion.g},${issue.suggestion.b})`;
+                ctx.fill(); ctx.strokeStyle = '#27303e'; ctx.lineWidth = 1; ctx.stroke();
+                if (issue.suggestion.id === 'NONE') {
+                    ctx.beginPath(); ctx.moveTo(x + scale - 7, y + 3); ctx.lineTo(x + scale - 3, y + 7);
+                    ctx.moveTo(x + scale - 3, y + 3); ctx.lineTo(x + scale - 7, y + 7); ctx.stroke();
                 }
             }
-
-            ctx.strokeStyle = getThemePrimaryColor(0.9);
-            ctx.lineWidth = 3;
-            ctx.setLineDash([7, 5]);
-            ctx.strokeRect(drawX + 2, drawY + 2, Math.max(4, drawW - 4), Math.max(4, drawH - 4));
-            ctx.setLineDash([]);
-
-            ctx.beginPath();
-            ctx.arc(badgeX, badgeY, 12, 0, Math.PI * 2);
-            ctx.fillStyle = getThemePrimaryColor(0.96);
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 13px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(String(issue.issueCount || issue.number), badgeX, badgeY + 0.5);
         }
         ctx.restore();
     }

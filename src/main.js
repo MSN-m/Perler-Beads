@@ -97,6 +97,7 @@ import {
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
 import { initCanvasContextMenu } from './features/canvas-context-menu.js';
+import { installQualityReview } from './features/quality.js';
 import { setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState, restorePaletteToolSession } from './editor.js';
 import { renderResult } from './renderer.js';
 import { createEditorShortcuts } from './features/editor-shortcuts.js';
@@ -495,9 +496,13 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleAllColorsPanelBtn.addEventListener('click', toggleAllColorsPanel);
     }
 
+    installQualityReview({ onUpdate: updateWorkbenchUI });
     const qualityCheckBtn = document.getElementById('quality-check-btn');
     if (qualityCheckBtn) {
         qualityCheckBtn.addEventListener('click', () => {
+            if (AppState.paintStroke || AppState.eraserStroke || AppState.fillSelection || AppState.zoomState?.isDragging) return;
+            closePalettePanel();
+            closeAllColorsPanel();
             openQualityCheckModal();
             updateWorkbenchUI();
         });
@@ -515,12 +520,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const palettePanelDragHandle = document.getElementById('palette-panel-drag-handle');
     if (palettePanelDragHandle) {
-        palettePanelDragHandle.addEventListener('pointerdown', (event) => {
-            if (startPalettePanelDrag(event)) {
-                event.preventDefault();
-                palettePanelDragHandle.setPointerCapture?.(event.pointerId);
-            }
-        });
+        for (const panel of [document.getElementById('palette-panel'), document.getElementById('all-colors-panel')]) {
+            panel?.addEventListener('pointerdown', (event) => {
+                if (AppState.workbenchViewportMode !== 'desktop' && !palettePanelDragHandle.contains(event.target)) return;
+                if (startPalettePanelDrag(event)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    panel.setPointerCapture?.(event.pointerId);
+                }
+            });
+        }
         window.addEventListener('pointermove', (event) => {
             if (movePalettePanelDrag(event)) {
                 event.preventDefault();
@@ -528,6 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         window.addEventListener('pointerup', endPalettePanelDrag);
         window.addEventListener('pointercancel', endPalettePanelDrag);
+        window.addEventListener('blur', endPalettePanelDrag);
     }
 
     const paletteSearchInput = document.getElementById('palette-search-input');
@@ -887,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 busy: Boolean(AppState.eraserStroke || AppState.paintStroke || AppState.fillSelection || AppState.zoomState?.isDragging || AppState.comparePreviewDragging || AppState.palettePanelDrag || AppState.cropInteraction),
                 dragging: Boolean(AppState.zoomState?.isDragging || AppState.comparePreviewDragging),
                 modal: modalOpen(),
-                panel: AppState.palettePanelOpen || AppState.allColorsPanelOpen || AppState.draftDrawerOpen || Boolean(AppState.workbenchTabletPanel),
+                panel: AppState.draftDrawerOpen || Boolean(AppState.workbenchTabletPanel),
                 palette: AppState.palettePanelOpen || AppState.allColorsPanelOpen,
                 tool: AppState.editor.activeTool
             };
@@ -907,7 +917,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWorkbenchUI();
         },
         endTemporaryPan() {
-            restoreTool(temporaryPanTool);
+            // An explicit close or color selection during Space owns the new tool.
+            if (temporaryPanTool?.tool !== 'palette' || AppState.palettePanelOpen || AppState.allColorsPanelOpen) restoreTool(temporaryPanTool);
             temporaryPanTool = null;
         },
         stopPan() {
@@ -1007,6 +1018,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('pointerdown', (event) => {
         if (!AppState.allColorsPanelOpen) return;
+        if (AppState.workbenchViewportMode === 'desktop' && document.getElementById('result-container')?.contains(event.target)) return;
         const panel = document.getElementById('all-colors-panel');
         const toggleBtn = document.getElementById('toggle-all-colors-panel-btn');
         const target = event.target;
@@ -1018,6 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('pointerdown', (event) => {
         if (!AppState.palettePanelOpen) return;
+        if (AppState.workbenchViewportMode === 'desktop' && document.getElementById('result-container')?.contains(event.target)) return;
         const panel = document.getElementById('palette-panel');
         const toggleBtn = document.getElementById('toggle-palette-panel-btn');
         const target = event.target;

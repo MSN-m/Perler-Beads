@@ -442,11 +442,17 @@ function positionDesktopPalettePanel(panel) {
     if (!toolbar) return;
     const rect = toolbar.getBoundingClientRect();
     panel.style.position = 'fixed';
-    panel.style.left = `${rect.left + rect.width / 2}px`;
-    panel.style.top = `${Math.max(12, rect.top - 328)}px`;
+    const position = AppState.palettePanelPosition;
+    const panelRect = panel.getBoundingClientRect();
+    if (position) {
+        position.x = Math.min(Math.max(12, position.x), Math.max(12, window.innerWidth - panelRect.width - 12));
+        position.y = Math.min(Math.max(12, position.y), Math.max(12, window.innerHeight - panelRect.height - 12));
+    }
+    panel.style.left = `${position ? position.x : rect.left + rect.width / 2}px`;
+    panel.style.top = `${position ? position.y : Math.max(12, rect.top - 328)}px`;
     panel.style.right = 'auto';
     panel.style.bottom = 'auto';
-    panel.style.transform = 'translateX(-50%)';
+    panel.style.transform = AppState.palettePanelPosition ? 'none' : 'translateX(-50%)';
 }
 
 function bindDesktopPaletteTabs(panel) {
@@ -834,24 +840,30 @@ function syncEditorToolVisualState() {
 }
 
 export function startPalettePanelDrag(event) {
-    if (getWorkbenchViewportMode() === 'desktop') return false;
-    const panel = document.getElementById('palette-panel');
-    if (!panel || !AppState.palettePanelOpen) return false;
+    const desktop = getWorkbenchViewportMode() === 'desktop';
+    if (event.button != null && event.button !== 0) return false;
+    const panelId = desktop && AppState.allColorsPanelOpen ? 'all-colors-panel' : 'palette-panel';
+    const panel = document.getElementById(panelId);
+    if (!panel || (!AppState.palettePanelOpen && !(desktop && AppState.allColorsPanelOpen))) return false;
+    if (desktop && event.target.closest('#palette-color-grid, #all-colors-grid')) return false;
     if (event.target.closest('button, input, select, textarea')) return false;
 
     const rect = panel.getBoundingClientRect();
     const stage = document.getElementById('workbench-stage');
     const stageRect = stage?.getBoundingClientRect();
     const point = event.touches && event.touches[0] ? event.touches[0] : event;
-    if (!stageRect || typeof point.clientX !== 'number') return false;
+    if ((!desktop && !stageRect) || typeof point.clientX !== 'number') return false;
 
     AppState.palettePanelDrag = {
+        panelId,
+        desktop,
+        pointerId: event.pointerId,
         startX: point.clientX,
         startY: point.clientY,
         originX: rect.left,
         originY: rect.top
     };
-    AppState.palettePanelPosition = { x: rect.left - stageRect.left, y: rect.top - stageRect.top };
+    AppState.palettePanelPosition = { x: rect.left - (desktop ? 0 : stageRect.left), y: rect.top - (desktop ? 0 : stageRect.top) };
     applyPalettePanelPosition(panel);
     return true;
 }
@@ -860,12 +872,13 @@ export function movePalettePanelDrag(event) {
     const drag = AppState.palettePanelDrag;
     if (!drag) return false;
 
-    const panel = document.getElementById('palette-panel');
+    if (drag.pointerId != null && event.pointerId !== drag.pointerId) return false;
+    const panel = document.getElementById(drag.panelId);
     const stage = document.getElementById('workbench-stage');
     const point = event.touches && event.touches[0] ? event.touches[0] : event;
-    if (!panel || !stage || typeof point.clientX !== 'number') return false;
+    if (!panel || (!drag.desktop && !stage) || typeof point.clientX !== 'number') return false;
 
-    const stageRect = stage.getBoundingClientRect();
+    const stageRect = drag.desktop ? { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight } : stage.getBoundingClientRect();
     const panelRect = panel.getBoundingClientRect();
     const padding = 12;
     const maxX = Math.max(padding, stageRect.width - panelRect.width - padding);
@@ -3169,7 +3182,8 @@ export function updateWorkbenchUI() {
     }
     if (hasPattern) refreshQualityIssues();
     else AppState.qualityIssues = [];
-    setText('quality-check-btn', AppState.qualityOverlayVisible ? '\u5173\u95ed\u68c0\u67e5' : `\u8d28\u91cf\u68c0\u67e5\uff08${AppState.qualityIssues.length}\uff09`);
+    setText('quality-check-btn', '排查');
+    document.getElementById('quality-check-btn')?.setAttribute('aria-pressed', String(AppState.qualityOverlayVisible));
     renderPalettePanel();
     renderAllColorsPanel();
     syncRecentColorChips();

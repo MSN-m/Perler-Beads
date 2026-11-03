@@ -187,7 +187,7 @@ function applyPixelAction(pixels, action, useNextColor) {
     if (!pixels || !action) return;
     if (Array.isArray(action.indices)) {
         const colors = useNextColor
-            ? action.indices.map(() => action.nextColor)
+            ? (action.nextColors || action.indices.map(() => action.nextColor))
             : action.prevColors;
         action.indices.forEach((index, i) => {
             pixels[index] = { ...colors[i] };

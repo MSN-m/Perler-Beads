@@ -1,271 +1,260 @@
 import { AppState } from '../state.js';
-import { renderResult } from '../renderer.js';
+import { renderResult, updateResultTransform } from '../renderer.js';
+import { deepClonePixels, recordPixelAction, calculateStats, updateAdjustUndoButton, setActiveEditorTool } from '../editor.js';
+import { findSingletons, isSingleton, isOccupied, pixelSignature, suggestRepairs } from './quality-analysis.js';
 
-const NONE_ID = 'NONE';
-const SMALL_COMPONENT_MAX_SIZE = 3;
-const REGION_SIZE = 8;
-const QUALITY_GRID_COLUMNS = 3;
-const QUALITY_GRID_ROWS = 3;
-
-function getActivePixels() {
-    return AppState.stagedPixelData || AppState.pixelData || [];
+let review = null, panel = null, shield = null, updateUI = () => {}, drag = null;
+const pixels = () => AppState.stagedPixelData || AppState.pixelData || [];
+const busy = () => Boolean(AppState.paintStroke || AppState.eraserStroke || AppState.fillSelection || AppState.zoomState?.isDragging);
+const valid = () => review && review.patternId === AppState.colorSelectionPatternId && review.width === AppState.gridWidth
+    && review.height === AppState.gridHeight && review.mirrored === AppState.isMirrored && AppState.currentStep === 3;
+const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const currentStatus = item => pixels()[item.index]?.id !== item.colorId || !isSingleton(pixels(), item.index, review.width, review.height)
+    ? '已修改' : item.ignored ? '已忽略' : '待检查';
+const pending = () => review.items.filter(item => currentStatus(item) === '待检查');
+const positionLabel = item => `第 ${item.index % review.width + 1} 列 / 第 ${Math.floor(item.index / review.width) + 1} 行`;
+const paint = () => {
+    const canvas = document.getElementById('result-canvas');
+    if (canvas && pixels().length) renderResult(canvas, pixels(), AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+};
+function setZoom(zoom) {
+    Object.assign(AppState.zoomState, zoom, { isDragging: false });
+    const canvas = document.getElementById('result-canvas');
+    if (canvas) { canvas.style.transition = 'none'; updateResultTransform(canvas, AppState.zoomState, document.getElementById('zoom-reset-btn')); }
 }
-
-function getNeighbors(idx, gridWidth, gridHeight) {
-    const x = idx % gridWidth;
-    const y = Math.floor(idx / gridWidth);
-    const neighbors = [];
-    if (x > 0) neighbors.push(idx - 1);
-    if (x < gridWidth - 1) neighbors.push(idx + 1);
-    if (y > 0) neighbors.push(idx - gridWidth);
-    if (y < gridHeight - 1) neighbors.push(idx + gridWidth);
-    return neighbors;
+function fitOverview() {
+    const container = document.getElementById('result-container'), canvas = document.getElementById('result-canvas');
+    if (!container || !canvas) return;
+    const rect = container.getBoundingClientRect();
+    const available = Math.max(120, rect.width - (rect.width > 760 ? 390 : 24));
+    const availableHeight = Math.max(120, rect.height - (rect.width > 760 ? 140 : 350));
+    const scale = Math.max(0.02, Math.min(available / canvas.width, availableHeight / canvas.height, 1));
+    setZoom({ scale, x: (available - canvas.width * scale) / 2 + 12, y: (availableHeight - canvas.height * scale) / 2 + 40 });
 }
-
-function makeBounds(indices, gridWidth, gridHeight) {
-    let minX = gridWidth;
-    let minY = gridHeight;
-    let maxX = -1;
-    let maxY = -1;
-
-    for (const idx of indices) {
-        const x = idx % gridWidth;
-        const y = Math.floor(idx / gridWidth);
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-    }
-
-    return { minX, minY, maxX, maxY };
+function focusItem(index) {
+    if (!valid() || busy() || !review.items[index]) return;
+    review.cursor = index;
+    setActiveEditorTool('pan');
+    review.message = '';
+    refreshQualityIssues(); paint();
+    const item = review.items[index], container = document.getElementById('result-container');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const width = Math.max(150, rect.width - (rect.width > 760 ? 390 : 24));
+    const height = Math.max(150, rect.height - (rect.width > 760 ? 140 : 350));
+    const scale = Math.min(2, Math.max(0.5, Math.min(width, height) / 330));
+    const cx = (item.index % review.width - AppState.renderedMinX + 1.5) * 30;
+    const cy = (Math.floor(item.index / review.width) - AppState.renderedMinY + 1.5) * 30;
+    setZoom({ scale, x: width / 2 - cx * scale, y: height / 2 + 40 - cy * scale });
+    renderPanel();
 }
-
-function overlaps(a, b) {
-    return !(a.maxX < b.minX || a.minX > b.maxX || a.maxY < b.minY || a.minY > b.maxY);
+function closeReview() {
+    review = null; drag = null;
+    AppState.qualityOverlayVisible = false; AppState.qualityIssues = [];
+    if (panel) { panel.hidden = true; panel.removeAttribute('role'); panel.removeAttribute('aria-modal'); }
+    if (shield) shield.hidden = true;
+    paint();
 }
-
-function uniqueIndices(indices) {
-    return Array.from(new Set(indices)).sort((a, b) => a - b);
+function cancelPreview(message = '') {
+    if (!review?.preview) return;
+    const zoom = review.preview.zoom;
+    review.preview = null; review.message = message;
+    if (shield) shield.hidden = true;
+    setZoom(zoom); refreshQualityIssues(); paint(); renderPanel();
+    panel?.querySelector('[data-quality-action="auto"]')?.focus({ preventScroll: true });
 }
-
-function isIndexInsideBounds(idx, bounds, gridWidth) {
-    const x = idx % gridWidth;
-    const y = Math.floor(idx / gridWidth);
-    return x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY;
-}
-
-function getFixedRegionIndexForCell(idx, gridWidth, gridHeight) {
-    const x = idx % gridWidth;
-    const y = Math.floor(idx / gridWidth);
-    const col = Math.min(QUALITY_GRID_COLUMNS - 1, Math.floor((x / Math.max(gridWidth, 1)) * QUALITY_GRID_COLUMNS));
-    const row = Math.min(QUALITY_GRID_ROWS - 1, Math.floor((y / Math.max(gridHeight, 1)) * QUALITY_GRID_ROWS));
-    return row * QUALITY_GRID_COLUMNS + col;
-}
-
-function findSmallComponentIssues(pixels, gridWidth, gridHeight) {
-    const visited = new Uint8Array(gridWidth * gridHeight);
-    const issues = [];
-
-    for (let i = 0; i < pixels.length; i++) {
-        const start = pixels[i];
-        if (!start || start.id === NONE_ID || visited[i]) continue;
-
-        const stack = [i];
-        const indices = [];
-        visited[i] = 1;
-
-        while (stack.length) {
-            const idx = stack.pop();
-            indices.push(idx);
-
-            for (const nextIdx of getNeighbors(idx, gridWidth, gridHeight)) {
-                const next = pixels[nextIdx];
-                if (!next || next.id !== start.id || visited[nextIdx]) continue;
-                visited[nextIdx] = 1;
-                stack.push(nextIdx);
-            }
-        }
-
-        if (indices.length > SMALL_COMPONENT_MAX_SIZE) continue;
-
-        issues.push({
-            type: 'small_component',
-            label: indices.length === 1 ? '\u72ec\u7acb\u8272\u5757' : '\u5c11\u91cf\u72ec\u7acb\u8272\u5757',
-            description: `${start.id} \u5171 ${indices.length} \u683c`,
-            indices,
-            suspectIndices: indices,
-            bounds: makeBounds(indices, gridWidth, gridHeight),
-            severity: indices.length === 1 ? 3 : 2
-        });
-    }
-
-    return issues;
-}
-
-function findFragmentedRegionIssues(pixels, gridWidth, gridHeight) {
-    const issues = [];
-    const windowSize = Math.min(REGION_SIZE, gridWidth, gridHeight);
-    if (windowSize < 6) return issues;
-
-    const stride = Math.max(4, Math.floor(windowSize / 2));
-
-    for (let startY = 0; startY <= gridHeight - windowSize; startY += stride) {
-        for (let startX = 0; startX <= gridWidth - windowSize; startX += stride) {
-            const colorCounts = new Map();
-            const colorIndices = new Map();
-            const indices = [];
-
-            for (let y = startY; y < startY + windowSize; y++) {
-                for (let x = startX; x < startX + windowSize; x++) {
-                    const idx = y * gridWidth + x;
-                    const pixel = pixels[idx];
-                    if (!pixel || pixel.id === NONE_ID) continue;
-                    indices.push(idx);
-                    colorCounts.set(pixel.id, (colorCounts.get(pixel.id) || 0) + 1);
-                    const list = colorIndices.get(pixel.id) || [];
-                    list.push(idx);
-                    colorIndices.set(pixel.id, list);
-                }
-            }
-
-            const coloredCount = indices.length;
-            if (coloredCount < Math.floor(windowSize * windowSize * 0.55)) continue;
-
-            const uniqueColors = colorCounts.size;
-            const dominantCount = Math.max(...colorCounts.values());
-            const dominantRatio = dominantCount / coloredCount;
-
-            if (uniqueColors < 6 || dominantRatio > 0.42) continue;
-
-            const rareLimit = Math.max(2, Math.floor(coloredCount * 0.08));
-            const suspectIndices = [];
-            for (const [colorId, count] of colorCounts.entries()) {
-                if (count <= rareLimit) {
-                    suspectIndices.push(...(colorIndices.get(colorId) || []));
-                }
-            }
-
-            const bounds = { minX: startX, minY: startY, maxX: startX + windowSize - 1, maxY: startY + windowSize - 1 };
-            if (issues.some(issue => overlaps(issue.bounds, bounds))) continue;
-
-            issues.push({
-                type: 'fragmented_region',
-                label: '\u989c\u8272\u6563\u788e',
-                description: `${windowSize}x${windowSize} \u533a\u57df\u5185 ${uniqueColors} \u8272`,
-                indices,
-                suspectIndices: suspectIndices.length ? uniqueIndices(suspectIndices) : indices,
-                bounds,
-                severity: uniqueColors >= 8 ? 3 : 2
-            });
-        }
-    }
-
-    return issues;
-}
-
-function makeFixedRegion(col, row, gridWidth, gridHeight) {
-    const minX = Math.floor((col / QUALITY_GRID_COLUMNS) * gridWidth);
-    const maxX = Math.floor(((col + 1) / QUALITY_GRID_COLUMNS) * gridWidth) - 1;
-    const minY = Math.floor((row / QUALITY_GRID_ROWS) * gridHeight);
-    const maxY = Math.floor(((row + 1) / QUALITY_GRID_ROWS) * gridHeight) - 1;
-    return { minX, minY, maxX, maxY };
-}
-
-function createFixedRegions(gridWidth, gridHeight) {
-    const regions = [];
-    for (let row = 0; row < QUALITY_GRID_ROWS; row++) {
-        for (let col = 0; col < QUALITY_GRID_COLUMNS; col++) {
-            regions.push({
-                bounds: makeFixedRegion(col, row, gridWidth, gridHeight),
-                col,
-                row,
-                issues: [],
-                suspectIndices: [],
-                severity: 0
-            });
-        }
-    }
-    return regions;
-}
-
-function buildQualityRegions(issues, gridWidth, gridHeight) {
-    const regions = createFixedRegions(gridWidth, gridHeight);
-
-    for (const issue of issues) {
-        const suspectIndices = uniqueIndices(issue.suspectIndices || issue.indices || []);
-        const indicesByRegion = new Map();
-
-        for (const idx of suspectIndices) {
-            const regionIndex = getFixedRegionIndexForCell(idx, gridWidth, gridHeight);
-            const list = indicesByRegion.get(regionIndex) || [];
-            list.push(idx);
-            indicesByRegion.set(regionIndex, list);
-        }
-
-        for (const [regionIndex, indices] of indicesByRegion.entries()) {
-            const region = regions[regionIndex];
-            const localIndices = indices.filter(idx => isIndexInsideBounds(idx, region.bounds, gridWidth));
-            if (!localIndices.length) continue;
-            region.issues.push(issue);
-            region.suspectIndices = uniqueIndices([...region.suspectIndices, ...localIndices]);
-            region.severity = Math.max(region.severity, issue.severity);
-        }
-    }
-
-    return regions
-        .filter(region => region.suspectIndices.length > 0)
-        .sort((a, b) => {
-            if (b.severity !== a.severity) return b.severity - a.severity;
-            return b.suspectIndices.length - a.suspectIndices.length;
-        })
-        .map((region, index) => ({
-            ...region,
-            number: index + 1,
-            issueCount: region.suspectIndices.length,
-            label: `\u533a\u57df ${region.row + 1}-${region.col + 1}`,
-            description: `\u5305\u542b ${region.suspectIndices.length} \u4e2a\u7591\u4f3c\u683c\u5b50`
-        }));
-}
-
 export function analyzeQualityIssues() {
-    const pixels = getActivePixels();
-    if (!pixels.length || !AppState.gridWidth || !AppState.gridHeight) return [];
-    if (pixels.length !== AppState.gridWidth * AppState.gridHeight) return [];
-
-    const issues = [
-        ...findFragmentedRegionIssues(pixels, AppState.gridWidth, AppState.gridHeight),
-        ...findSmallComponentIssues(pixels, AppState.gridWidth, AppState.gridHeight)
-    ];
-
-    return buildQualityRegions(issues, AppState.gridWidth, AppState.gridHeight);
+    return findSingletons(pixels(), AppState.gridWidth, AppState.gridHeight);
 }
-
 export function refreshQualityIssues() {
-    AppState.qualityIssues = analyzeQualityIssues();
+    if (review && (!valid() || !AppState.qualityOverlayVisible)) { closeReview(); return []; }
+    const issues = analyzeQualityIssues();
+    if (!review) { AppState.qualityIssues = issues; return issues; }
+    if (review.preview && review.preview.signature !== pixelSignature(pixels())) {
+        const zoom = review.preview.zoom;
+        review.preview = null; review.message = '图纸已变化，请重新预览修复。';
+        if (shield) shield.hidden = true;
+        setZoom(zoom);
+    }
+    const active = review.items[review.cursor];
+    AppState.qualityIssues = review.preview
+        ? review.preview.plans.map(plan => ({ ...plan, selected: review.preview.selected.has(plan.index), suggestion: plan.nextColor }))
+        : active && currentStatus(active) !== '已修改' ? [{ ...active, active: true }] : [];
+    renderPanel();
     return AppState.qualityIssues;
 }
-
-function renderQualityLayer() {
-    const resultCanvas = document.getElementById('result-canvas');
-    if (resultCanvas && AppState.pixelData.length) {
-        renderResult(resultCanvas, getActivePixels(), AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
-    }
-}
-
-export function toggleQualityCheck() {
-    AppState.qualityOverlayVisible = !AppState.qualityOverlayVisible;
-    if (AppState.qualityOverlayVisible) {
-        refreshQualityIssues();
-    }
-    renderQualityLayer();
-}
-
-export function openQualityCheckModal() {
-    toggleQualityCheck();
-}
-
 export function refreshQualityOverlay() {
     if (!AppState.qualityOverlayVisible) return;
-    refreshQualityIssues();
-    renderQualityLayer();
+    refreshQualityIssues(); paint();
+}
+export function openQualityCheckModal() {
+    if (busy() || AppState.currentStep !== 3 || !pixels().length) return;
+    if (review) { closeReview(); return; }
+    review = { patternId: AppState.colorSelectionPatternId, width: AppState.gridWidth, height: AppState.gridHeight,
+        mirrored: AppState.isMirrored, items: analyzeQualityIssues(), cursor: 0, preview: null, message: '' };
+    AppState.qualityOverlayVisible = true;
+    if (panel) { panel.hidden = false; panel.style.left = ''; panel.style.top = ''; panel.style.right = ''; panel.style.bottom = ''; }
+    setActiveEditorTool('pan');
+    refreshQualityIssues(); paint();
+    if (review.items.length) focusItem(0);
+}
+export const toggleQualityCheck = openQualityCheckModal;
+
+/** Validate the full batch before any write, then record one reversible edit. */
+export function commitQualityRepairs(plans, signature) {
+    const source = pixels();
+    if (pixelSignature(source) !== signature || busy()) return false;
+    const changes = plans.filter(plan => plan.nextColor && !plan.blocked && source[plan.index]?.id === plan.colorId
+        && isSingleton(source, plan.index, AppState.gridWidth, AppState.gridHeight));
+    if (changes.length !== plans.length || !changes.length) return false;
+    const remaining = source.filter(isOccupied).length - changes.filter(plan => plan.nextColor.id === 'NONE').length;
+    if (remaining < 1) return false;
+    if (!AppState.stagedPixelData) AppState.stagedPixelData = deepClonePixels(source);
+    const action = { indices: changes.map(plan => plan.index), prevColors: changes.map(plan => ({ ...source[plan.index] })),
+        nextColors: changes.map(plan => ({ ...plan.nextColor })) };
+    changes.forEach((plan, i) => { AppState.stagedPixelData[plan.index] = { ...action.nextColors[i] }; });
+    recordPixelAction(action);
+    return true;
+}
+function previewRepairs() {
+    if (!valid() || busy()) return;
+    const plans = suggestRepairs(pixels(), review.width, review.height, pending());
+    review.preview = { plans, selected: new Set(plans.filter(plan => plan.recommended && !plan.blocked).map(plan => plan.index)),
+        signature: pixelSignature(pixels()), zoom: { scale: AppState.zoomState.scale, x: AppState.zoomState.x, y: AppState.zoomState.y } };
+    review.message = '';
+    if (shield) shield.hidden = false;
+    refreshQualityIssues(); paint(); fitOverview();
+    panel?.querySelector('[data-quality-action="cancel-preview"]')?.focus({ preventScroll: true });
+}
+function confirmRepairs() {
+    if (!valid() || !review.preview || busy()) return;
+    const preview = review.preview;
+    const selected = preview.plans.filter(plan => preview.selected.has(plan.index));
+    if (!commitQualityRepairs(selected, preview.signature)) {
+        cancelPreview('图纸已变化或本批次无法安全应用，请重新检查。'); return;
+    }
+    review.preview = null; review.message = `已应用 ${selected.length} 处修改，可通过撤销一次还原。`;
+    if (shield) shield.hidden = true;
+    calculateStats(); updateAdjustUndoButton();
+    refreshQualityIssues(); paint(); updateUI();
+}
+function renderPanel() {
+    if (!panel || !review) return;
+    panel.hidden = false;
+    const preview = review.preview;
+    panel.setAttribute('role', preview ? 'dialog' : 'region');
+    if (preview) panel.setAttribute('aria-modal', 'true'); else panel.removeAttribute('aria-modal');
+    panel.querySelector('#quality-review-title').textContent = preview ? '确认自动修复' : '单格排查';
+    panel.querySelector('[data-quality-action="close"]').setAttribute('aria-label', preview ? '取消修复预览' : '关闭单格排查');
+    const body = panel.querySelector('.quality-review-body');
+    const pendingCount = pending().length;
+    const ignoredCount = review.items.filter(item => currentStatus(item) === '已忽略').length;
+    const modifiedCount = review.items.length - pendingCount - ignoredCount;
+    let html = `<p class="quality-review-count">待检查 <strong>${pendingCount}</strong> · 已修改 ${modifiedCount} · 已忽略 ${ignoredCount}</p>`;
+    if (review.message) html += `<p class="quality-review-message" role="status">${escape(review.message)}</p>`;
+    if (preview) {
+        html += `<p>已显示全图。描边标出全部待确认单格；粉色为已勾选，橙色为未勾选。确认前不会修改图纸。</p><div class="quality-repair-list">`;
+        for (const plan of preview.plans) {
+            const target = plan.nextColor?.id === 'NONE' ? '擦除' : plan.nextColor?.id || '手动处理';
+            html += `<label class="quality-repair-row"><input type="checkbox" data-quality-index="${plan.index}" aria-label="修复第${plan.index % review.width + 1}列第${Math.floor(plan.index / review.width) + 1}行" ${preview.selected.has(plan.index) ? 'checked' : ''} ${!plan.nextColor || plan.blocked ? 'disabled' : ''}><span><b>${escape(plan.colorId)} → ${escape(target)}</b><small>${positionLabel(plan)}<br>${escape(plan.reason)}</small></span></label>`;
+        }
+        html += `</div><p class="quality-review-note">建议均取自修复前图纸，不重复迭代；完成后可重新检查。并列邻色需手动处理，未过半默认不选；忽略项不参与。</p><div class="quality-review-actions"><button data-quality-action="cancel-preview">取消预览</button><button class="is-primary" data-quality-action="confirm" ${preview.selected.size ? '' : 'disabled'}>确认修复 ${preview.selected.size} 处</button></div>`;
+    } else {
+        const item = review.items[review.cursor];
+        if (item) {
+            html += `<div class="quality-review-target"><span>第 ${review.cursor + 1} / ${review.items.length} 处 · ${currentStatus(item)}</span><strong>${escape(item.colorId)}</strong><span>${positionLabel(item)}</span></div><p>仅检查八邻域没有同色的单格。有斜角同色不算落单。可直接用画笔、吸管或橡皮处理，修改后点下一处。</p><div class="quality-review-actions"><button data-quality-action="prev" ${review.cursor === 0 ? 'disabled' : ''}>上一处</button><button data-quality-action="next" ${review.cursor >= review.items.length - 1 ? 'disabled' : ''}>下一处</button><button data-quality-action="ignore" ${currentStatus(item) === '已修改' ? 'disabled' : ''}>${item.ignored ? '取消忽略' : '忽略并下一处'}</button></div>`;
+        } else html += '<p class="quality-review-empty">没有发现落单单格。</p>';
+        html += `<div class="quality-review-actions"><button data-quality-action="rescan">重新检查</button><button class="is-primary" data-quality-action="auto" ${!pendingCount ? 'disabled' : ''}>自动修复预览</button></div>`;
+        if (review.items.length) html += `<details><summary>查看全部 ${review.items.length} 处</summary><div class="quality-review-list">${review.items.map((entry, i) => `<button data-quality-action="goto" data-quality-item="${i}">${escape(entry.colorId)} · ${positionLabel(entry)} · ${currentStatus(entry)}</button>`).join('')}</div></details>`;
+        html += '<p class="quality-review-note">待检查不代表错误。忽略仅本轮有效，不改变像素或草稿。重新检查可发现本轮编辑后产生的新单格。</p>';
+    }
+    if (body._html === html) return;
+    const active = document.activeElement;
+    const action = body.contains(active) ? active?.dataset?.qualityAction : null;
+    const checkbox = body.contains(active) ? active?.dataset?.qualityIndex : null;
+    const scroll = body.scrollTop, listScroll = body.querySelector('.quality-repair-list')?.scrollTop || 0;
+    const expanded = body.querySelector('details')?.open;
+    body.innerHTML = html; body._html = html; body.scrollTop = scroll;
+    if (body.querySelector('.quality-repair-list')) body.querySelector('.quality-repair-list').scrollTop = listScroll;
+    if (expanded && body.querySelector('details')) body.querySelector('details').open = true;
+    if (action) body.querySelector(`[data-quality-action="${action}"]`)?.focus({ preventScroll: true });
+    if (checkbox) body.querySelector(`[data-quality-index="${checkbox}"]`)?.focus({ preventScroll: true });
+}
+export function installQualityReview({ onUpdate = () => {} } = {}) {
+    updateUI = onUpdate;
+    if (panel) return;
+    shield = document.createElement('div'); shield.className = 'quality-preview-shield'; shield.hidden = true;
+    panel = document.createElement('section'); panel.id = 'quality-review-panel'; panel.className = 'quality-review-panel'; panel.hidden = true;
+    panel.setAttribute('aria-labelledby', 'quality-review-title');
+    panel.innerHTML = '<header class="quality-review-header"><h2 id="quality-review-title">单格排查</h2><button type="button" data-quality-action="close" aria-label="关闭单格排查">×</button></header><div class="quality-review-body"></div>';
+    document.body.append(shield, panel);
+    panel.addEventListener('click', event => {
+        const button = event.target.closest('[data-quality-action]');
+        if (!button || !valid() || busy()) return;
+        const action = button.dataset.qualityAction;
+        if (action === 'close') { if (review.preview) cancelPreview(); else { closeReview(); updateUI(); } return; }
+        if (action === 'cancel-preview') { cancelPreview(); return; }
+        if (action === 'confirm') { confirmRepairs(); return; }
+        if (action === 'auto') { previewRepairs(); return; }
+        if (review.preview) return;
+        if (action === 'prev') focusItem(review.cursor - 1);
+        if (action === 'next') focusItem(review.cursor + 1);
+        if (action === 'goto') focusItem(Number(button.dataset.qualityItem));
+        if (action === 'ignore') {
+            const item = review.items[review.cursor]; item.ignored = !item.ignored;
+            const next = review.items.findIndex((entry, i) => i > review.cursor && currentStatus(entry) === '待检查');
+            focusItem(next >= 0 && item.ignored ? next : review.cursor);
+        }
+        if (action === 'rescan') {
+            const ignored = new Set(review.items.filter(item => item.ignored).map(item => `${item.index}:${item.colorId}`));
+            review.items = analyzeQualityIssues().map(item => ({ ...item, ignored: ignored.has(`${item.index}:${item.colorId}`) }));
+            review.cursor = 0; review.message = ''; refreshQualityIssues(); paint();
+            if (review.items.length) focusItem(0);
+        }
+    });
+    panel.addEventListener('change', event => {
+        if (!valid() || !review.preview || event.target.dataset.qualityIndex === undefined) return;
+        const index = Number(event.target.dataset.qualityIndex);
+        const plan = review.preview.plans.find(item => item.index === index);
+        if (!plan?.nextColor || plan.blocked) return;
+        if (event.target.checked) review.preview.selected.add(index); else review.preview.selected.delete(index);
+        refreshQualityIssues(); paint();
+    });
+    const header = panel.querySelector('header');
+    header.addEventListener('pointerdown', event => {
+        if (!valid() || event.button !== 0 || event.target.closest('button')) return;
+        const rect = panel.getBoundingClientRect();
+        drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
+        header.setPointerCapture(event.pointerId); event.preventDefault();
+    });
+    header.addEventListener('pointermove', event => {
+        if (!drag || event.pointerId !== drag.id) return;
+        const rect = panel.getBoundingClientRect();
+        panel.style.left = `${Math.max(8, Math.min(window.innerWidth - rect.width - 8, drag.left + event.clientX - drag.x))}px`;
+        panel.style.top = `${Math.max(8, Math.min(window.innerHeight - rect.height - 8, drag.top + event.clientY - drag.y))}px`;
+        panel.style.right = 'auto'; panel.style.bottom = 'auto';
+    });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) header.addEventListener(type, () => { drag = null; });
+    window.addEventListener('blur', () => { drag = null; });
+    window.addEventListener('resize', () => {
+        if (panel.hidden) return;
+        const rect = panel.getBoundingClientRect();
+        panel.style.left = `${Math.max(8, Math.min(window.innerWidth - rect.width - 8, rect.left))}px`;
+        panel.style.top = `${Math.max(8, Math.min(window.innerHeight - rect.height - 8, rect.top))}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto';
+    });
+    window.addEventListener('keydown', event => {
+        if (!valid() || event.isComposing || event.defaultPrevented) return;
+        if (event.key === 'Escape' && !busy()) {
+            if (!review.preview && (AppState.palettePanelOpen || AppState.allColorsPanelOpen || AppState.draftDrawerOpen || AppState.workbenchTabletPanel)) return;
+            const otherDialog = [...document.querySelectorAll('[role="dialog"],dialog[open]')].some(el => el !== panel && !el.hidden && !el.classList.contains('hidden') && el.getClientRects().length);
+            if (otherDialog) return;
+            if (review.preview) cancelPreview(); else { closeReview(); updateUI(); }
+            event.preventDefault(); event.stopImmediatePropagation();
+        } else if (review.preview && event.key === 'Tab') {
+            const controls = [...panel.querySelectorAll('button:not(:disabled),input:not(:disabled)')];
+            const i = controls.indexOf(document.activeElement);
+            controls[(i + (event.shiftKey ? -1 : 1) + controls.length) % controls.length]?.focus();
+            event.preventDefault();
+        }
+    }, true);
 }

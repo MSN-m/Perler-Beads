@@ -62,6 +62,8 @@ function getGridHitFromPoint(point, resultCanvas) {
 function shouldStartPan(e, resultCanvas) {
     if (AppState.eraserStroke) return false;
     if (AppState.editor?.activeTool === 'pan') return true;
+    if (AppState.workbenchViewportMode === 'desktop' && AppState.editor?.activeTool === 'palette'
+        && (AppState.palettePanelOpen || AppState.allColorsPanelOpen)) return true;
     if (!isEditingMode()) return true;
     if (e.touches && e.touches.length >= 2) return true;
     if (!canPanFromCurrentEditMode()) return false;

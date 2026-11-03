@@ -2890,3 +2890,46 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 .canvas-context-menu button.is-danger { color: #dc3545; }
 .canvas-context-color { display: flex; align-items: center; gap: 8px; padding: 8px 10px 10px; margin-bottom: 4px; border-bottom: 1px solid #eee; font-size: 12px; line-height: 1.6; white-space: pre-line; }
 .canvas-context-color > span:first-child { width: 24px; height: 24px; flex-shrink: 0; border: 1px solid #0002; border-radius: 6px; }
+
+@media (min-width: 1024px) and (pointer: fine) {
+    #workbench-layout[data-mode="editor"] #palette-panel,
+    body:has(#workbench-layout[data-mode="editor"]) #all-colors-panel,
+    #workbench-layout[data-mode="editor"] #palette-panel-drag-handle { cursor: move; touch-action: none; }
+    #palette-color-grid, #all-colors-grid { cursor: default; touch-action: auto; }
+}
+
+/* Singleton review remains nonmodal while editing; only batch confirmation shields input. */
+.quality-check-entry { flex-shrink: 0; border: 0; padding: 10px 12px; border-radius: 20px; background: #f4f2f5; color: #27303e; font-size: 12px; cursor: pointer; }
+.quality-check-entry[aria-pressed="true"] { background: var(--pb-color-primary); color: white; }
+.quality-preview-shield { position: fixed; inset: 0; z-index: 480; background: rgba(245,247,250,.12); }
+.quality-review-panel { position: fixed; z-index: 500; right: 20px; top: 90px; width: 340px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 110px); display: flex; flex-direction: column; background: #fff; color: #27303e; border: 1px solid #e5e7ed; border-radius: 23px; box-shadow: 0 6px 30px rgba(39,46,62,.14); font: 12px/1.65 "PingFang SC", "Microsoft YaHei", sans-serif; }
+.quality-review-panel[hidden], .quality-preview-shield[hidden] { display: none; }
+.quality-review-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 8px; cursor: move; touch-action: none; user-select: none; }
+.quality-review-header h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.quality-review-panel button { border: 1px solid #e5e7ed; border-radius: 16px; padding: 7px 12px; font: inherit; color: inherit; background: #fff; cursor: pointer; }
+.quality-review-header button { border: 0; font-size: 22px; line-height: 24px; padding: 0 6px; }
+.quality-review-panel button:hover { background: #f5f2f6; }
+.quality-review-panel button:focus-visible, .quality-review-panel input:focus-visible { outline: 2px solid var(--pb-color-primary); outline-offset: 2px; }
+.quality-review-panel button:disabled { opacity: .45; cursor: default; }
+.quality-review-panel button.is-primary { background: var(--pb-color-primary); border-color: transparent; color: white; }
+.quality-review-body { overflow-y: auto; min-height: 0; padding: 0 20px 20px; overscroll-behavior: contain; }
+.quality-review-body p { margin: 10px 0; }
+.quality-review-count { color: #77808f; }
+.quality-review-count strong { color: var(--pb-color-primary); font-size: 18px; }
+.quality-review-target { display: flex; flex-direction: column; padding: 14px 16px; border: 1px solid #eadde5; border-radius: 16px; background: #fff9fc; }
+.quality-review-target strong { font-size: 24px; line-height: 1.5; }
+.quality-review-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.quality-review-note { color: #77808f; font-size: 11px; }
+.quality-review-message { padding: 10px; background: #f3f7f5; border-radius: 10px; }
+.quality-review-empty { text-align: center; padding: 24px 0; }
+.quality-review-panel summary { cursor: pointer; }
+.quality-review-list { display: grid; gap: 6px; margin-top: 10px; max-height: 160px; overflow-y: auto; }
+.quality-review-list button { text-align: left; font-size: 11px; }
+.quality-repair-list { max-height: 260px; overflow-y: auto; border-top: 1px solid #edf0f3; }
+.quality-repair-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid #edf0f3; cursor: pointer; }
+.quality-repair-row input { margin-top: 5px; accent-color: var(--pb-color-primary); }
+.quality-repair-row small { display: block; color: #77808f; }
+@media (max-width: 767px) {
+    .quality-review-panel { top: auto; right: 8px; bottom: 85px; max-height: 42dvh; width: calc(100vw - 16px); }
+    .quality-check-entry { position: fixed; top: 64px; right: 12px; z-index: 45; padding: 8px 12px; box-shadow: 0 2px 8px rgba(39,46,62,.1); }
+}

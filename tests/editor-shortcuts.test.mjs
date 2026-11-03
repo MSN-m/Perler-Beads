@@ -62,3 +62,13 @@ test('blur restores temporary pan, Esc can close a modal but does not interrupt 
     f.context.busy = true; f.press('Escape');
     assert.deepEqual(f.calls, ['begin', 'stop', 'end', 'escape']);
 });
+
+test('palette permits temporary pan, blocks button activation and restores after release', () => {
+    const f = fixture(); f.context.tool = 'palette'; f.context.palette = true;
+    assert.equal(f.press(' ').prevented, true);
+    f.context.dragging = true; f.keyboard.keyup(f.event(' '));
+    assert.deepEqual(f.calls, ['begin']);
+    f.keyboard.pointerup(); assert.deepEqual(f.calls, ['begin', 'end']);
+    f.context.panel = true; assert.equal(f.press(' ').prevented, undefined);
+    assert.deepEqual(f.calls, ['begin', 'end']);
+});
