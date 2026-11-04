@@ -39,6 +39,28 @@ test('transparent neighbors do not vote and erased suggestions cannot clear the 
  assert.equal(plans[0].nextColor.id,'NONE');
  const one=empty(9);one[4]=color('A');assert.equal(suggestRepairs(one,3,3,findSingletons(one,3,3))[0].blocked,true);
 });
+test('PC repairs accept unique plurality and resolve tied colors by spatial priority',()=>{
+ let p=cells(['B','B','C','B','A','C','B','D','C']);
+ let [plan]=suggestRepairs(p,3,3,target(p,3,3,4),{resolveUncertain:true});
+ assert.equal(plan.nextColor.id,'B');assert.equal(plan.recommended,true);
+ // C and B tie, but the left neighbor D wins the explicit fallback even as a minority.
+ p=cells(['B','B','C','D','A','C','B','C','NONE']);
+ [plan]=suggestRepairs(p,3,3,target(p,3,3,4),{resolveUncertain:true});
+ assert.equal(plan.nextColor.id,'D');assert.equal(plan.kind,'recolor');assert.equal(plan.recommended,true);
+ assert.equal(suggestRepairs(p,3,3,target(p,3,3,4))[0].kind,'manual');
+});
+test('PC tie fallback skips transparency in each direction and never wraps at boundaries',()=>{
+ const directions=[3,5,1,7,0,2,6,8];
+ for(let start=0;start<directions.length-1;start++) {
+  const p=empty(9);p[4]=color('A');p[directions[start]]=color('B');p[directions[start+1]]=color('C');
+  const [plan]=suggestRepairs(p,3,3,target(p,3,3,4),{resolveUncertain:true});assert.equal(plan.nextColor.id,'B');
+ }
+ const p=cells(['NONE','B','A','C','NONE','NONE']);
+ const [plan]=suggestRepairs(p,3,2,target(p,3,2,2),{resolveUncertain:true});assert.equal(plan.nextColor.id,'B');
+ const isolated=empty(9);isolated[4]=color('A');
+ const [blocked]=suggestRepairs(isolated,3,3,findSingletons(isolated,3,3),{resolveUncertain:true});
+ assert.equal(blocked.kind,'erase');assert.equal(blocked.nextColor.id,'NONE');assert.equal(blocked.blocked,true);
+});
 test('ignored or changed items are excluded; transparent cells cannot become target colors',()=>{
  const p=empty(9);p[0]=color('A');p[8]=color('B');
  const items=findSingletons(p,3,3);items[1].ignored=true;

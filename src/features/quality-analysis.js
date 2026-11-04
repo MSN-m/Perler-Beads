@@ -22,7 +22,7 @@ export function findSingletons(pixels, width, height) {
     return result;
 }
 export const pixelSignature = pixels => JSON.stringify(pixels.map(color => [color?.id, color?.r, color?.g, color?.b, color?.a]));
-export function suggestRepairs(pixels, width, height, items) {
+export function suggestRepairs(pixels, width, height, items, { resolveUncertain = false } = {}) {
     const occupied = pixels.filter(isOccupied).length;
     const plans = items.filter(item => !item.ignored && pixels[item.index]?.id === item.colorId && isSingleton(pixels, item.index, width, height)).map(item => {
         const counts = new Map();
@@ -34,11 +34,22 @@ export function suggestRepairs(pixels, width, height, items) {
         }
         const sorted = [...counts.values()].sort((a, b) => b.count - a.count);
         if (!sorted.length) return { ...item, kind: 'erase', nextColor: { id: 'NONE', r: 0, g: 0, b: 0, a: 0 }, recommended: true, reason: '周围无有效颜色，建议擦除' };
-        if (sorted[1]?.count === sorted[0].count) return { ...item, kind: 'manual', recommended: false, reason: '邻色并列，需手动处理' };
+        if (sorted[1]?.count === sorted[0].count) {
+            if (!resolveUncertain) return { ...item, kind: 'manual', recommended: false, reason: '邻色并列，需手动处理' };
+            // Explicit PC fallback order; coordinate bounds prevent wrapping across rows.
+            const x = item.index % width, y = Math.floor(item.index / width);
+            const directions = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]];
+            for (const [dx, dy] of directions) {
+                if (x + dx < 0 || x + dx >= width || y + dy < 0 || y + dy >= height) continue;
+                const color = pixels[(y + dy) * width + x + dx];
+                if (isOccupied(color)) return { ...item, kind: 'recolor', nextColor: { ...color }, recommended: true, reason: '邻色并列，按左、右、上、下、左上、右上、左下、右下选色' };
+            }
+        }
         const total = sorted.reduce((sum, entry) => sum + entry.count, 0);
-        const recommended = sorted[0].count > total / 2;
+        const majority = sorted[0].count > total / 2;
+        const recommended = resolveUncertain || majority;
         return { ...item, kind: 'recolor', nextColor: { ...sorted[0].color }, recommended,
-            reason: recommended ? `邻色过半（${sorted[0].count}/${total}）` : `邻色未过半（${sorted[0].count}/${total}），默认不选` };
+            reason: majority ? `邻色过半（${sorted[0].count}/${total}）` : `邻色唯一最多（${sorted[0].count}/${total}）${resolveUncertain ? '' : '，默认不选'}` };
     });
     // If every remaining bead would be erased, leave one for the user to inspect.
     if (plans.filter(plan => plan.kind === 'erase').length === occupied && occupied) {

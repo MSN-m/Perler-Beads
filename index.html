@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261103-quality-review-1">
+    <link rel="stylesheet" href="css/style.css?v=20261104-quality-tabs-2">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
@@ -18,10 +18,10 @@
             "./src/editor.js": "./src/editor.js?v=20261103-quality-review-1",
             "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261008-ruler-performance-1",
             "./src/renderer.js": "./src/renderer.js?v=20261103-quality-review-1",
-            "./src/ui.js": "./src/ui.js?v=20261103-quality-review-1",
+            "./src/ui.js": "./src/ui.js?v=20261104-quality-icon-1",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
-            "./src/features/quality.js": "./src/features/quality.js?v=20261103-quality-review-1",
-            "./src/features/quality-analysis.js": "./src/features/quality-analysis.js?v=20261103-quality-review-1",
+            "./src/features/quality.js": "./src/features/quality.js?v=20261104-quality-nonmodal-1",
+            "./src/features/quality-analysis.js": "./src/features/quality-analysis.js?v=20261104-quality-tabs-1",
             "./src/features/edge.js": "./src/features/edge.js?v=20261008-ruler-performance-1",
             "./src/features/adjust.js": "./src/features/adjust.js?v=20261008-ruler-performance-1",
             "./src/features/delete.js": "./src/features/delete.js?v=20261008-ruler-performance-1",
@@ -88,7 +88,11 @@
                         <span>放弃修改</span>
                     </button>
                 </div>
-                <button id="quality-check-btn" type="button" class="quality-check-entry" aria-label="单格排查" aria-pressed="false" title="检查落单单格">排查</button>
+                <button id="quality-check-btn" type="button" class="quality-check-entry" aria-label="单格排查" aria-pressed="false" title="检查落单单格">
+                    <!-- Lucide scan-search, ISC license: assets/lucide-LICENSE.txt -->
+                    <svg class="quality-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/></svg>
+                    <span id="quality-check-label">排查</span>
+                </button>
                 <button type="button" id="workbench-top-mirror-visual" aria-label="左右镜像图纸" aria-pressed="false"><img src="assets/figma-ui/mirror.svg" alt=""><span>镜像</span></button>
                 <div id="workbench-top-draft-slot" class="min-w-0"></div>
             </div>

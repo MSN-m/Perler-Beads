@@ -2901,6 +2901,29 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 /* Singleton review remains nonmodal while editing; only batch confirmation shields input. */
 .quality-check-entry { flex-shrink: 0; border: 0; padding: 10px 12px; border-radius: 20px; background: #f4f2f5; color: #27303e; font-size: 12px; cursor: pointer; }
 .quality-check-entry[aria-pressed="true"] { background: var(--pb-color-primary); color: white; }
+.quality-check-icon { display: none; }
+@media (min-width: 1024px) {
+    #workbench-layout[data-mode="editor"] .quality-check-entry {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        width: auto;
+        min-width: 0;
+        height: 40px;
+        padding: 12px 16px;
+        border-radius: 26px;
+        background: var(--pb-color-stroke);
+        color: var(--pb-color-deep);
+        font: 400 12px/12px "PingFang SC", "Microsoft YaHei", sans-serif;
+        transition: filter .15s, box-shadow .15s;
+    }
+    #workbench-layout[data-mode="editor"] .quality-check-icon { display: block; flex: 0 0 16px; }
+    #workbench-layout[data-mode="editor"] .quality-check-entry[aria-pressed="true"] { background: var(--pb-color-primary); color: #fff; }
+    #workbench-layout[data-mode="editor"] .quality-check-entry:hover { filter: brightness(.97); }
+    #workbench-layout[data-mode="editor"] .quality-check-entry:active { box-shadow: inset 0 0 0 2px rgba(255,255,255,.78); }
+}
 .quality-preview-shield { position: fixed; inset: 0; z-index: 480; background: rgba(245,247,250,.12); }
 .quality-review-panel { position: fixed; z-index: 500; right: 20px; top: 90px; width: 340px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 110px); display: flex; flex-direction: column; background: #fff; color: #27303e; border: 1px solid #e5e7ed; border-radius: 23px; box-shadow: 0 6px 30px rgba(39,46,62,.14); font: 12px/1.65 "PingFang SC", "Microsoft YaHei", sans-serif; }
 .quality-review-panel[hidden], .quality-preview-shield[hidden] { display: none; }
@@ -2929,6 +2952,44 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 .quality-repair-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid #edf0f3; cursor: pointer; }
 .quality-repair-row input { margin-top: 5px; accent-color: var(--pb-color-primary); }
 .quality-repair-row small { display: block; color: #77808f; }
+@media (min-width: 1024px) {
+    .quality-review-panel.quality-review-desktop {
+        width: max-content;
+        min-width: 410px;
+        max-width: calc(100vw - 24px);
+        max-height: calc(100dvh - 110px);
+        padding: 16px;
+        transform: translateX(-50%);
+        background: rgba(255,255,255,.9);
+        border: 1px solid #f6fcff;
+        border-radius: 20px;
+        box-shadow: 0 0 8px #e2eaf0;
+        color: #272e3e;
+    }
+    .quality-review-desktop .quality-review-header { position: absolute; right: 12px; top: 12px; padding: 0; cursor: default; }
+    .quality-review-desktop .quality-review-header h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .quality-review-desktop .quality-review-header button { display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border-radius: 50%; background: #f4eff2; font: 400 12px/20px sans-serif; }
+    .quality-review-desktop .quality-review-body { padding: 0; overflow-y: auto; }
+    .quality-review-desktop button { flex-shrink: 0; border: 0; padding: 12px 16px; border-radius: 20px; box-shadow: 0 0 8px rgba(0,0,0,.05); font: 500 14px/14px "PingFang SC", "Microsoft YaHei", sans-serif; white-space: nowrap; }
+    .quality-review-desktop .quality-mode-tabs { display: flex; width: max-content; margin: 0 auto; padding: 4px; background: #f4eff2; border-radius: 26px; }
+    .quality-review-desktop .quality-mode-tabs button { padding: 8px 16px; border-radius: 26px; background: transparent; box-shadow: none; font: 400 12px/12px "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .quality-review-desktop .quality-mode-tabs button[aria-selected="true"] { background: #fff; color: #de5387; font-weight: 500; box-shadow: 0 0 2px rgba(0,0,0,.1); }
+    .quality-review-desktop .quality-single-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; white-space: nowrap; }
+    .quality-review-desktop .quality-single-row > :last-child { margin-left: -6px; }
+    .quality-review-desktop .quality-progress { font: 400 18px/20px "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .quality-review-desktop .quality-coordinates { font: 400 14px/16px "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .quality-review-desktop.quality-review-automatic { width: 284px; min-width: 284px; padding-bottom: 15px; }
+    .quality-review-desktop .quality-auto-summary { width: max-content; max-width: 100%; margin: 16px auto 0; }
+    .quality-review-desktop .quality-total { margin: 0; font: 400 20px/20px "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .quality-review-desktop .quality-auto-caution { margin: 4px 0 0; color: #a0a6b3; font: 400 12px/16px "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .quality-review-desktop .quality-auto-apply { display: block; margin: 16px auto 0; padding: 12px 32px; font-size: 12px; }
+    .quality-review-desktop .quality-desktop-message { margin: 10px 0 0; max-width: 360px; color: #77808f; font-size: 11px; line-height: 16px; text-align: center; }
+    .quality-review-desktop button.is-primary { background: #de5387; color: #fff; }
+    .quality-review-desktop button.is-primary:hover { filter: brightness(.97); }
+    .quality-review-desktop .quality-single-row button { background: var(--pb-color-stroke); color: var(--pb-color-deep); box-shadow: none; font-size: 12px; }
+    .quality-review-desktop:not(.quality-review-automatic) .quality-review-header button { background: var(--pb-color-stroke); color: var(--pb-color-deep); box-shadow: none; }
+    .quality-review-desktop:not(.quality-review-automatic) .quality-desktop-message { font-size: 9px; }
+}
 @media (max-width: 767px) {
     .quality-review-panel { top: auto; right: 8px; bottom: 85px; max-height: 42dvh; width: calc(100vw - 16px); }
     .quality-check-entry { position: fixed; top: 64px; right: 12px; z-index: 45; padding: 8px 12px; box-shadow: 0 2px 8px rgba(39,46,62,.1); }

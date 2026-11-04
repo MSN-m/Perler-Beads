@@ -7,7 +7,8 @@ let review = null, panel = null, shield = null, updateUI = () => {}, drag = null
 const pixels = () => AppState.stagedPixelData || AppState.pixelData || [];
 const busy = () => Boolean(AppState.paintStroke || AppState.eraserStroke || AppState.fillSelection || AppState.zoomState?.isDragging);
 const valid = () => review && review.patternId === AppState.colorSelectionPatternId && review.width === AppState.gridWidth
-    && review.height === AppState.gridHeight && review.mirrored === AppState.isMirrored && AppState.currentStep === 3;
+    && review.height === AppState.gridHeight && review.mirrored === AppState.isMirrored && AppState.currentStep === 3
+    && review.desktop === (AppState.workbenchViewportMode === 'desktop');
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const currentStatus = item => pixels()[item.index]?.id !== item.colorId || !isSingleton(pixels(), item.index, review.width, review.height)
     ? '已修改' : item.ignored ? '已忽略' : '待检查';
@@ -22,10 +23,26 @@ function setZoom(zoom) {
     const canvas = document.getElementById('result-canvas');
     if (canvas) { canvas.style.transition = 'none'; updateResultTransform(canvas, AppState.zoomState, document.getElementById('zoom-reset-btn')); }
 }
+function positionDesktopPanel() {
+    if (!panel || !review?.desktop) return;
+    const rect = document.getElementById('result-container')?.getBoundingClientRect();
+    if (!rect) return;
+    panel.style.left = `${rect.left + rect.width / 2}px`;
+    panel.style.top = `${rect.top + 12}px`;
+    panel.style.right = 'auto'; panel.style.bottom = 'auto';
+}
 function fitOverview() {
     const container = document.getElementById('result-container'), canvas = document.getElementById('result-canvas');
     if (!container || !canvas) return;
     const rect = container.getBoundingClientRect();
+    if (review?.desktop) {
+        const top = 206, padding = 20;
+        const availableWidth = Math.max(120, rect.width - padding * 2);
+        const availableHeight = Math.max(120, rect.height - top - 90);
+        const scale = Math.max(0.02, Math.min(availableWidth / canvas.width, availableHeight / canvas.height, 1));
+        setZoom({ scale, x: (rect.width - canvas.width * scale) / 2, y: top + (availableHeight - canvas.height * scale) / 2 });
+        return;
+    }
     const available = Math.max(120, rect.width - (rect.width > 760 ? 390 : 24));
     const availableHeight = Math.max(120, rect.height - (rect.width > 760 ? 140 : 350));
     const scale = Math.max(0.02, Math.min(available / canvas.width, availableHeight / canvas.height, 1));
@@ -40,12 +57,12 @@ function focusItem(index) {
     const item = review.items[index], container = document.getElementById('result-container');
     if (!container) return;
     const rect = container.getBoundingClientRect();
-    const width = Math.max(150, rect.width - (rect.width > 760 ? 390 : 24));
-    const height = Math.max(150, rect.height - (rect.width > 760 ? 140 : 350));
+    const width = Math.max(150, rect.width - (review.desktop ? 0 : rect.width > 760 ? 390 : 24));
+    const height = Math.max(150, rect.height - (review.desktop ? 240 : rect.width > 760 ? 140 : 350));
     const scale = Math.min(2, Math.max(0.5, Math.min(width, height) / 330));
     const cx = (item.index % review.width - AppState.renderedMinX + 1.5) * 30;
     const cy = (Math.floor(item.index / review.width) - AppState.renderedMinY + 1.5) * 30;
-    setZoom({ scale, x: width / 2 - cx * scale, y: height / 2 + 40 - cy * scale });
+    setZoom({ scale, x: width / 2 - cx * scale, y: height / 2 + (review.desktop ? 130 : 40) - cy * scale });
     renderPanel();
 }
 function closeReview() {
@@ -71,10 +88,15 @@ export function refreshQualityIssues() {
     const issues = analyzeQualityIssues();
     if (!review) { AppState.qualityIssues = issues; return issues; }
     if (review.preview && review.preview.signature !== pixelSignature(pixels())) {
-        const zoom = review.preview.zoom;
-        review.preview = null; review.message = '图纸已变化，请重新预览修复。';
-        if (shield) shield.hidden = true;
-        setZoom(zoom);
+        if (review.desktop) {
+            // Editing stays available in the PC overview. Rebase suggestions without moving the camera.
+            refreshDesktopPreview();
+        } else {
+            const zoom = review.preview.zoom;
+            review.preview = null; review.mode = 'single'; review.message = '图纸已变化，请重新预览修复。';
+            if (shield) shield.hidden = true;
+            setZoom(zoom);
+        }
     }
     const active = review.items[review.cursor];
     AppState.qualityIssues = review.preview
@@ -91,9 +113,11 @@ export function openQualityCheckModal() {
     if (busy() || AppState.currentStep !== 3 || !pixels().length) return;
     if (review) { closeReview(); return; }
     review = { patternId: AppState.colorSelectionPatternId, width: AppState.gridWidth, height: AppState.gridHeight,
-        mirrored: AppState.isMirrored, items: analyzeQualityIssues(), cursor: 0, preview: null, message: '' };
+        mirrored: AppState.isMirrored, desktop: AppState.workbenchViewportMode === 'desktop', mode: 'single',
+        items: analyzeQualityIssues(), cursor: 0, preview: null, message: '' };
     AppState.qualityOverlayVisible = true;
     if (panel) { panel.hidden = false; panel.style.left = ''; panel.style.top = ''; panel.style.right = ''; panel.style.bottom = ''; }
+    if (shield) shield.style.cssText = '';
     setActiveEditorTool('pan');
     refreshQualityIssues(); paint();
     if (review.items.length) focusItem(0);
@@ -118,23 +142,39 @@ export function commitQualityRepairs(plans, signature) {
 }
 function previewRepairs() {
     if (!valid() || busy()) return;
-    const plans = suggestRepairs(pixels(), review.width, review.height, pending());
+    const plans = suggestRepairs(pixels(), review.width, review.height, pending(), { resolveUncertain: review.desktop });
+    review.mode = 'auto';
     review.preview = { plans, selected: new Set(plans.filter(plan => plan.recommended && !plan.blocked).map(plan => plan.index)),
         signature: pixelSignature(pixels()), zoom: { scale: AppState.zoomState.scale, x: AppState.zoomState.x, y: AppState.zoomState.y } };
     review.message = '';
-    if (shield) shield.hidden = false;
+    if (shield) shield.hidden = review.desktop;
     refreshQualityIssues(); paint(); fitOverview();
     panel?.querySelector('[data-quality-action="cancel-preview"]')?.focus({ preventScroll: true });
+}
+function refreshDesktopPreview() {
+    const plans = suggestRepairs(pixels(), review.width, review.height, pending(), { resolveUncertain: true });
+    review.preview = { plans, selected: new Set(plans.filter(plan => !plan.blocked).map(plan => plan.index)),
+        signature: pixelSignature(pixels()), zoom: review.preview?.zoom };
 }
 function confirmRepairs() {
     if (!valid() || !review.preview || busy()) return;
     const preview = review.preview;
     const selected = preview.plans.filter(plan => preview.selected.has(plan.index));
     if (!commitQualityRepairs(selected, preview.signature)) {
+        if (review.desktop) {
+            refreshDesktopPreview();
+            review.message = '图纸已变化或本批次无法应用，请核对后再修复。';
+            refreshQualityIssues(); paint(); return;
+        }
         cancelPreview('图纸已变化或本批次无法安全应用，请重新检查。'); return;
     }
     review.preview = null; review.message = `已应用 ${selected.length} 处修改，可通过撤销一次还原。`;
     if (shield) shield.hidden = true;
+    if (review.desktop) {
+        // Keep the fixed session total and the full-pattern view after applying one snapshot.
+        review.preview = preview;
+        refreshDesktopPreview();
+    }
     calculateStats(); updateAdjustUndoButton();
     refreshQualityIssues(); paint(); updateUI();
 }
@@ -142,10 +182,13 @@ function renderPanel() {
     if (!panel || !review) return;
     panel.hidden = false;
     const preview = review.preview;
-    panel.setAttribute('role', preview ? 'dialog' : 'region');
-    if (preview) panel.setAttribute('aria-modal', 'true'); else panel.removeAttribute('aria-modal');
+    const modal = Boolean(preview && !review.desktop);
+    panel.setAttribute('role', modal ? 'dialog' : 'region');
+    if (modal) panel.setAttribute('aria-modal', 'true'); else panel.removeAttribute('aria-modal');
     panel.querySelector('#quality-review-title').textContent = preview ? '确认自动修复' : '单格排查';
     panel.querySelector('[data-quality-action="close"]').setAttribute('aria-label', preview ? '取消修复预览' : '关闭单格排查');
+    panel.classList.toggle('quality-review-desktop', review.desktop);
+    if (review.desktop) { renderDesktopPanel(); return; }
     const body = panel.querySelector('.quality-review-body');
     const pendingCount = pending().length;
     const ignoredCount = review.items.filter(item => currentStatus(item) === '已忽略').length;
@@ -180,6 +223,29 @@ function renderPanel() {
     if (action) body.querySelector(`[data-quality-action="${action}"]`)?.focus({ preventScroll: true });
     if (checkbox) body.querySelector(`[data-quality-index="${checkbox}"]`)?.focus({ preventScroll: true });
 }
+function renderDesktopPanel() {
+    const automatic = review.mode === 'auto', item = review.items[review.cursor];
+    panel.classList.toggle('quality-review-automatic', automatic);
+    panel.querySelector('#quality-review-title').textContent = automatic ? '自动排查' : '单格排查';
+    panel.querySelector('[data-quality-action="close"]').setAttribute('aria-label', '关闭排查');
+    const body = panel.querySelector('.quality-review-body');
+    const total = review.items.length;
+    const tabs = `<div class="quality-mode-tabs" role="tablist" aria-label="排查方式"><button id="quality-single-tab" role="tab" aria-controls="quality-desktop-content" aria-selected="${!automatic}" data-quality-action="single">单格排查</button><button id="quality-auto-tab" role="tab" aria-controls="quality-desktop-content" aria-selected="${automatic}" data-quality-action="auto">自动排查</button></div>`;
+    let content;
+    if (automatic) {
+        const count = review.preview?.selected.size || 0;
+        content = `<div class="quality-auto-summary"><p class="quality-total">共${total}处</p><p class="quality-auto-caution">仅根据单格周围颜色修复请谨慎使用</p></div><button class="is-primary quality-auto-apply" data-quality-action="confirm" ${count ? '' : 'disabled'}>自动修复</button>`;
+    } else {
+        content = `<div class="quality-single-row"><button data-quality-action="prev" ${!item || review.cursor === 0 ? 'disabled' : ''}>上一处</button><span class="quality-progress">${item ? review.cursor + 1 : 0}/${total}处</span><span class="quality-coordinates">${item ? `${item.index % review.width + 1}列 ${Math.floor(item.index / review.width) + 1}行` : '暂无单格'}</span><button data-quality-action="ignore" ${!item || currentStatus(item) === '已修改' ? 'disabled' : ''}>${item?.ignored ? '取消忽略' : '忽略'}</button><button class="is-primary" data-quality-action="next" ${!item || review.cursor >= total - 1 ? 'disabled' : ''}>下一处</button></div>`;
+    }
+    const html = `${tabs}<div id="quality-desktop-content" role="tabpanel" aria-labelledby="${automatic ? 'quality-auto-tab' : 'quality-single-tab'}">${content}</div>${review.message ? `<p class="quality-desktop-message" role="status">${escape(review.message)}</p>` : ''}`;
+    if (body._html !== html) {
+        const activeAction = body.contains(document.activeElement) ? document.activeElement?.dataset?.qualityAction : null;
+        body.innerHTML = html; body._html = html;
+        if (activeAction) body.querySelector(`[data-quality-action="${activeAction}"]`)?.focus({ preventScroll: true });
+    }
+    positionDesktopPanel();
+}
 export function installQualityReview({ onUpdate = () => {} } = {}) {
     updateUI = onUpdate;
     if (panel) return;
@@ -192,7 +258,14 @@ export function installQualityReview({ onUpdate = () => {} } = {}) {
         const button = event.target.closest('[data-quality-action]');
         if (!button || !valid() || busy()) return;
         const action = button.dataset.qualityAction;
-        if (action === 'close') { if (review.preview) cancelPreview(); else { closeReview(); updateUI(); } return; }
+        if (action === 'close') { if (review.preview && !review.desktop) cancelPreview(); else { closeReview(); updateUI(); } return; }
+        if (action === 'single' && review.desktop) {
+            review.preview = null; review.mode = 'single'; review.message = '';
+            if (shield) shield.hidden = true;
+            refreshQualityIssues(); paint();
+            if (review.items.length) focusItem(0);
+            return;
+        }
         if (action === 'cancel-preview') { cancelPreview(); return; }
         if (action === 'confirm') { confirmRepairs(); return; }
         if (action === 'auto') { previewRepairs(); return; }
@@ -222,7 +295,7 @@ export function installQualityReview({ onUpdate = () => {} } = {}) {
     });
     const header = panel.querySelector('header');
     header.addEventListener('pointerdown', event => {
-        if (!valid() || event.button !== 0 || event.target.closest('button')) return;
+        if (!valid() || review.desktop || event.button !== 0 || event.target.closest('button')) return;
         const rect = panel.getBoundingClientRect();
         drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
         header.setPointerCapture(event.pointerId); event.preventDefault();
@@ -238,6 +311,7 @@ export function installQualityReview({ onUpdate = () => {} } = {}) {
     window.addEventListener('blur', () => { drag = null; });
     window.addEventListener('resize', () => {
         if (panel.hidden) return;
+        if (review?.desktop) { positionDesktopPanel(); return; }
         const rect = panel.getBoundingClientRect();
         panel.style.left = `${Math.max(8, Math.min(window.innerWidth - rect.width - 8, rect.left))}px`;
         panel.style.top = `${Math.max(8, Math.min(window.innerHeight - rect.height - 8, rect.top))}px`; panel.style.right = 'auto'; panel.style.bottom = 'auto';
@@ -245,12 +319,12 @@ export function installQualityReview({ onUpdate = () => {} } = {}) {
     window.addEventListener('keydown', event => {
         if (!valid() || event.isComposing || event.defaultPrevented) return;
         if (event.key === 'Escape' && !busy()) {
-            if (!review.preview && (AppState.palettePanelOpen || AppState.allColorsPanelOpen || AppState.draftDrawerOpen || AppState.workbenchTabletPanel)) return;
+            if ((!review.preview || review.desktop) && (AppState.palettePanelOpen || AppState.allColorsPanelOpen || AppState.draftDrawerOpen || AppState.workbenchTabletPanel)) return;
             const otherDialog = [...document.querySelectorAll('[role="dialog"],dialog[open]')].some(el => el !== panel && !el.hidden && !el.classList.contains('hidden') && el.getClientRects().length);
             if (otherDialog) return;
-            if (review.preview) cancelPreview(); else { closeReview(); updateUI(); }
+            if (review.preview && !review.desktop) cancelPreview(); else { closeReview(); updateUI(); }
             event.preventDefault(); event.stopImmediatePropagation();
-        } else if (review.preview && event.key === 'Tab') {
+        } else if (review.preview && !review.desktop && event.key === 'Tab') {
             const controls = [...panel.querySelectorAll('button:not(:disabled),input:not(:disabled)')];
             const i = controls.indexOf(document.activeElement);
             controls[(i + (event.shiftKey ? -1 : 1) + controls.length) % controls.length]?.focus();

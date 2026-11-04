@@ -3182,7 +3182,7 @@ export function updateWorkbenchUI() {
     }
     if (hasPattern) refreshQualityIssues();
     else AppState.qualityIssues = [];
-    setText('quality-check-btn', '排查');
+    setText('quality-check-label', '排查');
     document.getElementById('quality-check-btn')?.setAttribute('aria-pressed', String(AppState.qualityOverlayVisible));
     renderPalettePanel();
     renderAllColorsPanel();
