@@ -57,6 +57,8 @@ import {
     exportWorkbenchDraft,
     importWorkbenchDraftFile,
     restoreWorkbenchDraft,
+    getWorkbenchDrafts,
+    openMobileHomeExample,
     deleteWorkbenchDraft,
     renameWorkbenchDraft,
     toggleDraftDrawer,
@@ -103,6 +105,8 @@ import { renderResult } from './renderer.js';
 import { createEditorShortcuts } from './features/editor-shortcuts.js';
 import { createWorkbenchExportModal } from './features/export-modal.js';
 import { installWorkbenchHistory } from './features/history-modal.js';
+import { installMobileHome } from './features/mobile-home.js?v=20261115-mobile-drafts';
+import { installMobileDraftDialog } from './features/mobile-drafts.js?v=20261115-draft-loop';
 
 /**
  * 处理图片上传
@@ -223,6 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
         element.removeAttribute('title');
     });
     // --- Step 1: 首页 / 上传 ---
+    installMobileHome({ openExample: openMobileHomeExample });
+    installMobileDraftDialog({ getDrafts: getWorkbenchDrafts, openDraft: restoreWorkbenchDraft });
     const fileUpload = document.getElementById('file-upload');
     if (fileUpload) {
         fileUpload.addEventListener('click', () => {
@@ -1011,7 +1017,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const saveDraftBtn = document.getElementById('save-draft-btn');
         const toggleDraftDrawerBtn = document.getElementById('toggle-draft-drawer-btn');
         const target = event.target;
-        if (document.getElementById('workbench-history-modal')?.contains(target) || draftDrawer?.contains(target) || saveDraftBtn?.contains(target) || toggleDraftDrawerBtn?.contains(target)) return;
+        if (document.getElementById('workbench-history-modal')?.contains(target) || draftDrawer?.contains(target) || saveDraftBtn?.contains(target) || toggleDraftDrawerBtn?.contains(target) || document.getElementById('mobile-home-drafts')?.contains(target)) return;
         AppState.draftDrawerOpen = false;
         updateWorkbenchUI();
     });

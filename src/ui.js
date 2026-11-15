@@ -1671,15 +1671,25 @@ export function restoreWorkbenchDraft(draftId, versionId = null, automatic = fal
         try { draft = unpackDraftVersion(parentDraft, version); }
         catch { window.alert('恢复失败：历史版本数据不完整。'); return false; }
     }
+    return openWorkbenchPattern(draft, parentDraft, versionId, automatic);
+}
+
+export function openMobileHomeExample(pattern) {
+    if (!isWorkbenchMobileLayout() || AppState.image || hasWorkbenchPattern() || AppState.draftRestorePending) return false;
+    if (!isValidDraftPayload(pattern)) return false;
+    return openWorkbenchPattern(pattern);
+}
+
+function openWorkbenchPattern(draft, parentDraft = null, versionId = null, automatic = false) {
     AppState.imageAdjustments = normalizeImageAdjustments(Object.fromEntries(
         IMAGE_ADJUSTMENT_KEYS.map(key => [key, draft.generationSettings?.['image-' + key]])
     ));
     AppState.generatedImageAdjustments = { ...AppState.imageAdjustments };
     AppState.patternPreviewImageAdjustments = null;
     syncImageAdjustmentControls();
-    AppState.currentDraftId = automatic ? parentDraft.baseDraftId || null : parentDraft.id;
+    AppState.currentDraftId = automatic ? parentDraft.baseDraftId || null : parentDraft?.id || null;
     AppState.draftSourceImageDataUrl = draft.sourceImageDataUrl || null;
-    AppState.currentDraftVersionId = versionId || parentDraft.versions?.[0]?.id || null;
+    AppState.currentDraftVersionId = versionId || parentDraft?.versions?.[0]?.id || null;
     AppState.draftRestorePending = true;
     resetGlobalEditorSession();
     AppState.colorEraseMode = false;
@@ -1733,7 +1743,7 @@ export function restoreWorkbenchDraft(draftId, versionId = null, automatic = fal
     AppState.workbenchToolbarCollapsed = false;
     AppState.draftDrawerOpen = false;
     resetBatchReplaceState();
-    resetPatternColorSelection(draft.colorSelection, automatic ? draft.sourcePatternId : `draft:${draft.id}`);
+    resetPatternColorSelection(draft.colorSelection, automatic ? draft.sourcePatternId : parentDraft ? `draft:${draft.id}` : null);
 
     const gridSizeSlider = document.getElementById('grid-size-slider');
     if (gridSizeSlider) {
@@ -2870,6 +2880,10 @@ function applyWorkbenchLayoutMode(hasPattern) {
     layout.dataset.mode = hasPattern ? 'editor' : 'setup';
     layout.dataset.viewport = viewportMode;
     layout.dataset.mobileStep = isMobile && hasImage && !hasPattern ? AppState.mobileSetupStep : '';
+    const showMobileHome = isMobile && !hasPattern && !hasImage;
+    layout.toggleAttribute('data-mobile-home', showMobileHome);
+    const mobileHome = document.getElementById('mobile-home');
+    if (mobileHome) mobileHome.hidden = !showMobileHome;
     layout.classList.toggle('draft-modal-open', AppState.draftDrawerOpen);
     activeShell.dataset.mode = hasPattern ? 'editor' : 'setup';
     if (hasPattern) {
@@ -2953,7 +2967,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
         ? 'minmax(360px, 1fr)'
         : (isMobileSettingsStep ? 'minmax(180px, 30dvh) auto' : (isCompactSetup ? 'minmax(360px, 42dvh) auto' : ''));
     activeShell.style.gap = isMobile ? '12px' : (isTablet ? '16px' : '20px');
-    sidePanel.style.display = isMobileCropStep ? 'none' : (isCompactSetup ? 'grid' : '');
+    sidePanel.style.display = showMobileHome || isMobileCropStep ? 'none' : (isCompactSetup ? 'grid' : '');
     sidePanel.style.gridTemplateColumns = isTablet && hasImage ? 'minmax(0, 1fr) 280px' : '';
     sidePanel.style.gridTemplateRows = '';
     sidePanel.style.alignItems = isMobileSettingsStep ? 'stretch' : (isCompactSetup ? 'start' : '');
@@ -4001,6 +4015,11 @@ export function updateMaxColorsDisplay() {
     const val = document.getElementById('max-colors-slider').value;
     document.getElementById('max-colors-display').innerText = val;
     updateWorkbenchUI();
+}
+
+export async function getWorkbenchDrafts() {
+    await workbenchDraftsReady;
+    return AppState.drafts;
 }
 
 const workbenchDraftsReady = loadWorkbenchDrafts().then(() => {

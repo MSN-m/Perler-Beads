@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261104-quality-tabs-2">
+    <link rel="stylesheet" href="css/style.css?v=20261115-draft-loop">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
@@ -18,7 +18,7 @@
             "./src/editor.js": "./src/editor.js?v=20261103-quality-review-1",
             "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261008-ruler-performance-1",
             "./src/renderer.js": "./src/renderer.js?v=20261103-quality-review-1",
-            "./src/ui.js": "./src/ui.js?v=20261104-quality-icon-1",
+            "./src/ui.js": "./src/ui.js?v=20261115-mobile-drafts",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
             "./src/features/quality.js": "./src/features/quality.js?v=20261104-quality-nonmodal-1",
             "./src/features/quality-analysis.js": "./src/features/quality-analysis.js?v=20261104-quality-tabs-1",
@@ -35,7 +35,7 @@
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261103-quality-review-1"></script>
+    <script type="module" src="src/main.js?v=20261115-draft-loop"></script>
 </head>
 
 <body data-layout="workbench"
@@ -103,6 +103,44 @@
                         class="bg-white px-16 py-7 text-xl font-bold rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:text-primary hover:shadow-md transition">
                         上传图片
                     </label>
+                    <div id="mobile-home" hidden>
+                        <header class="mobile-home-header">
+                            <div class="mobile-home-brand">
+                                <img src="assets/app-icon-192.png" width="36" height="36" alt="">
+                                <div><strong>小豆鸡</strong><span>拼豆图纸生成工具</span></div>
+                            </div>
+                            <button id="mobile-home-drafts" type="button" aria-haspopup="dialog" aria-controls="mobile-draft-dialog">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V6a2 2 0 0 1 2-2h4l3 3h6a2 2 0 0 1 2 2v1M3 19a1 1 0 0 0 1 1h14a2 2 0 0 0 2-1.4l2-6a2 2 0 0 0-1.9-2.6H9a2 2 0 0 0-1.9 1.4L5 18"/></svg>
+                                我的草稿
+                            </button>
+                        </header>
+                        <div class="mobile-home-scroll">
+                            <div class="mobile-home-content">
+                                <div class="mobile-home-hero">
+                                    <div class="mobile-home-icons" aria-hidden="true">
+                                        <span class="mobile-home-icon mobile-home-pointer"><img src="assets/figma-ui/mobile-home-pointer.svg" width="14" height="14" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-bucket"><img src="assets/figma-ui/mobile-home-bucket.svg" width="16" height="16" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-eraser"><img src="assets/figma-ui/mobile-home-eraser.svg" width="17" height="15" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-pencil"><img src="assets/figma-ui/mobile-home-pencil.svg" width="16" height="16" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-hand"><img src="assets/figma-ui/mobile-home-hand.svg" width="15" height="15" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-pan"><img src="assets/figma-ui/mobile-home-pan.svg" width="17" height="16" alt=""></span>
+                                    </div>
+                                    <p class="mobile-home-tagline">快速生成 · 灵活修改 · 辅助检查</p>
+                                    <h1>一秒转图纸<br>一格一格改喜欢</h1>
+                                </div>
+                                <section class="mobile-home-gallery" aria-labelledby="mobile-home-gallery-title">
+                                    <h2 id="mobile-home-gallery-title">示例图纸</h2>
+                                    <p>可免费下载/使用哦</p>
+                                    <div class="mobile-home-grid" id="mobile-home-grid"></div>
+                                    <p id="mobile-home-error" role="status" hidden></p>
+                                </section>
+                            </div>
+                        </div>
+                        <button id="mobile-home-upload" type="button">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3M7 8l5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
+                            上传图片 开始制图
+                        </button>
+                    </div>
                     <div id="workbench-setup-draft-slot"></div>
                 </div>
 
@@ -584,6 +622,26 @@
             </aside>
         </div>
     </section>
+
+    <dialog id="mobile-draft-dialog" aria-labelledby="mobile-draft-heading" aria-describedby="mobile-draft-note">
+        <div class="mobile-draft-sheet">
+            <button type="button" class="mobile-draft-close" aria-label="关闭我的草稿" autofocus>
+                <img src="assets/figma-ui/mobile-draft-close.svg" width="14" height="14" alt="">
+            </button>
+            <h2 id="mobile-draft-heading">我的草稿</h2>
+            <p id="mobile-draft-note">草稿保存在本地，请勿清理缓存</p>
+            <div class="mobile-draft-stack" hidden></div>
+            <p class="mobile-draft-empty" role="status">正在读取草稿…</p>
+            <div class="mobile-draft-caption" aria-live="polite" hidden>
+                <p class="mobile-draft-name"></p>
+                <div><span class="mobile-draft-summary"></span><time></time></div>
+            </div>
+            <button type="button" class="mobile-draft-open" hidden>
+                <img src="assets/figma-ui/mobile-draft-open.svg" width="20" height="20" alt="">
+                进入草稿
+            </button>
+        </div>
+    </dialog>
 
     <div id="pattern-preview-layer" class="hidden fixed inset-0 z-50 bg-[#E7EBEE]">
         <div class="h-full grid grid-cols-[minmax(0,1fr)_340px] max-lg:grid-cols-1">
