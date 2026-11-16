@@ -2,6 +2,7 @@
  * 拼豆图纸生成器 - 主入口与事件绑定
  */
 import { AppState } from './state.js';
+import { beginMobileLoading, isMobileLoadingActive } from './features/mobile-loading.js?v=20261116-mobile-loading';
 import { installWorkbenchRename } from './features/pattern-rename.js';
 import { installWorkbenchTooltips, installPickerColorPreview } from './features/tooltips.js';
 import { activateEraserTool, updateEraserHover } from './features/delete.js';
@@ -16,6 +17,8 @@ import {
     handleGeneratePixelArt,
     handleGeneratePattern,
     handleGeneratePatternLegacy,
+    installMobileUploadControls,
+    resetMobileUploadSettings,
     applyWorkbenchSettings,
     handlePatternPreviewStyle,
     cancelPatternPreview,
@@ -106,12 +109,13 @@ import { createEditorShortcuts } from './features/editor-shortcuts.js';
 import { createWorkbenchExportModal } from './features/export-modal.js';
 import { installWorkbenchHistory } from './features/history-modal.js';
 import { installMobileHome } from './features/mobile-home.js?v=20261115-mobile-drafts';
-import { installMobileDraftDialog } from './features/mobile-drafts.js?v=20261115-draft-loop';
+import { installMobileDraftDialog } from './features/mobile-drafts.js?v=20261116-draft-swipe';
 
 /**
  * 处理图片上传
  */
 const resetProjectForNewImage = () => {
+    resetMobileUploadSettings();
     AppState.currentDraftId = null;
     AppState.draftSourceImageDataUrl = null;
     AppState.currentDraftVersionId = null;
@@ -125,7 +129,7 @@ const resetProjectForNewImage = () => {
     AppState.pixelArtData = null;
     AppState.pixelArtSettings = { contrast: 0, sharpen: 0, dominant: 50 };
     AppState.patternPreviewVisible = false;
-    AppState.patternPreviewStyle = 'photo';
+    AppState.patternPreviewStyle = null;
     AppState.patternPreviewPixelData = null;
     AppState.patternPreviewPixelArtData = null;
     AppState.patternPreviewPixelGridDetection = null;
@@ -181,17 +185,35 @@ const resetProjectForNewImage = () => {
 
 const handleImageUpload = (event) => {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file || isMobileLoadingActive()) return;
 
+    const loading = beginMobileLoading('upload');
+    const onImageError = () => {
+        if (!loading) return;
+        loading.close();
+        window.alert('图片加载失败，请重新选择图片。');
+    };
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onerror = onImageError;
+    reader.onabort = () => loading?.close();
+    reader.onload = () => {
         const img = new Image();
+        img.onerror = onImageError;
         img.onload = () => {
-            AppState.image = img;
-            resetProjectForNewImage();
-            goToStep(2);
+            try {
+                AppState.image = img;
+                resetProjectForNewImage();
+                goToStep(2);
+            } catch (error) {
+                if (!loading) throw error;
+                removeWorkbenchImage();
+                goToStep(1);
+                onImageError();
+            } finally {
+                loading?.close();
+            }
         };
-        img.src = e.target.result;
+        img.src = reader.result;
     };
     reader.readAsDataURL(file);
 };
@@ -227,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         element.removeAttribute('title');
     });
     // --- Step 1: 首页 / 上传 ---
+    installMobileUploadControls();
     installMobileHome({ openExample: openMobileHomeExample });
     installMobileDraftDialog({ getDrafts: getWorkbenchDrafts, openDraft: restoreWorkbenchDraft });
     const fileUpload = document.getElementById('file-upload');
@@ -352,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobilePatternNameInput = document.getElementById('mobile-pattern-name-input');
     if (mobilePatternNameInput) {
         mobilePatternNameInput.addEventListener('keydown', (event) => {
-            if (event.key !== 'Enter') return;
+            if (event.key !== 'Enter' || event.isComposing) return;
             event.preventDefault();
             applyMobilePatternName();
         });
@@ -971,7 +994,9 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWorkbenchUI();
         }
     });
-    window.addEventListener('keydown', keyboard.keydown);
+    window.addEventListener('keydown', event => {
+        if (!isMobileLoadingActive()) keyboard.keydown(event);
+    });
     window.addEventListener('keyup', keyboard.keyup);
     window.addEventListener('mouseup', keyboard.pointerup);
     window.addEventListener('blur', keyboard.blur);

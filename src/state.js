@@ -27,7 +27,7 @@ export const AppState = {
         dominant: 50
     },
     patternPreviewVisible: false,
-    patternPreviewStyle: 'photo',
+    patternPreviewStyle: null,
     patternPreviewPixelData: null,
     patternPreviewPixelArtData: null,
     patternPreviewPixelGridDetection: null,

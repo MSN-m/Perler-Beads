@@ -414,27 +414,25 @@ export function cleanTinyFragments(imageData, minIslandSize = 15) {
 function detectAxisPixelGrid(imageData, horizontal) {
     const { data, width, height } = imageData;
     const axisLength = horizontal ? width : height;
-    const scanLength = horizontal ? height : width;
     const boundaryWeights = new Float64Array(axisLength);
+    const neighborOffset = horizontal ? 4 : width * 4;
     const edgeThreshold = 42;
     let totalWeight = 0;
     let activeBoundaryCount = 0;
 
-    for (let scan = 0; scan < scanLength; scan++) {
-        for (let boundary = 1; boundary < axisLength; boundary++) {
-            const x1 = horizontal ? boundary - 1 : scan;
-            const y1 = horizontal ? scan : boundary - 1;
-            const x2 = horizontal ? boundary : scan;
-            const y2 = horizontal ? scan : boundary;
-            const first = (y1 * width + x1) * 4;
-            const second = (y2 * width + x2) * 4;
+    const startX = horizontal ? 1 : 0;
+    const startY = horizontal ? 0 : 1;
+    for (let y = startY; y < height; y++) {
+        let second = (y * width + startX) * 4;
+        for (let x = startX; x < width; x++, second += 4) {
+            const first = second - neighborOffset;
             if (data[first + 3] < 128 || data[second + 3] < 128) continue;
 
             const difference = Math.abs(data[first] - data[second])
                 + Math.abs(data[first + 1] - data[second + 1])
                 + Math.abs(data[first + 2] - data[second + 2]);
             if (difference < edgeThreshold) continue;
-            boundaryWeights[boundary] += difference;
+            boundaryWeights[horizontal ? x : y] += difference;
         }
     }
 
@@ -448,18 +446,18 @@ function detectAxisPixelGrid(imageData, horizontal) {
     let best = null;
     const maxSpacing = Math.min(32, Math.floor(axisLength / 4));
     for (let spacing = 2; spacing <= maxSpacing; spacing++) {
+        const weightsByOffset = new Float64Array(spacing);
+        const countsByOffset = new Uint32Array(spacing);
+        for (let boundary = 1; boundary < axisLength; boundary++) {
+            if (boundaryWeights[boundary] <= 0) continue;
+            const offset = boundary % spacing;
+            weightsByOffset[offset] += boundaryWeights[boundary];
+            countsByOffset[offset]++;
+        }
+        const minimumAligned = Math.max(4, Math.ceil((axisLength / spacing) * 0.08));
         for (let offset = 0; offset < spacing; offset++) {
-            let alignedWeight = 0;
-            let alignedBoundaryCount = 0;
-            for (let boundary = 1; boundary < axisLength; boundary++) {
-                if (boundaryWeights[boundary] <= 0) continue;
-                if ((boundary - offset + spacing) % spacing !== 0) continue;
-                alignedWeight += boundaryWeights[boundary];
-                alignedBoundaryCount++;
-            }
-
-            const coverage = alignedWeight / totalWeight;
-            const minimumAligned = Math.max(4, Math.ceil((axisLength / spacing) * 0.08));
+            const coverage = weightsByOffset[offset] / totalWeight;
+            const alignedBoundaryCount = countsByOffset[offset];
             if (coverage < 0.78 || alignedBoundaryCount < minimumAligned) continue;
             if (!best || spacing > best.spacing || (spacing === best.spacing && coverage > best.coverage)) {
                 best = { spacing, offset, coverage, alignedBoundaryCount };
@@ -514,7 +512,7 @@ export function detectPixelArtAppearance(imageData) {
         for (let x = 1; x < width; x += step) {
             const i = (y * width + x) * 4;
             if (data[i + 3] < 128) continue;
-            colorBuckets.add(`${data[i] >> 4},${data[i + 1] >> 4},${data[i + 2] >> 4}`);
+            colorBuckets.add((data[i] & 0xf0) * 16 + (data[i + 1] & 0xf0) + (data[i + 2] >> 4));
             if (x % (step * 2) === 1) {
                 const left = i - 4;
                 if (data[left + 3] >= 128) {
@@ -539,6 +537,13 @@ export function detectPixelArtAppearance(imageData) {
     const hardRatio = hardEdges / compared;
     const hardShareOfEdges = hardEdges / Math.max(1, hardEdges + softEdges);
     return hardRatio >= 0.0025 && hardShareOfEdges >= 0.2 && colorBuckets.size <= 900;
+}
+
+export function detectPixelArtFeatures(imageData) {
+    return {
+        grid: detectPixelArtGrid(imageData),
+        looksLikePixelArt: detectPixelArtAppearance(imageData)
+    };
 }
 
 /** Samples the most common quantized source color inside each output bead cell. */
@@ -612,120 +617,141 @@ export function generateAlignedPixelArtData({ sourceImageData, gridWidth, gridHe
  * @param {Object} options - 配置选项
  * @returns {Array} - 生成的像素数据
  */
-export function generatePixelArtData({
-    sourceImageData,
-    gridWidth,
-    gridHeight,
-    precisionMode = 'standard',
-    contrast = 0,
-    sharpen = 0,
-    dominant = 50
-}) {
-    const { data: sourceData, width: sourceWidth, height: sourceHeight } = sourceImageData;
-    const useHighPrecisionSampling = precisionMode === 'high';
-    let pixelArtData = [];
-    const dominantStrength = Math.max(0, Math.min(100, dominant)) / 100;
-    const dominantThreshold = 0.52 - dominantStrength * 0.2;
-    const dominantWeight = 0.5 + dominantStrength * 0.35;
+function getPixelSamplingWeights(width, height, weightsBySize) {
+    // Most output cells have one of only a few sizes. Keep very large cells
+    // on the direct path so a weight table cannot grow to the source size.
+    if (width * height > 16384) return null;
+    const key = `${width}×${height}`;
+    if (weightsBySize.has(key)) return weightsBySize.get(key);
 
-    for (let y = 0; y < gridHeight; y++) {
-        for (let x = 0; x < gridWidth; x++) {
-            const startX = Math.floor((x / gridWidth) * sourceWidth);
-            const startY = Math.floor((y / gridHeight) * sourceHeight);
-            const endX = Math.max(startX + 1, Math.floor(((x + 1) / gridWidth) * sourceWidth));
-            const endY = Math.max(startY + 1, Math.floor(((y + 1) / gridHeight) * sourceHeight));
-            const centerX = (startX + endX - 1) / 2;
-            const centerY = (startY + endY - 1) / 2;
-            const maxDistance = Math.max(1, Math.hypot(endX - startX, endY - startY) / 2);
-            const colorBuckets = new Map();
-            let rSum = 0, gSum = 0, bSum = 0, opaqueCount = 0, totalCount = 0;
-            let weightedR = 0, weightedG = 0, weightedB = 0, weightSum = 0;
-
-            for (let sy = startY; sy < endY; sy++) {
-                for (let sx = startX; sx < endX; sx++) {
-                    const idx = (sy * sourceWidth + sx) * 4;
-                    totalCount++;
-                    if (sourceData[idx + 3] <= 128) continue;
-
-                    const r = sourceData[idx];
-                    const g = sourceData[idx + 1];
-                    const b = sourceData[idx + 2];
-                    rSum += r;
-                    gSum += g;
-                    bSum += b;
-                    opaqueCount++;
-
-                    if (useHighPrecisionSampling) {
-                        const distance = Math.hypot(sx - centerX, sy - centerY);
-                        const weight = 1 + Math.max(0, 1 - distance / maxDistance);
-                        weightedR += r * weight;
-                        weightedG += g * weight;
-                        weightedB += b * weight;
-                        weightSum += weight;
-
-                        const bucketKey = `${Math.round(r / 24)}-${Math.round(g / 24)}-${Math.round(b / 24)}`;
-                        const bucket = colorBuckets.get(bucketKey) || { r: 0, g: 0, b: 0, count: 0 };
-                        bucket.r += r;
-                        bucket.g += g;
-                        bucket.b += b;
-                        bucket.count++;
-                        colorBuckets.set(bucketKey, bucket);
-                    }
-                }
-            }
-
-            const opaqueRatio = opaqueCount / Math.max(totalCount, 1);
-            const alphaThreshold = useHighPrecisionSampling ? 0.22 : 0.3;
-            if (opaqueRatio <= alphaThreshold) {
-                pixelArtData.push({ r: 255, g: 255, b: 255, a: 0 });
-                continue;
-            }
-
-            if (!useHighPrecisionSampling || weightSum === 0) {
-                pixelArtData.push({
-                    r: opaqueCount > 0 ? rSum / opaqueCount : 255,
-                    g: opaqueCount > 0 ? gSum / opaqueCount : 255,
-                    b: opaqueCount > 0 ? bSum / opaqueCount : 255,
-                    a: 255
-                });
-                continue;
-            }
-
-            const weightedAvg = {
-                r: weightedR / weightSum,
-                g: weightedG / weightSum,
-                b: weightedB / weightSum
-            };
-            let dominantBucket = null;
-            for (const bucket of colorBuckets.values()) {
-                if (!dominantBucket || bucket.count > dominantBucket.count) {
-                    dominantBucket = bucket;
-                }
-            }
-
-            if (dominantStrength > 0 && dominantBucket && dominantBucket.count / opaqueCount >= dominantThreshold) {
-                const dominantAvg = {
-                    r: dominantBucket.r / dominantBucket.count,
-                    g: dominantBucket.g / dominantBucket.count,
-                    b: dominantBucket.b / dominantBucket.count
-                };
-                pixelArtData.push({
-                    r: dominantAvg.r * dominantWeight + weightedAvg.r * (1 - dominantWeight),
-                    g: dominantAvg.g * dominantWeight + weightedAvg.g * (1 - dominantWeight),
-                    b: dominantAvg.b * dominantWeight + weightedAvg.b * (1 - dominantWeight),
-                    a: 255
-                });
-                continue;
-            }
-
-            pixelArtData.push({ ...weightedAvg, a: 255 });
+    const centerX = (width - 1) / 2;
+    const centerY = (height - 1) / 2;
+    const maxDistance = Math.max(1, Math.hypot(width, height) / 2);
+    const weights = new Float64Array(width * height);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const distance = Math.hypot(x - centerX, y - centerY);
+            weights[y * width + x] = 1 + Math.max(0, 1 - distance / maxDistance);
         }
     }
+    weightsBySize.set(key, weights);
+    return weights;
+}
 
-    pixelArtData = applyPixelArtContrast(pixelArtData, contrast);
-    pixelArtData = applyPixelArtSharpen(pixelArtData, gridWidth, gridHeight, sharpen);
+const COLOR_BIN_COUNT = 12;
+const COLOR_BUCKET_COUNT = COLOR_BIN_COUNT ** 3;
+const channelColorBins = Uint8Array.from({ length: 256 }, (_, value) => Math.round(value / 24));
 
-    return pixelArtData;
+export function samplePixelArtGrid({ sourceImageData, gridWidth, gridHeight, precisionMode = 'standard' }) {
+    const { data, width: sourceWidth, height: sourceHeight } = sourceImageData;
+    const highPrecision = precisionMode === 'high';
+    const alphaThreshold = highPrecision ? 0.22 : 0.3;
+    const weightsBySize = new Map();
+    const bucketCounts = highPrecision ? new Uint32Array(COLOR_BUCKET_COUNT) : null;
+    const bucketRed = highPrecision ? new Float64Array(COLOR_BUCKET_COUNT) : null;
+    const bucketGreen = highPrecision ? new Float64Array(COLOR_BUCKET_COUNT) : null;
+    const bucketBlue = highPrecision ? new Float64Array(COLOR_BUCKET_COUNT) : null;
+    const usedBuckets = highPrecision ? new Uint16Array(COLOR_BUCKET_COUNT) : null;
+    const samples = [];
+
+    for (let y = 0; y < gridHeight; y++) {
+        const startY = Math.floor((y / gridHeight) * sourceHeight);
+        const cellHeight = Math.max(1, Math.floor(((y + 1) / gridHeight) * sourceHeight) - startY);
+        for (let x = 0; x < gridWidth; x++) {
+            const startX = Math.floor((x / gridWidth) * sourceWidth);
+            const cellWidth = Math.max(1, Math.floor(((x + 1) / gridWidth) * sourceWidth) - startX);
+            const weights = highPrecision ? getPixelSamplingWeights(cellWidth, cellHeight, weightsBySize) : null;
+            let usedBucketCount = 0;
+            const centerX = (cellWidth - 1) / 2;
+            const centerY = (cellHeight - 1) / 2;
+            const maxDistance = highPrecision && !weights ? Math.max(1, Math.hypot(cellWidth, cellHeight) / 2) : 1;
+            let rSum = 0, gSum = 0, bSum = 0, weightSum = 0, opaqueCount = 0;
+
+            for (let row = 0; row < cellHeight; row++) {
+                let index = ((startY + row) * sourceWidth + startX) * 4;
+                const weightOffset = row * cellWidth;
+                for (let col = 0; col < cellWidth; col++, index += 4) {
+                    if (data[index + 3] <= 128) continue;
+                    const r = data[index];
+                    const g = data[index + 1];
+                    const b = data[index + 2];
+                    opaqueCount++;
+
+                    if (!highPrecision) {
+                        rSum += r;
+                        gSum += g;
+                        bSum += b;
+                        continue;
+                    }
+
+                    const weight = weights ? weights[weightOffset + col]
+                        : 1 + Math.max(0, 1 - Math.hypot(col - centerX, row - centerY) / maxDistance);
+                    rSum += r * weight;
+                    gSum += g * weight;
+                    bSum += b * weight;
+                    weightSum += weight;
+                    const key = (channelColorBins[r] * COLOR_BIN_COUNT + channelColorBins[g]) * COLOR_BIN_COUNT + channelColorBins[b];
+                    if (bucketCounts[key] === 0) {
+                        usedBuckets[usedBucketCount++] = key;
+                        bucketRed[key] = 0;
+                        bucketGreen[key] = 0;
+                        bucketBlue[key] = 0;
+                    }
+                    bucketRed[key] += r;
+                    bucketGreen[key] += g;
+                    bucketBlue[key] += b;
+                    bucketCounts[key]++;
+                }
+            }
+
+            let dominantKey = -1;
+            let dominantCount = 0;
+            // Traverse the populated buckets in encounter order so exact ties
+            // select the same source color as before.
+            for (let i = 0; i < usedBucketCount; i++) {
+                const key = usedBuckets[i];
+                if (bucketCounts[key] > dominantCount) {
+                    dominantKey = key;
+                    dominantCount = bucketCounts[key];
+                }
+                bucketCounts[key] = 0;
+            }
+
+            if (opaqueCount / (cellWidth * cellHeight) <= alphaThreshold) {
+                samples.push({ color: { r: 255, g: 255, b: 255, a: 0 } });
+                continue;
+            }
+
+            const divisor = highPrecision ? weightSum : opaqueCount;
+            const color = { r: rSum / divisor, g: gSum / divisor, b: bSum / divisor, a: 255 };
+            const dominant = dominantKey < 0 ? null : {
+                r: bucketRed[dominantKey], g: bucketGreen[dominantKey], b: bucketBlue[dominantKey], count: dominantCount
+            };
+            samples.push({ color, dominant, opaqueCount });
+        }
+    }
+    return samples;
+}
+
+export function applyPixelArtPreset(samples, { gridWidth, gridHeight, contrast = 0, sharpen = 0, dominant = 50 }) {
+    const strength = Math.max(0, Math.min(100, dominant)) / 100;
+    const threshold = 0.52 - strength * 0.2;
+    const weight = 0.5 + strength * 0.35;
+    const pixels = samples.map(({ color, dominant: bucket, opaqueCount }) => {
+        if (!strength || !bucket || bucket.count / opaqueCount < threshold) return { ...color };
+        return {
+            r: (bucket.r / bucket.count) * weight + color.r * (1 - weight),
+            g: (bucket.g / bucket.count) * weight + color.g * (1 - weight),
+            b: (bucket.b / bucket.count) * weight + color.b * (1 - weight),
+            a: 255
+        };
+    });
+
+    return applyPixelArtSharpen(applyPixelArtContrast(pixels, contrast), gridWidth, gridHeight, sharpen);
+}
+
+export function generatePixelArtData(options) {
+    return applyPixelArtPreset(samplePixelArtGrid(options), options);
 }
 
 export function mapPixelArtToBeads({

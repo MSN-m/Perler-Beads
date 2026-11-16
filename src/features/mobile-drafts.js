@@ -132,7 +132,13 @@ export function installMobileDraftDialog({ getDrafts, openDraft }) {
     stack.addEventListener('pointerdown', event => {
         if (drafts.length < 2 || !event.isPrimary || event.button !== 0) return;
         suppressClick = false;
-        gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, horizontal: false };
+        gesture = {
+            id: event.pointerId,
+            target: event.target,
+            x: event.clientX,
+            y: event.clientY,
+            horizontal: false
+        };
     });
     stack.addEventListener('pointermove', event => {
         if (event.pointerId !== gesture?.id) return;
@@ -145,7 +151,11 @@ export function installMobileDraftDialog({ getDrafts, openDraft }) {
             }
             if (Math.abs(x) < 10) return;
             gesture.horizontal = true;
-            stack.setPointerCapture(event.pointerId);
+            // Touch already captures on the pressed card. Keep that target so
+            // transferring capture cannot cancel the swipe through a bubbling event.
+            if (!gesture.target.hasPointerCapture(event.pointerId)) {
+                gesture.target.setPointerCapture(event.pointerId);
+            }
         }
         stack.style.setProperty('--draft-drag', `${Math.max(-56, Math.min(56, x * 0.65))}px`);
     });
@@ -157,8 +167,12 @@ export function installMobileDraftDialog({ getDrafts, openDraft }) {
         if (suppressClick && Math.abs(x) >= 28) step(Math.sign(x));
         resetGesture();
     });
-    stack.addEventListener('pointercancel', resetGesture);
-    stack.addEventListener('lostpointercapture', resetGesture);
+    stack.addEventListener('pointercancel', event => {
+        if (event.pointerId === gesture?.id) resetGesture();
+    });
+    stack.addEventListener('lostpointercapture', event => {
+        if (event.pointerId === gesture?.id && event.target === gesture.target) resetGesture();
+    });
     stack.addEventListener('wheel', event => {
         if (drafts.length < 2 || event.ctrlKey || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
         event.preventDefault();

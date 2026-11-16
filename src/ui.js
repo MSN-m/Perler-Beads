@@ -2,6 +2,7 @@
  * 拼豆图纸生成器 - UI 与页面流程
  */
 import { AppState } from './state.js';
+import { beginMobileLoading, isMobileLoadingActive } from './features/mobile-loading.js?v=20261116-mobile-loading';
 import { IMAGE_ADJUSTMENT_KEYS, normalizeImageAdjustments, applyImageAdjustments } from './features/image-adjustments.js';
 import { syncWorkbenchRename } from './features/pattern-rename.js';
 import { buildDraftWithVersions, unpackDraftVersion } from './features/draft-versions.js';
@@ -9,7 +10,7 @@ import { renderWorkbenchHistory, getCurrentPatternHistory } from './features/his
 import { hidePickerColorPreview } from './features/tooltips.js';
 import { captureRecentColors, animateRecentColors } from './features/recent-color-motion.js';
 import { getColorSelectionSnapshot, resetPatternColorSelection, openPaletteToolSession, restorePaletteToolSession, setActiveEditorTool } from './editor.js';
-import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, generateAlignedPixelArtData, generateDominantPixelArtData, detectPixelArtGrid, detectPixelArtAppearance, mapPixelArtToBeads } from './processor.js';
+import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, samplePixelArtGrid, applyPixelArtPreset, generateAlignedPixelArtData, generateDominantPixelArtData, detectPixelArtFeatures, mapPixelArtToBeads } from './processor.js';
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
 import { calculateStats, configureEditorActions, deepClonePixels, getCurrentPalette, mirrorEditorHistory, mirrorPixelRows, resetGlobalEditorSession, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
@@ -150,6 +151,151 @@ function syncBrandControls() {
     if (mardSetContainer) mardSetContainer.classList.toggle('hidden', AppState.brand !== 'mard');
 }
 
+let mobileUploadTab = 'pattern';
+const mobileUploadCropHistory = [];
+let mobileUploadLongEdge = 40;
+let mobileUploadColorLimit = 4;
+let previewMobileColorLimit = null;
+let mobilePatternPreviewCache = null;
+let mobileUploadGridApplied = false;
+let mobileUploadInitialBrand = null;
+let mobileSourcePreview = null;
+
+export function resetMobileUploadSettings() {
+    mobileUploadTab = 'pattern';
+    mobileUploadCropHistory.length = 0;
+    mobileUploadLongEdge = 40;
+    mobileUploadColorLimit = 4;
+    previewMobileColorLimit = null;
+    clearMobilePatternPreviewCache();
+    mobileUploadGridApplied = false;
+    mobileSourcePreview = null;
+    mobileUploadInitialBrand = { brand: AppState.brand, mardSet: AppState.mardSet };
+}
+
+function isMobileUploadSetup() {
+    return isWorkbenchMobileLayout() && Boolean(AppState.image) && !hasWorkbenchPattern();
+}
+
+function getMobileCropBounds() {
+    return mobileUploadCropHistory[mobileUploadCropHistory.length - 1] || getDefaultCropRect();
+}
+
+function isPendingMobileCrop(rect, bounds) {
+    return rect.x !== bounds.x || rect.y !== bounds.y || rect.width !== bounds.width || rect.height !== bounds.height;
+}
+
+function updateMobileCropTools() {
+    const pending = isPendingMobileCrop(ensureCropRect(), getMobileCropBounds());
+    document.getElementById('mobile-upload-crop-confirm').disabled = !pending;
+    document.getElementById('mobile-upload-crop-cancel').disabled = !pending;
+    document.getElementById('mobile-upload-crop-undo').disabled = !mobileUploadCropHistory.length;
+}
+
+function getMobileUploadSize(longEdge, ratio = getActiveSourceRatio()) {
+    return ratio >= 1
+        ? { width: longEdge, height: Math.max(1, Math.round(longEdge / ratio)) }
+        : { width: Math.max(1, Math.round(longEdge * ratio)), height: longEdge };
+}
+
+function renderMobileUploadSizes() {
+    const ratio = getActiveSourceRatio();
+    for (const button of document.querySelectorAll('[data-upload-size]')) {
+        const longEdge = Number(button.dataset.uploadSize);
+        const { width, height } = getMobileUploadSize(longEdge, ratio);
+        button.textContent = `${width}×${height}`;
+        button.setAttribute('aria-pressed', String(longEdge === mobileUploadLongEdge));
+    }
+}
+
+function renderMobileUploadControls(active) {
+    for (const id of ['mobile-upload-title', 'mobile-upload-crop-tools', 'mobile-upload-tabs', 'mobile-upload-actions']) {
+        const element = document.getElementById(id);
+        if (element) element.hidden = !active;
+    }
+    const patternSettings = document.getElementById('mobile-upload-pattern-settings');
+    if (patternSettings) patternSettings.hidden = !active || mobileUploadTab !== 'pattern';
+    if (!active) {
+        const exitDialog = document.getElementById('mobile-upload-exit-dialog');
+        if (exitDialog?.open) exitDialog.close();
+        return;
+    }
+    updateMobileCropTools();
+    setHidden('image-adjustments-panel', mobileUploadTab !== 'image');
+    for (const button of document.querySelectorAll('[data-upload-tab]')) {
+        button.setAttribute('aria-pressed', String(button.dataset.uploadTab === mobileUploadTab));
+    }
+    for (const button of document.querySelectorAll('[data-upload-colors]')) {
+        button.setAttribute('aria-pressed', String(Number(button.dataset.uploadColors) === mobileUploadColorLimit));
+    }
+    const name = String(AppState.patternName || '').trim();
+    setText('mobile-upload-name-value', name || '未命名图纸');
+    document.getElementById('mobile-upload-name')?.classList.toggle('is-placeholder', !name);
+    setText('mobile-upload-brand-value', AppState.brand === 'mard' ? `MARD–${AppState.mardSet}色` : getBrandLabel(AppState.brand));
+    renderMobileUploadSizes();
+}
+
+export function installMobileUploadControls() {
+    const tabs = document.getElementById('mobile-upload-tabs');
+    const settings = document.getElementById('mobile-upload-pattern-settings');
+    const exitDialog = document.getElementById('mobile-upload-exit-dialog');
+    if (!tabs || !settings || !exitDialog) return;
+
+    tabs.addEventListener('click', event => {
+        const tab = event.target.closest('[data-upload-tab]');
+        if (!tab) return;
+        mobileUploadTab = tab.dataset.uploadTab;
+        renderMobileUploadControls(true);
+    });
+    settings.addEventListener('click', event => {
+        const size = event.target.closest('[data-upload-size]');
+        const colors = event.target.closest('[data-upload-colors]');
+        if (size) {
+            mobileUploadLongEdge = Number(size.dataset.uploadSize);
+            updateGridDimensions();
+        }
+        if (colors) {
+            mobileUploadColorLimit = Number(colors.dataset.uploadColors);
+            renderMobileUploadControls(true);
+        }
+    });
+    document.getElementById('mobile-upload-name').addEventListener('click', () => openMobileSettingsModal('name'));
+    document.getElementById('mobile-upload-brand').addEventListener('click', () => openMobileSettingsModal('scheme'));
+    document.getElementById('mobile-upload-preview').addEventListener('click', handleGeneratePattern);
+    document.getElementById('mobile-upload-crop-confirm').addEventListener('click', () => {
+        if (!isMobileUploadSetup()) return;
+        const rect = ensureCropRect();
+        if (!isPendingMobileCrop(rect, getMobileCropBounds())) return;
+        mobileUploadCropHistory.push(rect);
+        stopCropInteraction();
+        updateGridDimensions();
+    });
+    document.getElementById('mobile-upload-crop-undo').addEventListener('click', () => {
+        if (!isMobileUploadSetup() || !mobileUploadCropHistory.length) return;
+        mobileUploadCropHistory.pop();
+        restoreMobileCropBounds();
+    });
+    document.getElementById('mobile-upload-crop-cancel').addEventListener('click', () => {
+        if (isMobileUploadSetup()) restoreMobileCropBounds();
+    });
+    document.getElementById('mobile-upload-back').addEventListener('click', () => {
+        if (isMobileUploadSetup() && !exitDialog.open) exitDialog.showModal();
+    });
+    document.getElementById('mobile-upload-discard').addEventListener('click', event => {
+        event.preventDefault();
+        exitDialog.close();
+        if (!isMobileUploadSetup()) return;
+        AppState.mobileSettingsModal = null;
+        AppState.patternPreviewPixelGridDetection = null;
+        AppState.patternPreviewLooksLikePixelArt = false;
+        if (mobileUploadInitialBrand) Object.assign(AppState, mobileUploadInitialBrand);
+        resetMobileUploadSettings();
+        exitWorkbenchToUpload();
+        const preview = document.getElementById('workbench-source-preview');
+        if (preview) preview.width = preview.height = 0;
+    });
+}
+
 function syncMobileColorLimitDisplay() {
     if (!isWorkbenchMobileLayout()) return;
     const display = document.getElementById('max-colors-display');
@@ -241,6 +387,8 @@ const WORKBENCH_CURSORS = {
     crosshair: `url("${new URL('../assets/cursors/figma/crosshair-cursor.svg', import.meta.url).href}") 14 14, crosshair`,
     default: `url("${new URL('../assets/cursors/figma/default-cursor.svg', import.meta.url).href}") 7 6, default`,
 };
+
+const DEFAULT_PATTERN_PREVIEW_STYLE = 'original';
 
 const PATTERN_PREVIEW_STYLES = {
     original: {
@@ -1846,16 +1994,18 @@ function clamp(value, min, max) {
 
 function normalizeCropRect(rect, width, height) {
     if (!rect) return null;
-    const minSize = 16;
-    const left = clamp(Math.min(rect.x, rect.x + rect.width), 0, Math.max(0, width - minSize));
-    const top = clamp(Math.min(rect.y, rect.y + rect.height), 0, Math.max(0, height - minSize));
-    const right = clamp(Math.max(rect.x, rect.x + rect.width), left + minSize, width);
-    const bottom = clamp(Math.max(rect.y, rect.y + rect.height), top + minSize, height);
+    const mobileSetup = isMobileUploadSetup();
+    const minWidth = mobileSetup ? Math.min(16, width) : 16;
+    const minHeight = mobileSetup ? Math.min(16, height) : 16;
+    const left = clamp(Math.min(rect.x, rect.x + rect.width), 0, Math.max(0, width - minWidth));
+    const top = clamp(Math.min(rect.y, rect.y + rect.height), 0, Math.max(0, height - minHeight));
+    const right = clamp(Math.max(rect.x, rect.x + rect.width), left + minWidth, width);
+    const bottom = clamp(Math.max(rect.y, rect.y + rect.height), top + minHeight, height);
     return {
         x: Math.round(left),
         y: Math.round(top),
-        width: Math.max(minSize, Math.round(right - left)),
-        height: Math.max(minSize, Math.round(bottom - top))
+        width: Math.max(minWidth, Math.round(right - left)),
+        height: Math.max(minHeight, Math.round(bottom - top))
     };
 }
 
@@ -2136,43 +2286,7 @@ function detectInsetCropRect(data, width, height) {
     return padCropRect(rect, width, height, 0.025);
 }
 
-function detectTransparentCropRect(data, width, height) {
-    let minX = width;
-    let minY = height;
-    let maxX = -1;
-    let maxY = -1;
-    let transparentCount = 0;
-    let opaqueCount = 0;
-
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const alpha = data[(y * width + x) * 4 + 3];
-            if (alpha <= 24) {
-                transparentCount++;
-                continue;
-            }
-            if (alpha < 245) transparentCount++;
-            opaqueCount++;
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x);
-            maxY = Math.max(maxY, y);
-        }
-    }
-
-    if (opaqueCount < Math.max(32, width * height * 0.002)) return null;
-    if (transparentCount < width * height * 0.01) return null;
-    const rect = {
-        x: minX,
-        y: minY,
-        width: maxX - minX + 1,
-        height: maxY - minY + 1
-    };
-    if (rect.width >= width * 0.98 && rect.height >= height * 0.98) return null;
-    return padCropRect(rect, width, height, 0.012);
-}
-
-function detectContentCropRect() {
+function detectContentCropRect(initialImageData) {
     const sourceCanvas = document.getElementById('source-canvas');
     if (!sourceCanvas || !AppState.image) return null;
     const width = sourceCanvas.width;
@@ -2180,11 +2294,8 @@ function detectContentCropRect() {
     if (!width || !height) return null;
 
     const ctx = sourceCanvas.getContext('2d', { willReadFrequently: true });
-    const imageData = ctx.getImageData(0, 0, width, height);
+    const imageData = initialImageData ?? ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
-    const transparentRect = detectTransparentCropRect(data, width, height);
-    if (transparentRect) return transparentRect;
-
     const corners = [
         getImageDataColor(data, width, 0, 0),
         getImageDataColor(data, width, width - 1, 0),
@@ -2206,24 +2317,56 @@ function detectContentCropRect() {
     let maxX = -1;
     let maxY = -1;
     let hitCount = 0;
+    let alphaMinX = width;
+    let alphaMinY = height;
+    let alphaMaxX = -1;
+    let alphaMaxY = -1;
+    let transparentCount = 0;
+    let opaqueCount = 0;
 
+    // Collect both candidate bounds in the same pass. Transparency still has
+    // priority over corner-color detection and the existing fallback scans.
     for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const index = (y * width + x) * 4;
+        let index = y * width * 4;
+        let rowMin = width;
+        let rowMax = -1;
+        let alphaRowMin = width;
+        let alphaRowMax = -1;
+        for (let x = 0; x < width; x++, index += 4) {
             const alpha = data[index + 3];
-            const visibleByAlpha = hasTransparentBackground ? alpha > 24 : (alpha > 24 && alpha < 245);
-            const visibleOpaque = alpha >= 245 && colorDistanceSq({
-                r: data[index],
-                g: data[index + 1],
-                b: data[index + 2]
-            }, background) > backgroundThreshold;
-            if (!visibleByAlpha && !visibleOpaque) continue;
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x);
-            maxY = Math.max(maxY, y);
+            if (alpha < 245) transparentCount++;
+            if (alpha <= 24) continue;
+            if (alphaRowMax === -1) alphaRowMin = x;
+            alphaRowMax = x;
+            opaqueCount++;
+
+            if (!hasTransparentBackground && alpha >= 245) {
+                const dr = data[index] - background.r;
+                const dg = data[index + 1] - background.g;
+                const db = data[index + 2] - background.b;
+                if (dr * dr + dg * dg + db * db <= backgroundThreshold) continue;
+            }
+            if (rowMax === -1) rowMin = x;
+            rowMax = x;
             hitCount++;
         }
+        if (alphaRowMax !== -1) {
+            alphaMinX = Math.min(alphaMinX, alphaRowMin);
+            alphaMaxX = Math.max(alphaMaxX, alphaRowMax);
+            alphaMinY = Math.min(alphaMinY, y);
+            alphaMaxY = y;
+        }
+        if (rowMax !== -1) {
+            minX = Math.min(minX, rowMin);
+            maxX = Math.max(maxX, rowMax);
+            minY = Math.min(minY, y);
+            maxY = y;
+        }
+    }
+
+    if (opaqueCount >= Math.max(32, width * height * 0.002) && transparentCount >= width * height * 0.01) {
+        const rect = { x: alphaMinX, y: alphaMinY, width: alphaMaxX - alphaMinX + 1, height: alphaMaxY - alphaMinY + 1 };
+        if (rect.width < width * 0.98 || rect.height < height * 0.98) return padCropRect(rect, width, height, 0.012);
     }
 
     const fallbackRect = () => detectInsetCropRect(data, width, height) || detectBorderModeledCropRect(data, width, height) || detectEdgeCropRect(data, width, height);
@@ -2240,9 +2383,17 @@ function detectContentCropRect() {
     }, width, height, 0.02);
 }
 
+function normalizeWorkbenchCropRect(rect) {
+    if (!isMobileUploadSetup()) return normalizeCropRect(rect, AppState.image.width, AppState.image.height);
+
+    const bounds = getMobileCropBounds();
+    const local = normalizeCropRect({ ...rect, x: rect.x - bounds.x, y: rect.y - bounds.y }, bounds.width, bounds.height);
+    return { ...local, x: local.x + bounds.x, y: local.y + bounds.y };
+}
+
 function ensureCropRect() {
     if (!AppState.image) return null;
-    AppState.cropRect = normalizeCropRect(AppState.cropRect || getDefaultCropRect(), AppState.image.width, AppState.image.height);
+    AppState.cropRect = normalizeWorkbenchCropRect(AppState.cropRect || getDefaultCropRect());
     return AppState.cropRect;
 }
 
@@ -2276,8 +2427,8 @@ function renderWorkbenchCropOverlay() {
     const cropBox = document.getElementById('workbench-crop-box');
     const previewCanvas = document.getElementById('workbench-source-preview');
     const hasPattern = Array.isArray(AppState.pixelData) && AppState.pixelData.length > 0;
-    const shouldShowMobileCrop = !isWorkbenchMobileLayout() || AppState.mobileSetupStep !== 'settings';
-    const shouldShow = Boolean(AppState.image) && !hasPattern && !AppState.pixelArtData && shouldShowMobileCrop;
+    const mobileSetup = isMobileUploadSetup();
+    const shouldShow = Boolean(AppState.image) && !hasPattern && !AppState.pixelArtData;
     setHidden('workbench-crop-overlay', !shouldShow);
     if (!overlay || !cropBox || !previewCanvas || !shouldShow) {
         updateCropSummary();
@@ -2285,17 +2436,28 @@ function renderWorkbenchCropOverlay() {
     }
 
     const rect = ensureCropRect();
-    const scaleX = previewCanvas.clientWidth / previewCanvas.width;
-    const scaleY = previewCanvas.clientHeight / previewCanvas.height;
+    const bounds = getCropDisplayBounds(previewCanvas, mobileSetup);
+    const scaleX = previewCanvas.clientWidth / bounds.width;
+    const scaleY = previewCanvas.clientHeight / bounds.height;
     const overlayRect = overlay.getBoundingClientRect();
     const previewRect = previewCanvas.getBoundingClientRect();
     const previewLeft = previewRect.left - overlayRect.left;
     const previewTop = previewRect.top - overlayRect.top;
     cropBox.classList.remove('hidden');
-    cropBox.style.left = `${previewLeft + rect.x * scaleX}px`;
-    cropBox.style.top = `${previewTop + rect.y * scaleY}px`;
-    cropBox.style.width = `${Math.max(24, rect.width * scaleX)}px`;
-    cropBox.style.height = `${Math.max(24, rect.height * scaleY)}px`;
+    const left = previewLeft + (rect.x - bounds.x) * scaleX;
+    const top = previewTop + (rect.y - bounds.y) * scaleY;
+    cropBox.style.left = `${left}px`;
+    cropBox.style.top = `${top}px`;
+    const minDisplaySize = mobileSetup ? 1 : 24;
+    cropBox.style.width = `${Math.max(minDisplaySize, rect.width * scaleX)}px`;
+    cropBox.style.height = `${Math.max(minDisplaySize, rect.height * scaleY)}px`;
+    const mask = document.getElementById('workbench-crop-mask');
+    if (mobileSetup && mask) {
+        const right = left + rect.width * scaleX;
+        const bottom = top + rect.height * scaleY;
+        const corners = (x1, y1, x2, y2) => `${x1}px ${y1}px, ${x2}px ${y1}px, ${x2}px ${y2}px, ${x1}px ${y2}px, ${x1}px ${y1}px`;
+        mask.style.clipPath = `polygon(evenodd, ${corners(previewLeft, previewTop, previewLeft + previewRect.width, previewTop + previewRect.height)}, ${corners(left, top, right, bottom)})`;
+    }
     updateCropSummary();
 }
 
@@ -2309,31 +2471,39 @@ function clientPointFromEvent(event) {
     return { x: event.clientX, y: event.clientY };
 }
 
+function getCropDisplayBounds(previewCanvas, mobileSetup) {
+    return mobileSetup ? getMobileCropBounds()
+        : { x: 0, y: 0, width: previewCanvas.width, height: previewCanvas.height };
+}
+
 function getCropPointerData(event) {
     const overlay = document.getElementById('workbench-crop-overlay');
     const previewCanvas = document.getElementById('workbench-source-preview');
     if (!overlay || !previewCanvas || !AppState.image) return null;
     const point = clientPointFromEvent(event);
     const previewRect = previewCanvas.getBoundingClientRect();
-    const localX = clamp(point.x - previewRect.left, 0, previewRect.width);
-    const localY = clamp(point.y - previewRect.top, 0, previewRect.height);
-    const imageX = Math.round((localX / previewRect.width) * previewCanvas.width);
-    const imageY = Math.round((localY / previewRect.height) * previewCanvas.height);
+    if (!previewRect.width || !previewRect.height) return null;
+    const bounds = getCropDisplayBounds(previewCanvas, isMobileUploadSetup());
     return {
-        imageX: clamp(imageX, 0, previewCanvas.width),
-        imageY: clamp(imageY, 0, previewCanvas.height)
+        imageX: bounds.x + Math.round(clamp((point.x - previewRect.left) / previewRect.width, 0, 1) * bounds.width),
+        imageY: bounds.y + Math.round(clamp((point.y - previewRect.top) / previewRect.height, 0, 1) * bounds.height)
     };
 }
 
 function updateCropRectFromInteraction(pointer) {
     const interaction = AppState.cropInteraction;
     if (!interaction || !AppState.image || !pointer) return;
-    const minSize = 16;
-    let nextRect = { ...interaction.startRect };
+    const mobileSetup = isMobileUploadSetup();
+    const nextRect = { ...interaction.startRect };
 
     if (interaction.mode === 'move') {
         nextRect.x = interaction.startRect.x + (pointer.imageX - interaction.startPoint.x);
         nextRect.y = interaction.startRect.y + (pointer.imageY - interaction.startPoint.y);
+        if (mobileSetup) {
+            const bounds = getMobileCropBounds();
+            nextRect.x = clamp(nextRect.x, bounds.x, bounds.x + bounds.width - nextRect.width);
+            nextRect.y = clamp(nextRect.y, bounds.y, bounds.y + bounds.height - nextRect.height);
+        }
     } else {
         const right = interaction.startRect.x + interaction.startRect.width;
         const bottom = interaction.startRect.y + interaction.startRect.height;
@@ -2353,14 +2523,22 @@ function updateCropRectFromInteraction(pointer) {
         }
     }
 
-    AppState.cropRect = normalizeCropRect(nextRect, AppState.image.width, AppState.image.height);
-    if (AppState.cropRect.width < minSize) AppState.cropRect.width = minSize;
-    if (AppState.cropRect.height < minSize) AppState.cropRect.height = minSize;
+    AppState.cropRect = normalizeWorkbenchCropRect(nextRect);
     renderWorkbenchCropOverlay();
+    if (mobileSetup) {
+        renderMobileUploadSizes();
+        updateMobileCropTools();
+    }
 }
 
 function stopCropInteraction() {
     AppState.cropInteraction = null;
+}
+
+function restoreMobileCropBounds() {
+    AppState.cropRect = { ...getMobileCropBounds() };
+    stopCropInteraction();
+    updateGridDimensions();
 }
 
 export function resetWorkbenchCropRect() {
@@ -2379,15 +2557,14 @@ export function autoFitWorkbenchCropRect() {
 }
 
 export function startWorkbenchCropInteraction(event) {
-    if (!isWorkbenchLayout()) return;
-    if (!AppState.image) return;
+    if (!isWorkbenchLayout() || !AppState.image) return;
+    const mobileSetup = isMobileUploadSetup();
     const cropBox = document.getElementById('workbench-crop-box');
     const pointer = getCropPointerData(event);
     if (!pointer || !cropBox) return;
     const handle = event.target.closest('[data-crop-handle]')?.dataset.cropHandle;
     const isInsideBox = event.target === cropBox || cropBox.contains(event.target);
-    const isMobileCropStep = isWorkbenchMobileLayout() && AppState.mobileSetupStep === 'crop';
-    if (isMobileCropStep && !handle && !isInsideBox) return;
+    if (mobileSetup && !handle && !isInsideBox) return;
     const rect = ensureCropRect();
 
     AppState.cropInteraction = {
@@ -2494,6 +2671,43 @@ function getPixelArtSettingsFromUI() {
     return AppState.pixelArtSettings;
 }
 
+function drawMobileSourcePreview(canvas, image, crop, displayWidth, displayHeight) {
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(displayWidth * pixelRatio));
+    const height = Math.max(1, Math.round(displayHeight * pixelRatio));
+    const sourceSnapshot = AppState.history[AppState.history.length - 1];
+    const cropKey = `${crop.x},${crop.y},${crop.width},${crop.height}`;
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+    if (mobileSourcePreview?.image !== image || mobileSourcePreview.sourceSnapshot !== sourceSnapshot
+        || mobileSourcePreview.cropKey !== cropKey || mobileSourcePreview.width !== width || mobileSourcePreview.height !== height) {
+        mobileSourcePreview = { image, sourceSnapshot, cropKey, width, height, adjustmentKey: null, sourcePixels: null };
+    }
+
+    const adjustments = normalizeImageAdjustments(AppState.imageAdjustments);
+    const values = Object.values(adjustments);
+    const adjustmentKey = values.join(',');
+    if (mobileSourcePreview.adjustmentKey === adjustmentKey) return;
+
+    const ctx = canvas.getContext('2d');
+    if (values.some(Boolean)) {
+        if (!mobileSourcePreview.sourcePixels) {
+            const source = document.getElementById('source-canvas');
+            const sample = document.createElement('canvas');
+            sample.width = width;
+            sample.height = height;
+            const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
+            sampleCtx.drawImage(source?.width ? source : image, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
+            mobileSourcePreview.sourcePixels = sampleCtx.getImageData(0, 0, width, height);
+        }
+        ctx.putImageData(applyImageAdjustments(mobileSourcePreview.sourcePixels, adjustments), 0, 0);
+    } else {
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, width, height);
+    }
+    mobileSourcePreview.adjustmentKey = adjustmentKey;
+}
+
 function updateWorkbenchSourcePreview() {
     if (!isWorkbenchLayout() || !AppState.image) return;
     const previewCanvas = document.getElementById('workbench-source-preview');
@@ -2501,35 +2715,38 @@ function updateWorkbenchSourcePreview() {
     if (!previewCanvas || !resultContainer) return;
 
     const img = AppState.image;
-    const isMobileSettingsPreview = isWorkbenchMobileLayout() && AppState.mobileSetupStep === 'settings' && !hasWorkbenchPattern();
-    const crop = isMobileSettingsPreview ? ensureCropRect() : null;
-    const sourceWidth = crop ? crop.width : img.width;
-    const sourceHeight = crop ? crop.height : img.height;
+    const mobileSetup = isMobileUploadSetup();
+    const crop = mobileSetup ? getMobileCropBounds() : getDefaultCropRect();
+    const sourceWidth = crop.width;
+    const sourceHeight = crop.height;
     const containerWidth = resultContainer.clientWidth || window.innerWidth;
     const containerHeight = resultContainer.clientHeight || window.innerHeight;
-    const padding = isMobileSettingsPreview ? 24 : 96;
-    const minPreviewSize = isMobileSettingsPreview ? 72 : 240;
+    const padding = mobileSetup ? 32 : 96;
+    const minPreviewSize = mobileSetup ? 1 : 240;
     const maxWidth = Math.max(minPreviewSize, containerWidth - padding);
     const maxHeight = Math.max(minPreviewSize, containerHeight - padding);
-    const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
+    const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, mobileSetup ? Infinity : 1);
     const displayWidth = Math.max(1, Math.round(sourceWidth * scale));
     const displayHeight = Math.max(1, Math.round(sourceHeight * scale));
 
-    previewCanvas.width = sourceWidth;
-    previewCanvas.height = sourceHeight;
     previewCanvas.style.width = `${displayWidth}px`;
     previewCanvas.style.height = `${displayHeight}px`;
     previewCanvas.style.left = `${(containerWidth - displayWidth) / 2}px`;
     previewCanvas.style.top = `${(containerHeight - displayHeight) / 2}px`;
 
+    if (mobileSetup) {
+        drawMobileSourcePreview(previewCanvas, img, crop, displayWidth, displayHeight);
+        renderWorkbenchCropOverlay();
+        return;
+    }
+
+    previewCanvas.width = sourceWidth;
+    previewCanvas.height = sourceHeight;
     const ctx = previewCanvas.getContext('2d');
     ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    const adjusting = Object.values(normalizeImageAdjustments(AppState.imageAdjustments)).some(Boolean)
-        && !(isWorkbenchMobileLayout() && AppState.mobileSetupStep === 'crop');
+    const adjusting = Object.values(normalizeImageAdjustments(AppState.imageAdjustments)).some(Boolean);
     if (adjusting) {
-        drawAdjustedSourcePreview(ctx, crop || { x: 0, y: 0, width: img.width, height: img.height }, sourceWidth, sourceHeight);
-    } else if (crop) {
-        ctx.drawImage(img, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+        drawAdjustedSourcePreview(ctx, { x: 0, y: 0, width: img.width, height: img.height }, sourceWidth, sourceHeight);
     } else {
         ctx.drawImage(img, 0, 0);
     }
@@ -2568,6 +2785,7 @@ function renderMobileSettingsThumbnail() {
 
 function renderPixelArtPreview() {
     if (!isWorkbenchLayout() || !AppState.pixelArtData) return;
+    mobileSourcePreview = null;
     const previewCanvas = document.getElementById('workbench-source-preview');
     const resultContainer = document.getElementById('result-container-single');
     if (!previewCanvas || !resultContainer) return;
@@ -2601,11 +2819,19 @@ function renderPixelArtPreview() {
     renderWorkbenchCropOverlay();
 }
 
+function getPatternPreviewColorCount() {
+    return new Set(AppState.patternPreviewPixelData
+        .filter(pixel => pixel && pixel.id !== 'NONE' && pixel.a !== 0)
+        .map(pixel => pixel.id)).size;
+}
+
 function getWorkbenchGenerationSummary() {
     const brandLabel = AppState.brand === 'mard' ? `MARD ${AppState.mardSet}色` : AppState.brand.toUpperCase();
     const colorLimitToggle = document.getElementById('color-limit-toggle');
     const maxColorsSlider = document.getElementById('max-colors-slider');
-    const colorText = colorLimitToggle?.checked ? `最多 ${maxColorsSlider?.value || 20} 色` : '不限颜色';
+    const colorText = previewMobileColorLimit !== null
+        ? `${getPatternPreviewColorCount()} 色`
+        : colorLimitToggle?.checked ? `最多 ${maxColorsSlider?.value || 20} 色` : '不限颜色';
     return `${AppState.gridWidth} x ${AppState.gridHeight} · ${brandLabel} · ${colorText}`;
 }
 
@@ -2620,9 +2846,14 @@ function renderPatternPreviewCanvas() {
     const availableWidth = Math.max(240, (layer?.clientWidth || window.innerWidth) - 420);
     const availableHeight = Math.max(240, (layer?.clientHeight || window.innerHeight) - 64);
     const isNarrow = window.innerWidth < 1024;
-    const maxWidth = isNarrow ? Math.max(240, window.innerWidth - 24) : availableWidth;
-    const maxHeight = isNarrow ? Math.max(220, Math.floor(window.innerHeight * 0.55)) : availableHeight;
-    const scale = Math.max(1, Math.floor(Math.min(maxWidth / AppState.gridWidth, maxHeight / AppState.gridHeight)));
+    const isMobile = isWorkbenchMobileLayout();
+    const frame = canvas.parentElement;
+    const maxWidth = isMobile ? frame.clientWidth
+        : (isNarrow ? Math.max(240, window.innerWidth - 24) : availableWidth);
+    const maxHeight = isMobile ? frame.clientHeight
+        : (isNarrow ? Math.max(220, Math.floor(window.innerHeight * 0.55)) : availableHeight);
+    const fit = Math.min(maxWidth / AppState.gridWidth, maxHeight / AppState.gridHeight);
+    const scale = isMobile ? fit : Math.max(1, Math.floor(fit));
     canvas.style.width = `${AppState.gridWidth * scale}px`;
     canvas.style.height = `${AppState.gridHeight * scale}px`;
 
@@ -2643,90 +2874,216 @@ function renderPatternPreviewLayer() {
     setHidden('pattern-preview-layer', !visible);
     if (!visible) return;
 
-    setText('pattern-preview-summary', `${PATTERN_PREVIEW_STYLES[AppState.patternPreviewStyle]?.label || '预览'} · ${getWorkbenchGenerationSummary()}`);
-    const isDesktop = getWorkbenchViewportMode() === 'desktop';
+    const viewportMode = getWorkbenchViewportMode();
+    const isMobile = viewportMode === 'mobile';
+    const offersPixelStyle = viewportMode !== 'tablet';
     const styleOptions = document.getElementById('pattern-preview-style-options');
-    const pixelArtButton = document.querySelector('[data-preview-style="pixel"]');
-    const pixelArtHint = document.getElementById('pixel-art-detection-hint');
-    const hasPixelArtGrid = Boolean(AppState.patternPreviewPixelGridDetection);
-    const looksLikePixelArt = Boolean(AppState.patternPreviewLooksLikePixelArt);
-    const canUsePixelArt = hasPixelArtGrid || looksLikePixelArt;
+    setText('pattern-preview-cancel-btn', isMobile ? '返回' : '返回调整');
+    setText('pattern-preview-confirm-btn', isMobile ? '进入编辑' : '使用这个效果');
+    if (isMobile) setText('pattern-preview-mobile-color-count', `共 ${getPatternPreviewColorCount()} 色`);
+    else setText('pattern-preview-summary', `${PATTERN_PREVIEW_STYLES[AppState.patternPreviewStyle]?.label || '预览'} · ${getWorkbenchGenerationSummary()}`);
     if (styleOptions) {
-        styleOptions.classList.toggle('grid-cols-4', isDesktop);
-        styleOptions.classList.toggle('grid-cols-3', !isDesktop);
+        styleOptions.classList.toggle('grid-cols-4', offersPixelStyle);
+        styleOptions.classList.toggle('grid-cols-3', !offersPixelStyle);
     }
-    if (pixelArtButton) {
-        pixelArtButton.classList.toggle('hidden', !isDesktop);
-        pixelArtButton.disabled = !canUsePixelArt;
-        pixelArtButton.title = hasPixelArtGrid ? '已识别到排列整齐的像素格' : (looksLikePixelArt ? '识别到像素画特征，将按每格主色取样' : '没有识别到明显的像素画特征');
-        pixelArtButton.setAttribute('aria-label', canUsePixelArt ? '像素画（可以使用）' : '像素画（未识别到像素画特征）');
-    }
-    if (pixelArtHint) {
-        pixelArtHint.classList.toggle('hidden', !isDesktop);
-        pixelArtHint.textContent = hasPixelArtGrid
-            ? `识别到约 ${AppState.patternPreviewPixelGridDetection.columns} × ${AppState.patternPreviewPixelGridDetection.rows} 格，将按原格取色。`
-            : (looksLikePixelArt ? '识别到像素画特征，但格子没有完全对齐；将按每个拼豆格里的主色取色。' : '没有识别到明显的像素画特征，像素画效果暂不可用。');
-    }
+    syncPixelArtPreviewOption(viewportMode);
     document.querySelectorAll('.pattern-preview-style-btn').forEach((btn) => {
         const active = btn.dataset.previewStyle === AppState.patternPreviewStyle;
         btn.classList.toggle('bg-primary', active);
         btn.classList.toggle('text-white', active);
         btn.classList.toggle('border-primary', active);
         btn.classList.toggle('shadow-sm', active);
+        btn.setAttribute('aria-pressed', String(active));
     });
     renderPatternPreviewCanvas();
 }
 
-function buildPatternPreview(style = 'photo') {
-    const rawSourceImageData = getSourceImageDataForGeneration(false);
-    const sourceImageData = applyImageAdjustments(rawSourceImageData, AppState.imageAdjustments);
-    AppState.patternPreviewPixelGridDetection = detectPixelArtGrid(rawSourceImageData);
-    AppState.patternPreviewLooksLikePixelArt = detectPixelArtAppearance(rawSourceImageData);
-    if (style === 'pixel' && (getWorkbenchViewportMode() !== 'desktop' || (!AppState.patternPreviewPixelGridDetection && !AppState.patternPreviewLooksLikePixelArt))) {
-        style = 'photo';
+function syncPixelArtPreviewOption(viewportMode = getWorkbenchViewportMode()) {
+    const button = document.querySelector('[data-preview-style="pixel"]');
+    const hint = document.getElementById('pixel-art-detection-hint');
+    const grid = AppState.patternPreviewPixelGridDetection;
+    const looksLikePixelArt = AppState.patternPreviewLooksLikePixelArt;
+    const canUsePixelArt = Boolean(grid || looksLikePixelArt);
+    const pending = Boolean(mobilePatternPreviewCache?.cancelDetection);
+    const label = viewportMode === 'mobile' ? '像素' : '像素画';
+    const description = grid ? '已识别到排列整齐的像素格'
+        : looksLikePixelArt ? '识别到像素画特征，将按每格主色取样' : '没有识别到明显的像素画特征';
+    if (button) {
+        button.classList.toggle('hidden', viewportMode === 'tablet');
+        button.textContent = label;
+        button.disabled = !canUsePixelArt;
+        button.title = pending ? '' : description;
+        button.setAttribute('aria-label', canUsePixelArt || pending ? label : `${label}（未识别到像素画特征）`);
     }
-    const config = PATTERN_PREVIEW_STYLES[style] || PATTERN_PREVIEW_STYLES.photo;
-    const alignedPixelArtData = style === 'pixel' && AppState.patternPreviewPixelGridDetection
-        ? generateAlignedPixelArtData({
-            sourceImageData,
-            gridWidth: AppState.gridWidth,
-            gridHeight: AppState.gridHeight,
-            pixelGrid: AppState.patternPreviewPixelGridDetection
-        })
-        : null;
-    const pixelArtData = alignedPixelArtData || (style === 'pixel'
-        ? generateDominantPixelArtData({ sourceImageData, gridWidth: AppState.gridWidth, gridHeight: AppState.gridHeight })
-        : generatePixelArtData({
-        sourceImageData,
-        gridWidth: AppState.gridWidth,
-        gridHeight: AppState.gridHeight,
-        precisionMode: config.precisionMode,
-        contrast: config.contrast,
-        sharpen: config.sharpen,
-        dominant: config.dominant
-    }));
-    const pixelData = mapPixelArtToBeads({
-        sourceImageData: null,
-        pixelArtData,
-        gridWidth: AppState.gridWidth,
-        gridHeight: AppState.gridHeight,
-        brand: AppState.brand,
-        mardSet: AppState.mardSet,
-        isColorLimitEnabled: document.getElementById('color-limit-toggle').checked,
-        maxColors: parseInt(document.getElementById('max-colors-slider').value),
-        isDitheringEnabled: config.dithering,
-        precisionMode: 'standard',
-        colorMatchMode: config.colorMatchMode,
-        palettes: PALETTES,
-        skipSmallRegionCleanup: style === 'pixel'
-    });
+    if (hint) {
+        hint.classList.toggle('hidden', viewportMode !== 'desktop' || pending);
+        hint.textContent = grid
+            ? `识别到约 ${grid.columns} × ${grid.rows} 格，将按原格取色。`
+            : looksLikePixelArt
+                ? '识别到像素画特征，但格子没有完全对齐；将按每个拼豆格里的主色取色。'
+                : '没有识别到明显的像素画特征，像素画效果暂不可用。';
+    }
+}
+
+function clearMobilePatternPreviewCache() {
+    mobilePatternPreviewCache?.cancelDetection?.();
+    mobilePatternPreviewCache = null;
+}
+
+function startMobilePixelArtDetection(cache, sourceImageData) {
+    let worker;
+    let frame;
+    let timer;
+    const isCurrent = () => mobilePatternPreviewCache === cache && AppState.patternPreviewVisible;
+    const cancel = () => {
+        worker?.terminate();
+        if (frame !== undefined) cancelAnimationFrame(frame);
+        if (timer !== undefined) window.clearTimeout(timer);
+        cache.cancelDetection = null;
+    };
+    const publish = detection => {
+        cancel();
+        if (!isCurrent()) return;
+        cache.detection = detection;
+        AppState.patternPreviewPixelGridDetection = detection.grid;
+        AppState.patternPreviewLooksLikePixelArt = detection.looksLikePixelArt;
+        syncPixelArtPreviewOption();
+    };
+    const fallback = () => {
+        worker?.terminate();
+        worker = null;
+        if (!isCurrent()) return;
+        // In browsers without a module worker, display the normal preview
+        // before doing the optional check on the main thread.
+        frame = requestAnimationFrame(() => {
+            timer = window.setTimeout(() => {
+                if (!isCurrent()) return;
+                try {
+                    const source = sourceImageData.data.byteLength ? sourceImageData : getSourceImageDataForGeneration(false);
+                    publish(detectPixelArtFeatures(source));
+                } catch {
+                    publish({ grid: null, looksLikePixelArt: false });
+                }
+            }, 0);
+        });
+    };
+
+    cache.cancelDetection = cancel;
+    try {
+        worker = new Worker(new URL('./features/pixel-art-detection-worker.js?v=20261116-preview-first', import.meta.url), { type: 'module' });
+        worker.onmessage = event => publish(event.data);
+        worker.onerror = event => {
+            event.preventDefault();
+            fallback();
+        };
+        worker.onmessageerror = fallback;
+        const { data, width, height } = sourceImageData;
+        worker.postMessage({ data, width, height }, [data.buffer]);
+    } catch {
+        fallback();
+    }
+}
+
+function* generatePatternPreview(style = DEFAULT_PATTERN_PREVIEW_STYLE) {
+    const cache = previewMobileColorLimit === null ? null
+        : (mobilePatternPreviewCache ??= { results: new Map(), samples: null, detection: null });
+    let rawSourceImageData;
+    let detection = cache?.detection;
+    // A normal phone preset can be rendered without the optional pixel-art check.
+    if (!detection && (!cache || style === 'pixel')) {
+        yield 'image';
+        rawSourceImageData = getSourceImageDataForGeneration(false);
+        detection = detectPixelArtFeatures(rawSourceImageData);
+        if (cache) cache.detection = detection;
+    }
+    AppState.patternPreviewPixelGridDetection = detection?.grid ?? null;
+    AppState.patternPreviewLooksLikePixelArt = detection?.looksLikePixelArt ?? false;
+    if (style === 'pixel' && (getWorkbenchViewportMode() === 'tablet' || (!AppState.patternPreviewPixelGridDetection && !AppState.patternPreviewLooksLikePixelArt))) {
+        style = DEFAULT_PATTERN_PREVIEW_STYLE;
+    }
+    const config = PATTERN_PREVIEW_STYLES[style] || PATTERN_PREVIEW_STYLES[DEFAULT_PATTERN_PREVIEW_STYLE];
+    let result = cache?.results.get(style);
+    if (!result) {
+        const { gridWidth, gridHeight } = AppState;
+        let samples = style === 'pixel' ? null : cache?.samples;
+        let sourceImageData;
+        if (!samples) {
+            if (!rawSourceImageData) {
+                yield 'image';
+                rawSourceImageData = getSourceImageDataForGeneration(false);
+            }
+            sourceImageData = applyImageAdjustments(rawSourceImageData, AppState.imageAdjustments);
+            yield 'grid';
+            if (style !== 'pixel') {
+                samples = samplePixelArtGrid({ sourceImageData, gridWidth, gridHeight, precisionMode: config.precisionMode });
+                if (cache) cache.samples = samples;
+            }
+        }
+
+        const pixelArtData = style === 'pixel'
+            ? (detection.grid && generateAlignedPixelArtData({ sourceImageData, gridWidth, gridHeight, pixelGrid: detection.grid }))
+                || generateDominantPixelArtData({ sourceImageData, gridWidth, gridHeight })
+            : applyPixelArtPreset(samples, { ...config, gridWidth, gridHeight });
+        yield 'palette';
+        const pixelData = mapPixelArtToBeads({
+            pixelArtData,
+            gridWidth,
+            gridHeight,
+            brand: AppState.brand,
+            mardSet: AppState.mardSet,
+            isColorLimitEnabled: previewMobileColorLimit !== null || document.getElementById('color-limit-toggle').checked,
+            maxColors: previewMobileColorLimit ?? parseInt(document.getElementById('max-colors-slider').value),
+            isDitheringEnabled: config.dithering,
+            colorMatchMode: config.colorMatchMode,
+            palettes: PALETTES,
+            skipSmallRegionCleanup: style === 'pixel'
+        });
+        result = { pixelArtData, pixelData };
+        if (cache) cache.results.set(style, result);
+    }
 
     AppState.patternPreviewImageAdjustments = normalizeImageAdjustments(AppState.imageAdjustments);
     AppState.patternPreviewStyle = style;
-    AppState.patternPreviewPixelArtData = pixelArtData;
-    AppState.patternPreviewPixelData = pixelData;
+    AppState.patternPreviewPixelArtData = result.pixelArtData;
+    AppState.patternPreviewPixelData = result.pixelData;
     AppState.patternPreviewVisible = true;
-    renderPatternPreviewLayer();
+    if (cache && !detection && rawSourceImageData && !cache.cancelDetection) {
+        startMobilePixelArtDetection(cache, rawSourceImageData);
+    }
+}
+
+function buildPatternPreview(style) {
+    const generation = generatePatternPreview(style);
+    while (!generation.next().done) { /* Run without presenting intermediate stages. */ }
+}
+
+async function buildMobilePatternPreview(style) {
+    const loading = beginMobileLoading('image');
+    const hadPreview = AppState.patternPreviewVisible;
+    const crop = ensureCropRect();
+    const shouldPaintFirst = crop.width * crop.height >= 512 * 512;
+    let previousPaint = performance.now();
+    let first = true;
+    let failed = false;
+    try {
+        for (const stage of generatePatternPreview(style)) {
+            loading?.setStage(stage);
+            if (loading && !document.hidden && ((first && shouldPaintFirst) || performance.now() - previousPaint >= 8)) {
+                // Let a frame paint before another long piece of synchronous work.
+                await new Promise(resolve => requestAnimationFrame(() => window.setTimeout(resolve, 0)));
+                previousPaint = performance.now();
+            }
+            first = false;
+        }
+        updateWorkbenchUI();
+    } catch (error) {
+        failed = true;
+        console.error('Failed to generate a mobile preview.', error);
+        if (!hadPreview) cancelPatternPreview();
+    } finally {
+        loading?.close();
+    }
+    if (failed) window.alert('图纸生成失败，请重试。');
 }
 
 function updateWorkbenchComparePreview(resetScale = false) {
@@ -2879,7 +3236,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
     const hasImage = Boolean(AppState.image);
     layout.dataset.mode = hasPattern ? 'editor' : 'setup';
     layout.dataset.viewport = viewportMode;
-    layout.dataset.mobileStep = isMobile && hasImage && !hasPattern ? AppState.mobileSetupStep : '';
+    layout.dataset.mobileStep = isMobile && hasImage && !hasPattern ? 'upload' : '';
     const showMobileHome = isMobile && !hasPattern && !hasImage;
     layout.toggleAttribute('data-mobile-home', showMobileHome);
     const mobileHome = document.getElementById('mobile-home');
@@ -2960,17 +3317,16 @@ function applyWorkbenchLayoutMode(hasPattern) {
     draftActions.classList.toggle('hidden', hideSetupDraftActions);
     if (hideSetupDraftActions) AppState.draftDrawerOpen = false;
     const isCompactSetup = isMobile || isTablet;
-    const isMobileCropStep = isMobile && hasImage && AppState.mobileSetupStep === 'crop';
-    const isMobileSettingsStep = isMobile && hasImage && AppState.mobileSetupStep === 'settings';
+    const mobileUploadSetup = isMobile && hasImage;
     activeShell.style.gridTemplateColumns = isCompactSetup ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 380px';
-    activeShell.style.gridTemplateRows = isMobileCropStep
-        ? 'minmax(360px, 1fr)'
-        : (isMobileSettingsStep ? 'minmax(180px, 30dvh) auto' : (isCompactSetup ? 'minmax(360px, 42dvh) auto' : ''));
-    activeShell.style.gap = isMobile ? '12px' : (isTablet ? '16px' : '20px');
-    sidePanel.style.display = showMobileHome || isMobileCropStep ? 'none' : (isCompactSetup ? 'grid' : '');
+    activeShell.style.gridTemplateRows = mobileUploadSetup
+        ? 'auto auto'
+        : (isCompactSetup ? 'minmax(360px, 42dvh) auto' : '');
+    activeShell.style.gap = mobileUploadSetup ? '0' : (isMobile ? '12px' : (isTablet ? '16px' : '20px'));
+    sidePanel.style.display = showMobileHome ? 'none' : (isCompactSetup ? 'grid' : '');
     sidePanel.style.gridTemplateColumns = isTablet && hasImage ? 'minmax(0, 1fr) 280px' : '';
     sidePanel.style.gridTemplateRows = '';
-    sidePanel.style.alignItems = isMobileSettingsStep ? 'stretch' : (isCompactSetup ? 'start' : '');
+    sidePanel.style.alignItems = mobileUploadSetup ? 'stretch' : (isCompactSetup ? 'start' : '');
     sidePanel.style.minHeight = isCompactSetup ? '0' : '';
     sidePanel.style.position = '';
     sidePanel.style.top = '';
@@ -3091,8 +3447,9 @@ export function updateWorkbenchUI() {
     }
     const hasPixelArt = Boolean(AppState.pixelArtData) && !hasPattern;
     const isMobile = isWorkbenchMobileLayout();
-    const isMobileCropStep = isMobile && hasImage && !hasPattern && AppState.mobileSetupStep === 'crop';
-    const isMobileSettingsStep = isMobile && hasImage && !hasPattern && AppState.mobileSetupStep === 'settings';
+    const mobileUploadSetup = isMobile && hasImage && !hasPattern;
+    if (!mobileUploadSetup) mobileSourcePreview = null;
+    renderMobileUploadControls(mobileUploadSetup);
     applyWorkbenchLayoutMode(hasPattern);
     const isTablet = isWorkbenchTabletLayout();
     const toolbarCollapsed = false;
@@ -3101,7 +3458,7 @@ export function updateWorkbenchUI() {
         ? AppState.workbenchTabletPanel
         : null;
     const settingsCollapsed = false;
-    const showSettingsPanel = hasPattern ? tabletPanel === 'settings' : !(isMobileCropStep || (isMobile && !hasImage));
+    const showSettingsPanel = hasPattern ? tabletPanel === 'settings' : !isMobile || hasImage;
     const showColorListPanel = hasPattern && tabletPanel === 'colors';
     const compareVisible = hasPattern && AppState.comparePreviewVisible;
     setHidden('workbench-upload-empty', hasImage || hasPattern);
@@ -3137,7 +3494,7 @@ export function updateWorkbenchUI() {
     setHidden('workbench-active-toolbar', true);
     setHidden('workbench-color-panel-empty', hasPattern);
     setHidden('color-stats', !hasPattern);
-    setHidden('workbench-side-panel', (hasPattern && !tabletPanel) || isMobileCropStep);
+    setHidden('workbench-side-panel', hasPattern && !tabletPanel);
     setHidden('workbench-top-actions', !hasPattern);
     setHidden('workbench-top-edit-actions', !hasPattern);
     const sidePanel = document.getElementById('workbench-side-panel');
@@ -3145,20 +3502,16 @@ export function updateWorkbenchUI() {
         sidePanel.style.display = tabletPanel ? 'block' : 'none';
         sidePanel.style.pointerEvents = tabletPanel ? 'auto' : 'none';
     }
-    if (sidePanel && isMobileCropStep) {
-        sidePanel.style.display = 'none';
-        sidePanel.style.pointerEvents = 'none';
-    }
     setHidden('workbench-settings-panel', !showSettingsPanel);
     setHidden('workbench-color-list-panel', !showColorListPanel);
-    setHidden('mobile-crop-actions', !isMobileSettingsStep);
-    setHidden('mobile-crop-confirm-actions', !isMobileCropStep);
+    setHidden('mobile-crop-actions', true);
+    setHidden('mobile-crop-confirm-actions', true);
     setHidden('next-to-step-4', !hasPattern);
-    setHidden('workbench-generate-actions', hasPattern || (isMobile && (!hasImage || isMobileCropStep)));
+    setHidden('workbench-generate-actions', hasPattern || isMobile);
     setHidden('legacy-generate-pattern-btn', true);
     setHidden('apply-workbench-settings-btn', !hasPattern);
-    setHidden('toggle-workbench-settings-btn', isMobileCropStep);
-    setHidden('workbench-settings-content', settingsCollapsed || isMobileCropStep);
+    setHidden('toggle-workbench-settings-btn', mobileUploadSetup);
+    setHidden('workbench-settings-content', settingsCollapsed);
     setText('generate-pattern-label', isWorkbenchLayout() ? '生成预览' : (hasPattern ? '更新拼豆图纸' : '生成拼豆图纸'));
     setText('pixel-art-status', hasPixelArt ? '预览已生成' : '未生成预览');
     setText('workbench-settings-summary', getWorkbenchSettingsSummary());
@@ -3205,7 +3558,7 @@ export function updateWorkbenchUI() {
     if (generateBtn) {
         const generateLabel = document.getElementById('generate-pattern-label');
         if (generateLabel && isWorkbenchLayout()) {
-            generateLabel.textContent = isMobileCropStep ? '确认范围' : '生成预览';
+            generateLabel.textContent = '生成预览';
         }
         generateBtn.classList.toggle('hidden', AppState.patternPreviewVisible);
         generateBtn.disabled = !hasImage;
@@ -3307,7 +3660,7 @@ export function updateWorkbenchUI() {
     if (resultPane) {
         resultPane.style.left = compareVisible ? '34%' : '0';
     }
-    renderWorkbenchCropOverlay();
+    if (!mobileUploadSetup) renderWorkbenchCropOverlay();
     if (hasImage && !hasPattern) {
         if (AppState.pixelArtData) renderPixelArtPreview();
         else updateWorkbenchSourcePreview();
@@ -3372,14 +3725,20 @@ function initSettingsView() {
     sourceCanvas.height = img.height;
     ctxSource.drawImage(img, 0, 0);
 
-    // 保存初始图像数据
+    // The initial undo entry and crop detector can read the same snapshot.
+    const mobileSetup = isMobileUploadSetup();
     AppState.originalImageData = ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
-    AppState.history = [ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height)];
-    AppState.cropRect = detectContentCropRect() || getDefaultCropRect();
+    AppState.history = [mobileSetup ? AppState.originalImageData
+        : ctxSource.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height)];
+    AppState.cropRect = detectContentCropRect(mobileSetup ? AppState.originalImageData : undefined) || getDefaultCropRect();
     AppState.cropInteraction = null;
     AppState.comparePreviewVisible = false;
     updateUndoButton();
-    
+
+    if (mobileSetup) {
+        updateGridDimensions({ refreshUI: false });
+        return;
+    }
     updateGridDimensions();
     updateWorkbenchSourcePreview();
     updateWorkbenchUI();
@@ -3388,7 +3747,7 @@ function initSettingsView() {
 /**
  * 更新网格尺寸
  */
-export function updateGridDimensions() {
+export function updateGridDimensions({ refreshUI = true } = {}) {
     const slider = document.getElementById('grid-size-slider');
     const sizeDisplay = document.getElementById('grid-size-display');
     const hadPattern = hasWorkbenchPattern();
@@ -3397,7 +3756,10 @@ export function updateGridDimensions() {
     let nextGridWidth;
     let nextGridHeight;
     
-    if (ratio >= 1) {
+    mobileUploadGridApplied = isMobileUploadSetup();
+    if (mobileUploadGridApplied) {
+        ({ width: nextGridWidth, height: nextGridHeight } = getMobileUploadSize(mobileUploadLongEdge, ratio));
+    } else if (ratio >= 1) {
         nextGridWidth = val;
         nextGridHeight = Math.round(val / ratio);
     } else {
@@ -3410,7 +3772,7 @@ export function updateGridDimensions() {
         AppState.pendingGridWidth = nextGridWidth;
         AppState.pendingGridHeight = nextGridHeight;
         updateBoardSizeUI(nextGridWidth, nextGridHeight);
-        updateWorkbenchUI();
+        if (refreshUI) updateWorkbenchUI();
         return;
     }
 
@@ -3432,7 +3794,7 @@ export function updateGridDimensions() {
         AppState.pixelArtData = null;
     }
     updateBoardSizeUI();
-    updateWorkbenchUI();
+    if (refreshUI) updateWorkbenchUI();
 }
 
 /**
@@ -3778,17 +4140,18 @@ export function handleGeneratePatternLegacy() {
 }
 
 export function handleGeneratePattern() {
-    if (!AppState.image) return;
+    if (!AppState.image || isMobileLoadingActive()) return;
     if (isWorkbenchLayout()) {
-        if (isWorkbenchMobileLayout() && AppState.mobileSetupStep === 'crop' && !hasWorkbenchPattern()) {
-            AppState.mobileSetupStep = 'settings';
+        clearMobilePatternPreviewCache();
+        if (isMobileUploadSetup()) {
             AppState.cropInteraction = null;
-            updateGridDimensions();
-            updateWorkbenchSourcePreview();
-            updateWorkbenchUI();
-            return;
+            updateGridDimensions({ refreshUI: false });
+            previewMobileColorLimit = mobileUploadColorLimit;
+            return buildMobilePatternPreview(AppState.patternPreviewStyle ?? undefined);
         }
-        buildPatternPreview(AppState.patternPreviewStyle || 'photo');
+        previewMobileColorLimit = null;
+        if (mobileUploadGridApplied && !hasWorkbenchPattern()) updateGridDimensions();
+        buildPatternPreview(AppState.patternPreviewStyle ?? undefined);
         updateWorkbenchUI();
         return;
     }
@@ -3848,18 +4211,24 @@ export function applyWorkbenchSettings() {
         AppState.pendingGridWidth = null;
         AppState.pendingGridHeight = null;
     }
-    buildPatternPreview(AppState.patternPreviewStyle || 'photo');
+    buildPatternPreview(AppState.patternPreviewStyle ?? undefined);
     updateWorkbenchUI();
 }
 
 export function handlePatternPreviewStyle(style) {
-    if (!AppState.image || !PATTERN_PREVIEW_STYLES[style]) return;
-    if (style === 'pixel' && (getWorkbenchViewportMode() !== 'desktop' || (!AppState.patternPreviewPixelGridDetection && !AppState.patternPreviewLooksLikePixelArt))) return;
+    if (!AppState.image || !AppState.patternPreviewVisible || !PATTERN_PREVIEW_STYLES[style]
+        || style === AppState.patternPreviewStyle || isMobileLoadingActive()) return;
+    if (style === 'pixel' && (getWorkbenchViewportMode() === 'tablet' || (!AppState.patternPreviewPixelGridDetection && !AppState.patternPreviewLooksLikePixelArt))) return;
+    if (style === 'pixel' && isWorkbenchMobileLayout() && !mobilePatternPreviewCache?.results.has(style)) {
+        return buildMobilePatternPreview(style);
+    }
     buildPatternPreview(style);
     updateWorkbenchUI();
 }
 
 export function cancelPatternPreview() {
+    previewMobileColorLimit = null;
+    clearMobilePatternPreviewCache();
     AppState.patternPreviewVisible = false;
     AppState.patternPreviewPixelData = null;
     AppState.patternPreviewPixelArtData = null;
@@ -3868,7 +4237,15 @@ export function cancelPatternPreview() {
 
 export function confirmPatternPreview() {
     if (!Array.isArray(AppState.patternPreviewPixelData)) return;
+    clearMobilePatternPreviewCache();
 
+    if (previewMobileColorLimit !== null) {
+        document.getElementById('color-limit-toggle').checked = true;
+        const slider = document.getElementById('max-colors-slider');
+        slider.value = String(previewMobileColorLimit);
+        setText('max-colors-display', slider.value);
+        previewMobileColorLimit = null;
+    }
     AppState.highlightedColorId = null;
     AppState.generatedImageAdjustments = normalizeImageAdjustments(AppState.patternPreviewImageAdjustments);
     AppState.pixelArtData = AppState.patternPreviewPixelArtData;
