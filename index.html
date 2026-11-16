@@ -4,12 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff" media="(max-width: 767px)">
     <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png?v=20261006-1">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=20261006-1">
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261116-mobile-loading">
+    <link rel="stylesheet" href="css/style.css?v=20261116-preview-pinch">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
@@ -18,7 +19,7 @@
             "./src/editor.js": "./src/editor.js?v=20261103-quality-review-1",
             "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261008-ruler-performance-1",
             "./src/renderer.js": "./src/renderer.js?v=20261103-quality-review-1",
-            "./src/ui.js": "./src/ui.js?v=20261116-mobile-loading",
+            "./src/ui.js": "./src/ui.js?v=20261116-preview-pinch",
             "./src/processor.js": "./src/processor.js?v=20261116-preview-first",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
             "./src/features/quality.js": "./src/features/quality.js?v=20261104-quality-nonmodal-1",
@@ -36,7 +37,7 @@
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261116-mobile-loading"></script>
+    <script type="module" src="src/main.js?v=20261116-mard-only"></script>
 </head>
 
 <body data-layout="workbench"
@@ -50,6 +51,7 @@
             <canvas id="source-canvas"></canvas>
         </div>
 
+        <h1 id="mobile-upload-title" hidden>上传图片</h1>
         <div id="workbench-layout" class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
             <div id="workbench-top-actions" class="hidden bg-white rounded-2xl border border-white shadow-sm p-3 items-center gap-3">
                 <div id="workbench-top-title" class="min-w-0 flex-1 flex items-center gap-3">
@@ -152,7 +154,6 @@
                     </div>
                 </div>
 
-                <h1 id="mobile-upload-title" hidden>上传图片</h1>
                 <div id="mobile-upload-crop-tools" role="group" aria-label="裁剪操作" hidden>
                     <button type="button" id="mobile-upload-crop-confirm" aria-label="确认裁剪" title="确认裁剪">
                         <svg aria-hidden="true" viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 10 3.5 3.5 7.5-7.5"/></svg>
@@ -428,9 +429,9 @@
                                 <select id="brand-select"
                                     class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary">
                                 <option value="mard">MARD</option>
-                                <option value="perler">Perler</option>
-                                <option value="hama">Hama</option>
-                                <option value="artkal">Artkal</option>
+                                <option value="perler" disabled>Perler</option>
+                                <option value="hama" disabled>Hama</option>
+                                <option value="artkal" disabled>Artkal</option>
                             </select>
                         </div>
                         <div id="mard-set-container">
@@ -708,8 +709,8 @@
     </dialog>
 
     <div id="pattern-preview-layer" class="hidden fixed inset-0 z-50 bg-[#E7EBEE]">
+        <h1 class="pattern-preview-mobile-title">预览图纸</h1>
         <div class="pattern-preview-layout h-full grid grid-cols-[minmax(0,1fr)_340px] max-lg:grid-cols-1">
-            <h1 class="pattern-preview-mobile-title">预览图纸</h1>
             <main class="pattern-preview-image min-h-0 flex items-center justify-center p-5 max-lg:p-3">
                 <div class="pattern-preview-frame w-full h-full bg-white rounded-2xl border border-white shadow-sm overflow-hidden flex items-center justify-center">
                     <canvas id="pattern-preview-canvas" class="image-pixelated max-w-full max-h-full"></canvas>

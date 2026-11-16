@@ -115,6 +115,7 @@ import { installMobileDraftDialog } from './features/mobile-drafts.js?v=20261116
  * 处理图片上传
  */
 const resetProjectForNewImage = () => {
+    if (document.body.dataset.layout === 'workbench') AppState.brand = 'mard';
     resetMobileUploadSettings();
     AppState.currentDraftId = null;
     AppState.draftSourceImageDataUrl = null;
@@ -337,8 +338,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!openMobileSettingsModal('scheme')) return;
             event.preventDefault();
         }, true);
-        brandSelect.addEventListener('change', (e) => {
-            AppState.brand = e.target.value;
+        brandSelect.addEventListener('change', () => {
+            const option = brandSelect.selectedOptions[0];
+            if (!option || option.disabled) {
+                brandSelect.value = AppState.brand;
+                return;
+            }
+            AppState.brand = option.value;
             const mardSetContainer = document.getElementById('mard-set-container');
             if (AppState.brand === 'mard') {
                 mardSetContainer.classList.remove('hidden');

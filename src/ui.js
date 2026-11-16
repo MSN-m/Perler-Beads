@@ -2,6 +2,7 @@
  * 拼豆图纸生成器 - UI 与页面流程
  */
 import { AppState } from './state.js';
+import { createPatternPreviewZoom } from './features/pattern-preview-zoom.js';
 import { beginMobileLoading, isMobileLoadingActive } from './features/mobile-loading.js?v=20261116-mobile-loading';
 import { IMAGE_ADJUSTMENT_KEYS, normalizeImageAdjustments, applyImageAdjustments } from './features/image-adjustments.js';
 import { syncWorkbenchRename } from './features/pattern-rename.js';
@@ -324,8 +325,10 @@ function renderMobileSettingsModal() {
     if (brandOptions) {
         const brands = ['mard', 'perler', 'hama', 'artkal'];
         brandOptions.innerHTML = brands.map((brand) => {
+            const disabled = brand !== 'mard';
             const active = AppState.brand === brand;
-            return `<button type="button" data-mobile-brand="${brand}" class="py-3 rounded-2xl text-sm font-bold border ${active ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-50 text-gray-700 border-gray-100'}">${getBrandLabel(brand)}</button>`;
+            const appearance = active && !disabled ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-50 text-gray-700 border-gray-100';
+            return `<button type="button" data-mobile-brand="${brand}" aria-pressed="${active}" ${disabled ? 'disabled' : ''} class="py-3 rounded-2xl text-sm font-bold border ${appearance}">${getBrandLabel(brand)}</button>`;
         }).join('');
     }
 
@@ -363,7 +366,7 @@ export function applyMobilePatternName() {
 }
 
 export function selectMobileBrand(brand) {
-    if (!['mard', 'perler', 'hama', 'artkal'].includes(brand)) return;
+    if (brand !== 'mard') return;
     AppState.brand = brand;
     syncBrandControls();
     updateWorkbenchUI();
@@ -2869,12 +2872,19 @@ function renderPatternPreviewCanvas() {
     });
 }
 
+let patternPreviewZoom;
+
 function renderPatternPreviewLayer() {
+    const layer = document.getElementById('pattern-preview-layer');
+    if (!layer) return;
     const visible = AppState.patternPreviewVisible && Array.isArray(AppState.patternPreviewPixelData);
     setHidden('pattern-preview-layer', !visible);
+    const viewportMode = getWorkbenchViewportMode();
+    const touchPreview = visible && viewportMode !== 'desktop';
+    if (touchPreview) patternPreviewZoom ??= createPatternPreviewZoom(layer);
+    patternPreviewZoom?.setEnabled(touchPreview);
     if (!visible) return;
 
-    const viewportMode = getWorkbenchViewportMode();
     const isMobile = viewportMode === 'mobile';
     const offersPixelStyle = viewportMode !== 'tablet';
     const styleOptions = document.getElementById('pattern-preview-style-options');
@@ -2896,6 +2906,7 @@ function renderPatternPreviewLayer() {
         btn.setAttribute('aria-pressed', String(active));
     });
     renderPatternPreviewCanvas();
+    patternPreviewZoom?.refresh();
 }
 
 function syncPixelArtPreviewOption(viewportMode = getWorkbenchViewportMode()) {
