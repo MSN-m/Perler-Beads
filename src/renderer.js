@@ -1,5 +1,5 @@
 import { AppState } from './state.js';
-import { renderFixedRuler } from './features/fixed-ruler.js';
+import { renderFixedRuler, MOBILE_RULER_LEFT, MOBILE_RULER_TOP } from './features/fixed-ruler.js';
 import { getThemePrimaryColor, getEdgeBeadIndices } from './utils.js';
 
 /**
@@ -337,10 +337,16 @@ export function updateResultTransform(canvas, zoomState, resetBtn) {
     canvas.style.transform = `translate3d(${zoomState.x}px, ${zoomState.y}px, 0) scale(${zoomState.scale})`;
     canvas.style.transformOrigin = '0 0';
     
-    if (zoomState.scale !== 1 || zoomState.x !== 0 || zoomState.y !== 0) {
+    if (resetBtn && (zoomState.scale !== 1 || zoomState.x !== 0 || zoomState.y !== 0)) {
         resetBtn.classList.remove('opacity-0', 'pointer-events-none');
     } else {
-        resetBtn.classList.add('opacity-0', 'pointer-events-none');
+        resetBtn?.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    if (AppState.workbenchViewportMode === 'mobile') {
+        const ratio = document.getElementById('mobile-editor-zoom-ratio');
+        const percent = `${Math.round((zoomState.scale / (zoomState.fitScale || 1)) * 100)}%`;
+        if (ratio && ratio.textContent !== percent) ratio.textContent = percent;
     }
 
     renderFixedRuler();
@@ -358,17 +364,23 @@ export function getResetZoomState(container, canvas) {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     
-    const padding = 40;
-    const scaleX = (containerWidth - padding) / canvasWidth;
-    const scaleY = (containerHeight - padding) / canvasHeight;
+    const mobile = AppState.workbenchViewportMode === 'mobile' && container.id === 'result-container';
+    const left = mobile ? MOBILE_RULER_LEFT : 0;
+    const top = mobile ? MOBILE_RULER_TOP + 48 : 0;
+    const bottom = mobile ? Math.min(152, containerHeight / 3) : 0;
+    const padding = mobile ? 18 : 40;
+    const fitWidth = containerWidth - left;
+    const fitHeight = containerHeight - top - bottom;
+    const scaleX = (fitWidth - padding) / canvasWidth;
+    const scaleY = (fitHeight - padding) / canvasHeight;
     // 确保 scale 是正数且合理
-    const fitScale = Math.max(Math.min(scaleX, scaleY, 1.0), 0.1); 
+    const fitScale = Math.max(Math.min(scaleX, scaleY, 1.0), mobile ? 0.01 : 0.1);
     
     return { 
         scale: fitScale, 
         fitScale,
-        x: (containerWidth - canvasWidth * fitScale) / 2, 
-        y: (containerHeight - canvasHeight * fitScale) / 2, 
+        x: left + (fitWidth - canvasWidth * fitScale) / 2,
+        y: top + (fitHeight - canvasHeight * fitScale) / 2,
         isDragging: false, 
         lastX: 0, 
         lastY: 0, 

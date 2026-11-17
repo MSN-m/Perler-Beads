@@ -974,6 +974,20 @@ export function moveFillSelection(e) {
     return true;
 }
 
+export function cancelFillSelection() {
+    const stroke = AppState.paintStroke || AppState.eraserStroke;
+    if (!stroke) return false;
+
+    AppState.paintStroke = null;
+    AppState.eraserStroke = null;
+    for (const [position, index] of stroke.indices.entries()) {
+        AppState.stagedPixelData[index] = stroke.prevColors[position];
+    }
+    const canvas = document.getElementById('result-canvas');
+    renderResult(canvas, AppState.stagedPixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+    return true;
+}
+
 export function endFillSelection() {
     if (AppState.eraserStroke) return endEraserStroke(document.getElementById('result-canvas'));
     const stroke = AppState.paintStroke;

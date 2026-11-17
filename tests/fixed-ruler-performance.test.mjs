@@ -4,10 +4,11 @@ import { AppState } from '../src/state.js';
 import { renderFixedRuler } from '../src/features/fixed-ruler.js';
 
 test('ruler coalesces requests, uses the latest geometry, bounds dots and preserves its backing store', () => {
-    const frames = [], dots = [];
+    const frames = [], dots = [], labels = [];
     let clears = 0, resets = 0, zoom = 0.15, viewport = 'desktop';
     const ctx = new Proxy({
         clearRect() { clears++; }, arc(x, y) { dots.push([x, y]); },
+        fillText(label, x, y) { labels.push({ label, x, y }); },
         measureText() { return { width: 22 }; }
     }, { get: (obj, key) => obj[key] ?? (() => {}) });
     const ruler = { classList: { toggle() {} }, getContext: () => ctx };
@@ -46,6 +47,17 @@ test('ruler coalesces requests, uses the latest geometry, bounds dots and preser
     assert.equal(ruler.width, 2000); assert.equal(ruler.height, 1400);
     assert.equal(resets, 4);
     viewport = 'mobile';
+    AppState.gridWidth = 20;
+    AppState.gridHeight = 15;
+    dots.length = 0;
+    labels.length = 0;
     renderFixedRuler(); frames.shift()();
-    assert.equal(clears, 3);
+    assert.equal(clears, 4);
+    assert.equal(dots.length, 0);
+    assert.ok(labels.some(label => label.label === '1' && label.x === 55 && label.y === 8));
+    assert.ok(labels.some(label => label.label === '1' && label.x === 9 && label.y === 65));
+    assert.ok(labels.every(label => Number(label.label) <= (label.y === 8 ? 20 : 15)));
+    viewport = 'tablet';
+    renderFixedRuler(); frames.shift()();
+    assert.equal(clears, 4);
 });

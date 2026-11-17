@@ -12,6 +12,7 @@ import { hidePickerColorPreview } from './features/tooltips.js';
 import { captureRecentColors, animateRecentColors } from './features/recent-color-motion.js';
 import { getColorSelectionSnapshot, resetPatternColorSelection, openPaletteToolSession, restorePaletteToolSession, setActiveEditorTool } from './editor.js';
 import { removeBackground, cleanTinyFragments, generatePatternData, generatePatternDataOriginal, generatePixelArtData, samplePixelArtGrid, applyPixelArtPreset, generateAlignedPixelArtData, generateDominantPixelArtData, detectPixelArtFeatures, mapPixelArtToBeads } from './processor.js';
+import { renderFixedRuler } from './features/fixed-ruler.js';
 import { renderResult, updateResultTransform, getResetZoomState } from './renderer.js';
 import { PALETTES } from './constants.js';
 import { calculateStats, configureEditorActions, deepClonePixels, getCurrentPalette, mirrorEditorHistory, mirrorPixelRows, resetGlobalEditorSession, resetBatchReplaceState, updateAdjustUndoButton } from './editor.js';
@@ -502,8 +503,21 @@ function getPaletteGroupKey(color) {
 
 function getPaletteColorButtonHtml(color) {
     const selected = String(AppState.highlightedColorId || '') === String(color.id);
+    const viewport = getWorkbenchViewportMode();
+    if (viewport === 'mobile') {
+        const actions = [['select', '取色', 'pointer'], ['highlight', '查看', 'eye'], ['pick', '替换', 'replace']];
+        return `<div class="mobile-palette-row" data-palette-color-id="${color.id}">
+            <span class="mobile-palette-color">
+                <span class="mobile-palette-dot" style="background:rgb(${color.r},${color.g},${color.b})"></span>
+                <strong>${color.id}</strong><span>${color.count}颗</span>
+            </span>
+            <span class="mobile-palette-actions">${actions.map(([action, label, icon]) =>
+                `<button type="button" data-palette-action="${action}" aria-label="${label} ${color.id}"><img src="assets/figma-ui/palette-${icon}.svg" alt="">${label}</button>`
+            ).join('')}</span>
+        </div>`;
+    }
     const textColor = getPaletteTextColor(color);
-    if (getWorkbenchViewportMode() === 'desktop') {
+    if (viewport === 'desktop') {
         return `<button type="button" data-palette-color-id="${color.id}" class="figma-palette-card" title="${color.id} · ${color.count}颗">
             <span class="figma-palette-color-details"><span class="figma-palette-dot" style="background:rgb(${color.r},${color.g},${color.b})"></span><span class="figma-palette-code">${color.id}</span><span class="figma-palette-count">${color.count}颗</span></span>
             <span class="figma-palette-actions"><span role="button" tabindex="0" data-palette-action="secondary" aria-label="选择颜色" class="figma-palette-icon figma-palette-pointer"></span><span role="button" tabindex="0" data-palette-action="highlight" aria-pressed="${selected}" aria-label="高亮颜色" class="figma-palette-icon figma-palette-eye ${selected ? 'is-active' : ''}"></span><span role="button" tabindex="0" data-palette-action="pick" aria-label="替换颜色" class="figma-palette-icon figma-palette-replace"></span></span>
@@ -587,6 +601,93 @@ export function toggleWorkbenchMirror() {
 }
 
 let desktopPaletteSortAscending = false;
+let mobilePaletteSortAscending = false;
+
+function mountMobilePaletteSheet(mobile) {
+    const dialog = document.getElementById('mobile-palette-dialog');
+    const used = document.getElementById('palette-panel');
+    const all = document.getElementById('all-colors-panel');
+    if (!dialog || !used || !all) return;
+    if (mobile && used.parentElement !== dialog) {
+        for (const panel of [used, all]) {
+            for (const property of ['position', 'left', 'right', 'top', 'bottom', 'transform']) panel.style.removeProperty(property);
+            dialog.append(panel);
+        }
+    } else if (!mobile && used.parentElement === dialog) {
+        if (dialog.open) dialog.close();
+        document.getElementById('workbench-stage')?.append(used);
+        dialog.after(all);
+    }
+}
+
+function syncMobilePaletteSheet(enabled) {
+    const dialog = document.getElementById('mobile-palette-dialog');
+    if (!dialog) return;
+    const open = enabled && (AppState.palettePanelOpen || AppState.allColorsPanelOpen);
+    const toggle = document.getElementById('toggle-palette-panel-btn');
+    if (enabled) toggle?.setAttribute('aria-expanded', String(open));
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+}
+
+let mobilePaletteNotice;
+let mobilePaletteNoticeTimer;
+
+function setMobilePaletteNotice(kind, colorId) {
+    clearTimeout(mobilePaletteNoticeTimer);
+    mobilePaletteNotice = { kind, colorId: String(colorId), patternId: AppState.colorSelectionPatternId };
+    if (kind === 'select') {
+        mobilePaletteNoticeTimer = setTimeout(() => {
+            mobilePaletteNotice = null;
+            syncMobilePaletteHint(AppState.workbenchViewportMode === 'mobile' && AppState.currentStep === 3);
+        }, 2400);
+    }
+}
+
+function isPaletteReplacementPending() {
+    return AppState.batchReplace?.active && AppState.batchReplace.origin === 'palette';
+}
+
+function syncMobilePaletteHint(enabled) {
+    const hint = document.getElementById('mobile-palette-hint');
+    if (!hint) return;
+    const notice = mobilePaletteNotice;
+    const isCurrent = notice && notice.patternId === AppState.colorSelectionPatternId;
+    const kind = enabled && (isPaletteReplacementPending() ? 'replace' : isCurrent ? notice.kind : null);
+    const colorId = kind === 'replace' ? AppState.batchReplace.sourceColorId : notice?.colorId;
+    const visible = Boolean(kind && (kind !== 'highlight' || AppState.highlightedColorId === colorId)
+        && (kind !== 'select' || (AppState.editor.activeTool === 'brush' && AppState.paintColor?.id === colorId)));
+    hint.hidden = !visible;
+    if (!visible) return;
+    const messages = { select: '已选中', highlight: '已选中所有', replace: '点击颜色替换' };
+    const message = document.getElementById('mobile-palette-message');
+    const text = messages[kind] + colorId;
+    if (message.textContent !== text) message.textContent = text;
+    const dismiss = document.getElementById('mobile-palette-hint-dismiss');
+    dismiss.hidden = kind === 'select';
+    dismiss.setAttribute('aria-label', kind === 'replace' ? '取消替换' : '取消高亮');
+}
+
+export function dismissMobilePaletteHint() {
+    if (getWorkbenchViewportMode() !== 'mobile') return;
+    const replacing = isPaletteReplacementPending();
+    const viewing = mobilePaletteNotice?.kind === 'highlight'
+        && mobilePaletteNotice.patternId === AppState.colorSelectionPatternId
+        && AppState.highlightedColorId === mobilePaletteNotice.colorId;
+    clearTimeout(mobilePaletteNoticeTimer);
+    mobilePaletteNotice = null;
+    if (replacing || viewing) {
+        AppState.highlightedColorId = null;
+        if (replacing) {
+            resetBatchReplaceState();
+            restorePaletteToolSession();
+        }
+        const canvas = document.getElementById('result-canvas');
+        if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, null);
+    }
+    syncMobilePaletteHint(true);
+}
+
 
 function positionDesktopPalettePanel(panel) {
     const toolbar = document.getElementById('workbench-figma-main-toolbar');
@@ -606,12 +707,16 @@ function positionDesktopPalettePanel(panel) {
     panel.style.transform = AppState.palettePanelPosition ? 'none' : 'translateX(-50%)';
 }
 
-function bindDesktopPaletteTabs(panel) {
+function bindPaletteTabs(panel) {
     panel.querySelectorAll('[data-palette-view]').forEach((button) => {
         button.onclick = () => {
             AppState.palettePanelOpen = button.dataset.paletteView === 'used';
             AppState.allColorsPanelOpen = !AppState.palettePanelOpen;
             updateWorkbenchUI();
+            if (getWorkbenchViewportMode() === 'mobile') {
+                const panelId = AppState.palettePanelOpen ? 'palette-panel' : 'all-colors-panel';
+                document.getElementById(panelId)?.querySelector('[aria-selected="true"]')?.focus({ preventScroll: true });
+            }
         };
     });
 }
@@ -632,10 +737,11 @@ function renderPalettePanel() {
     toggleBtn?.classList.toggle('text-primary', shouldShow);
     toggleBtn?.setAttribute('aria-expanded', String(shouldShow));
     if (!shouldShow) return;
-    applyPalettePanelPosition(panel);
-    bindDesktopPaletteTabs(panel);
+    const mobile = getWorkbenchViewportMode() === 'mobile';
+    if (!mobile) applyPalettePanelPosition(panel);
+    bindPaletteTabs(panel);
 
-    const query = (AppState.palettePanelQuery || '').trim().toLowerCase();
+    const query = mobile ? '' : (AppState.palettePanelQuery || '').trim().toLowerCase();
     const source = AppState.stagedPixelData || AppState.pixelData;
     const usedColors = new Map();
     (Array.isArray(source) ? source : []).forEach((pixel) => {
@@ -645,7 +751,8 @@ function renderPalettePanel() {
         else usedColors.set(String(pixel.id), { ...pixel, count: 1 });
     });
     const desktop = getWorkbenchViewportMode() === 'desktop';
-    const palette = [...usedColors.values()].sort((a, b) => (desktop && desktopPaletteSortAscending ? a.count - b.count : b.count - a.count) || String(a.id).localeCompare(String(b.id)));
+    const ascending = mobile ? mobilePaletteSortAscending : desktop && desktopPaletteSortAscending;
+    const palette = [...usedColors.values()].sort((a, b) => (ascending ? a.count - b.count : b.count - a.count) || String(a.id).localeCompare(String(b.id)));
     const filtered = query
         ? palette.filter((color) => String(color.id).toLowerCase().includes(query))
         : palette;
@@ -654,9 +761,13 @@ function renderPalettePanel() {
     summary.textContent = `${palette.length}色${desktop ? '·' : ' · '}${totalUsed}颗`;
     const sortButton = document.getElementById('figma-palette-sort');
     if (sortButton) {
-        sortButton.querySelector('strong').textContent = desktopPaletteSortAscending ? '少到多' : '多到少';
-        sortButton.classList.toggle('is-ascending', desktopPaletteSortAscending);
-        sortButton.onclick = () => { desktopPaletteSortAscending = !desktopPaletteSortAscending; renderPalettePanel(); };
+        sortButton.querySelector('strong').textContent = ascending ? '少到多' : '多到少';
+        sortButton.classList.toggle('is-ascending', ascending);
+        sortButton.onclick = () => {
+            if (mobile) mobilePaletteSortAscending = !mobilePaletteSortAscending;
+            else desktopPaletteSortAscending = !desktopPaletteSortAscending;
+            renderPalettePanel();
+        };
     }
     if (searchInput && searchInput.value !== AppState.palettePanelQuery) {
         searchInput.value = AppState.palettePanelQuery;
@@ -751,7 +862,7 @@ function renderAllColorsPanel() {
         searchInput.value = AppState.allColorsPanelQuery;
     }
     const desktop = getWorkbenchViewportMode() === 'desktop';
-    bindDesktopPaletteTabs(panel);
+    bindPaletteTabs(panel);
     if (searchInput) searchInput.placeholder = desktop ? '输入色号搜索' : '搜索色号，例如 C29';
     if (desktop && filtered.length) {
         const groups = new Map();
@@ -764,10 +875,13 @@ function renderAllColorsPanel() {
     } else {
         grid.innerHTML = filtered.length ? filtered.map(getAllColorsButtonHtml).join('') : '<p class="col-span-full py-8 text-center text-xs text-gray-400">未找到匹配颜色</p>';
     }
-    positionAllColorsPanel(panel, toggleBtn);
-    requestAnimationFrame(() => {
-        if (AppState.allColorsPanelOpen) positionAllColorsPanel(panel, toggleBtn);
-    });
+    const mobile = getWorkbenchViewportMode() === 'mobile';
+    if (!mobile) {
+        positionAllColorsPanel(panel, toggleBtn);
+        requestAnimationFrame(() => {
+            if (AppState.allColorsPanelOpen && getWorkbenchViewportMode() !== 'mobile') positionAllColorsPanel(panel, toggleBtn);
+        });
+    }
 
     let suppressAllColorsClickUntil = 0;
     grid.querySelectorAll('button[data-all-color-id]').forEach((button) => {
@@ -776,7 +890,7 @@ function renderAllColorsPanel() {
             event.stopPropagation();
             handleAllColorsSelect(button.dataset.allColorId);
         };
-        button.onpointerdown = (event) => {
+        button.onpointerdown = mobile ? null : (event) => {
             suppressAllColorsClickUntil = Date.now() + 600;
             selectColor(event);
         };
@@ -837,6 +951,7 @@ export function handleAllColorsSelect(colorId) {
     AppState.highlightedColorId = null;
     resetBatchReplaceState();
     _selectPaletteFillColor(color);
+    if (getWorkbenchViewportMode() === 'mobile') setMobilePaletteNotice('select', color.id);
     updateWorkbenchUI();
     return true;
 }
@@ -847,7 +962,9 @@ export function updatePalettePanelQuery(value) {
 }
 
 export function handlePaletteColorSelect(colorId) {
-    if (getWorkbenchViewportMode() === 'desktop') return handleAllColorsSelect(colorId);
+    const viewport = getWorkbenchViewportMode();
+    if (viewport === 'desktop') return handleAllColorsSelect(colorId);
+    if (viewport === 'mobile') return false;
     const color = getCurrentPalette().find((item) => String(item.id) === String(colorId));
     if (!color) return false;
     AppState.highlightedColorId = String(color.id);
@@ -858,7 +975,23 @@ export function handlePaletteColorSelect(colorId) {
 }
 
 export function handlePaletteAction(colorId, action) {
-    if (getWorkbenchViewportMode() === 'desktop') {
+    const viewport = getWorkbenchViewportMode();
+    const mobile = viewport === 'mobile';
+    if (mobile && action === 'select') return handleAllColorsSelect(colorId);
+    if (mobile && action === 'highlight') {
+        const color = getCurrentPalette().find(item => String(item.id) === String(colorId));
+        if (!color) return false;
+        dismissMobilePaletteHint();
+        AppState.highlightedColorId = String(color.id);
+        AppState.palettePanelOpen = false;
+        AppState.allColorsPanelOpen = false;
+        setMobilePaletteNotice('highlight', color.id);
+        const canvas = document.getElementById('result-canvas');
+        if (canvas) renderResult(canvas, AppState.stagedPixelData || AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
+        updateWorkbenchUI();
+        return true;
+    }
+    if (viewport === 'desktop') {
         if (action === 'secondary') return handleAllColorsSelect(colorId);
         if (action === 'highlight') {
             AppState.highlightedColorId = AppState.highlightedColorId === String(colorId) ? null : String(colorId);
@@ -871,6 +1004,11 @@ export function handlePaletteAction(colorId, action) {
     if (action !== 'pick') return false;
     const color = getCurrentPalette().find((item) => String(item.id) === String(colorId));
     if (!color) return false;
+    if (mobile) {
+        if (!openPaletteToolSession()) return false;
+        clearTimeout(mobilePaletteNoticeTimer);
+        mobilePaletteNotice = null;
+    }
     AppState.highlightedColorId = String(color.id);
     AppState.palettePanelOpen = false;
     AppState.allColorsPanelOpen = false;
@@ -3236,6 +3374,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
     const isMobile = viewportMode === 'mobile';
     const isTablet = viewportMode === 'tablet';
     if (AppState.workbenchViewportMode !== viewportMode) {
+        if (AppState.workbenchViewportMode === 'mobile') AppState.allColorsPanelOpen = false;
         AppState.workbenchViewportMode = viewportMode;
         AppState.draftDrawerOpen = false;
         AppState.workbenchTabletPanel = null;
@@ -3278,7 +3417,7 @@ function applyWorkbenchLayoutMode(hasPattern) {
         if (topActions) {
             topActions.style.display = 'flex';
             topActions.style.gridColumn = '1 / -1';
-            topActions.style.margin = isMobile ? '-12px -12px 0' : (isTablet ? '-16px -16px 0' : '0');
+            topActions.style.margin = isTablet ? '-16px -16px 0' : '0';
             topActions.style.borderRadius = '0';
             topActions.style.position = isMobile || isTablet ? 'relative' : 'fixed';
             topActions.style.top = isMobile || isTablet ? '' : '0';
@@ -3480,7 +3619,7 @@ export function updateWorkbenchUI() {
     setHidden('result-canvas', !hasPattern);
     setHidden('workbench-single-stage', hasPattern);
     setHidden('workbench-edit-stage', !hasPattern);
-    setHidden('toggle-compare-preview-btn', !hasPattern);
+    setHidden('toggle-compare-preview-btn', !hasPattern || (isMobile && !hasImage));
     setHidden('compare-source-pane', !compareVisible);
     // The tool palette stays available while editing; only the active tool changes.
     const desktopToolbar = getWorkbenchViewportMode() === 'desktop';
@@ -3508,6 +3647,17 @@ export function updateWorkbenchUI() {
     setHidden('workbench-side-panel', hasPattern && !tabletPanel);
     setHidden('workbench-top-actions', !hasPattern);
     setHidden('workbench-top-edit-actions', !hasPattern);
+    const editActions = document.getElementById('workbench-top-edit-actions');
+    const topActions = document.getElementById('workbench-top-actions');
+    const mobileViewControls = document.getElementById('mobile-editor-view-controls');
+    if (editActions && mobileViewControls && topActions) {
+        if (hasPattern && isMobile) {
+            if (editActions.parentElement !== mobileViewControls) mobileViewControls.append(editActions);
+        } else if (editActions.parentElement !== topActions) {
+            topActions.insertBefore(editActions, document.getElementById('quality-check-btn'));
+        }
+    }
+    setHidden('mobile-editor-view-controls', !hasPattern || !isMobile);
     const sidePanel = document.getElementById('workbench-side-panel');
     if (sidePanel && hasPattern) {
         sidePanel.style.display = tabletPanel ? 'block' : 'none';
@@ -3562,8 +3712,12 @@ export function updateWorkbenchUI() {
     else AppState.qualityIssues = [];
     setText('quality-check-label', '排查');
     document.getElementById('quality-check-btn')?.setAttribute('aria-pressed', String(AppState.qualityOverlayVisible));
+    mountMobilePaletteSheet(isMobile);
     renderPalettePanel();
     renderAllColorsPanel();
+    const mobileEditor = isMobile && hasPattern && AppState.currentStep === 3;
+    syncMobilePaletteSheet(mobileEditor);
+    syncMobilePaletteHint(mobileEditor);
     syncRecentColorChips();
     const generateBtn = document.getElementById('generate-pattern-btn');
     if (generateBtn) {
@@ -3652,6 +3806,19 @@ export function updateWorkbenchUI() {
         button.setAttribute('aria-pressed', String(selected));
     });
     syncEditorToolVisualState();
+    const mobileToolbar = document.getElementById('workbench-edit-toolbar');
+    if (mobileToolbar && isMobile) {
+        const paletteOpen = AppState.palettePanelOpen || AppState.allColorsPanelOpen;
+        const activeGroup = paletteOpen ? 'palette'
+            : ['brush', 'bucket', 'edge'].includes(activeTool) ? 'brush'
+            : ['eraser', 'area-erase', 'color-eraser'].includes(activeTool) ? 'eraser' : activeTool;
+        mobileToolbar.dataset.activeGroup = activeGroup;
+        for (const button of mobileToolbar.querySelectorAll('[data-tool-menu] [data-tool-action]')) {
+            const selected = button.dataset.toolAction === activeTool
+                || (button.dataset.toolAction === 'color-erase' && activeTool === 'color-eraser');
+            button.setAttribute('aria-pressed', String(selected));
+        }
+    }
     const compareSourceFrame = document.getElementById('compare-source-frame');
     const compareSourcePreview = document.getElementById('compare-source-preview');
     const shouldUseOriginalPickerCursor = AppState.fillMode && compareVisible;
@@ -3669,7 +3836,11 @@ export function updateWorkbenchUI() {
     }
     const resultPane = document.getElementById('result-pane');
     if (resultPane) {
-        resultPane.style.left = compareVisible ? '34%' : '0';
+        const paneLeft = compareVisible ? '34%' : '0%';
+        if (resultPane.style.left !== paneLeft) {
+            resultPane.style.left = paneLeft;
+            renderFixedRuler();
+        }
     }
     if (!mobileUploadSetup) renderWorkbenchCropOverlay();
     if (hasImage && !hasPattern) {
@@ -4307,6 +4478,7 @@ function initEditorView() {
     renderResult(resultCanvas, AppState.pixelData, AppState.gridWidth, AppState.gridHeight, AppState.highlightedColorId);
     calculateStats();
     updateWorkbenchComparePreview(true);
+    if (isWorkbenchMobileLayout() && AppState.editMode === 'none') _toggleFillMode('brush');
     
     // 使用 requestAnimationFrame 等待布局完成，再计算适配缩放
     requestAnimationFrame(() => {

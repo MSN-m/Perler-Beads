@@ -10,25 +10,25 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261116-preview-pinch">
+    <link rel="stylesheet" href="css/style.css?v=20261117-mobile-toolbar-icons">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
         "imports": {
             "./src/state.js": "./src/state.js?v=20261116-mobile-preview-page",
             "./src/editor.js": "./src/editor.js?v=20261103-quality-review-1",
-            "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261008-ruler-performance-1",
-            "./src/renderer.js": "./src/renderer.js?v=20261103-quality-review-1",
-            "./src/ui.js": "./src/ui.js?v=20261116-preview-pinch",
+            "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261117-mobile-palette-2",
+            "./src/renderer.js": "./src/renderer.js?v=20261117-mobile-palette-2",
+            "./src/ui.js": "./src/ui.js?v=20261117-mobile-toolbar-icons",
             "./src/processor.js": "./src/processor.js?v=20261116-preview-first",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
             "./src/features/quality.js": "./src/features/quality.js?v=20261104-quality-nonmodal-1",
             "./src/features/quality-analysis.js": "./src/features/quality-analysis.js?v=20261104-quality-tabs-1",
             "./src/features/edge.js": "./src/features/edge.js?v=20261008-ruler-performance-1",
-            "./src/features/adjust.js": "./src/features/adjust.js?v=20261008-ruler-performance-1",
+            "./src/features/adjust.js": "./src/features/adjust.js?v=20261117-mobile-palette-2",
             "./src/features/delete.js": "./src/features/delete.js?v=20261008-ruler-performance-1",
-            "./src/features/zoom.js": "./src/features/zoom.js?v=20261103-palette-pan-1",
-            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261008-history-1",
+            "./src/features/zoom.js": "./src/features/zoom.js?v=20261117-mobile-palette-2",
+            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261117-history-limit-3",
             "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261008-ruler-performance-1",
             "./src/exporter.js": "./src/exporter.js?v=20261008-export-filenames-1",
             "./src/features/history-modal.js": "./src/features/history-modal.js?v=20261008-history-2",
@@ -37,7 +37,7 @@
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261116-mard-only"></script>
+    <script type="module" src="src/main.js?v=20261117-mobile-palette-2"></script>
 </head>
 
 <body data-layout="workbench"
@@ -211,6 +211,18 @@
                                 </svg>
                             </button>
                         </div>
+                        <div id="mobile-palette-hint" hidden>
+                            <span id="mobile-palette-message" role="status"></span>
+                            <button id="mobile-palette-hint-dismiss" type="button" aria-label="关闭提示" hidden>
+                                <img src="assets/figma-ui/palette-close.svg" alt="">
+                            </button>
+                        </div>
+                        <div id="mobile-editor-view-controls" class="hidden">
+                            <div class="mobile-editor-zoom" role="group" aria-label="视图缩放">
+                                <output id="mobile-editor-zoom-ratio" aria-label="当前缩放比例">100%</output>
+                                <button id="mobile-editor-reset-view" type="button" aria-label="重置视图">重置</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -251,9 +263,9 @@
 
                 <div id="workbench-figma-brush-toolbar" class="hidden" aria-label="画笔工具栏">
                     <div class="figma-brush-tools" role="group" aria-label="画笔子工具">
-                        <button type="button" class="figma-brush-tool-button" data-tool-action="brush" aria-label="画笔"><span class="figma-brush-icon" aria-hidden="true"></span><span>画笔</span></button>
-                        <button type="button" class="figma-brush-tool-button" data-tool-action="bucket" aria-label="油漆"><span class="figma-brush-icon figma-brush-bucket-icon" aria-hidden="true"></span><span>油漆</span></button>
-                        <button type="button" class="figma-brush-tool-button" data-tool-action="edge" aria-label="边框"><span class="figma-brush-icon" aria-hidden="true"></span><span>边框</span></button>
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="brush" data-mobile-label="画笔" aria-label="画笔"><span class="figma-brush-icon" aria-hidden="true"></span><span>画笔</span></button>
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="bucket" data-mobile-label="油漆" aria-label="油漆"><span class="figma-brush-icon figma-brush-bucket-icon" aria-hidden="true"></span><span>油漆</span></button>
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="edge" data-mobile-label="边框" aria-label="边框"><span class="figma-brush-icon" aria-hidden="true"></span><span>边框</span></button>
                     </div>
                     <div class="figma-brush-recent"><span class="figma-brush-recent-label">最近：</span><div class="figma-brush-color-list" aria-label="最近使用颜色">
                         <button type="button" class="figma-brush-color is-empty" data-recent-color="0" disabled>--</button>
@@ -266,9 +278,9 @@
 
                 <div id="workbench-figma-eraser-toolbar" class="hidden" aria-label="橡皮工具栏">
                     <div class="figma-brush-tools figma-eraser-tools" role="group" aria-label="橡皮子工具">
-                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="eraser" aria-label="橡皮工具"><span class="figma-eraser-icon figma-eraser-basic-icon" aria-hidden="true"><span class="figma-eraser-outline"></span><span class="figma-eraser-seam"></span></span><span>橡皮工具</span></button>
-                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="area-erase" aria-label="按区域擦除"><span class="figma-eraser-icon figma-eraser-region-icon" aria-hidden="true"></span><span>按区域擦除</span></button>
-                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="color-erase" aria-label="按颜色擦除"><span class="figma-eraser-icon figma-eraser-color-icon" aria-hidden="true"></span><span>按颜色擦除</span></button>
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="eraser" data-mobile-label="橡皮" aria-label="橡皮工具"><span class="figma-eraser-icon figma-eraser-basic-icon" aria-hidden="true"><span class="figma-eraser-outline"></span><span class="figma-eraser-seam"></span></span><span>橡皮工具</span></button>
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="area-erase" data-mobile-label="区域擦除" aria-label="按区域擦除"><span class="figma-eraser-icon figma-eraser-region-icon" aria-hidden="true"></span><span>按区域擦除</span></button>
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="color-erase" data-mobile-label="按颜色擦除" aria-label="按颜色擦除"><span class="figma-eraser-icon figma-eraser-color-icon" aria-hidden="true"></span><span>按颜色擦除</span></button>
                     </div>
                 </div>
 
@@ -291,17 +303,17 @@
 
                 <div id="workbench-edit-toolbar" class="hidden workbench-glass-toolbar absolute left-1/2 bottom-6 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-2.5">
                     <div class="workbench-tool-group">
-                        <button id="toggle-fill-btn" class="workbench-tool-button" aria-label="画笔工具" title="画笔：沿网格轨迹填色，点击箭头打开更多工具">
+                        <button id="toggle-fill-btn" data-mobile-label="画笔" class="workbench-tool-button" aria-label="画笔工具" title="画笔：沿网格轨迹填色，点击箭头打开更多工具">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4 5 5M13 6l5 5-8.5 8.5a2.12 2.12 0 0 1-3 0l-1-1a2.12 2.12 0 0 1 0-3L13 6Z"/><path d="m5 19-1 1M14 5l2-2 5 5-2 2"/></svg>
                             <svg class="workbench-tool-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>
                         </button>
                         <div class="workbench-tool-menu" data-tool-menu="brush">
-                            <button type="button" data-tool-action="brush" title="沿网格轨迹填色">画笔工具</button>
-                            <button type="button" id="toggle-fill-bucket-btn" data-tool-action="bucket" title="填充相连区域"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.66667 4.66634L12 1.33301M3.33874 8H14.6394M2.66656 11C2.56105 11.492 2.29199 11.9338 1.90323 12.2533C1.52323 12.5633 1.33323 12.93 1.33323 13.3167C1.33102 13.4932 1.36388 13.6683 1.4299 13.832C1.49592 13.9957 1.59378 14.1447 1.71781 14.2703C1.84184 14.3959 1.98958 14.4956 2.15244 14.5636C2.3153 14.6316 2.49006 14.6667 2.66656 14.6667C2.84307 14.6667 3.01782 14.6316 3.18069 14.5636C3.34355 14.4956 3.49128 14.3959 3.61531 14.2703C3.73935 14.1447 3.83721 13.9957 3.90323 13.832C3.96924 13.6683 4.0021 13.4932 3.9999 13.3167C3.9999 12.9333 3.81323 12.56 3.4299 12.2533C3.03951 11.9352 2.77006 11.4928 2.66656 11ZM10.3334 3.00026L8.90138 1.56826C8.75073 1.41763 8.54642 1.33301 8.33338 1.33301C8.12034 1.33301 7.91603 1.41763 7.76538 1.56826L2.90138 6.43226C2.75075 6.58291 2.66613 6.78722 2.66613 7.00026C2.66613 7.21329 2.75075 7.41761 2.90138 7.56826L7.96271 12.6296C8.41466 13.0815 9.0276 13.3353 9.66671 13.3353C10.3058 13.3353 10.9188 13.0815 11.3707 12.6296L13.9627 10.0376C14.4146 9.58564 14.6685 8.9727 14.6685 8.33359C14.6685 7.69448 14.4146 7.08154 13.9627 6.62959L12.22 4.88692"/></svg>油漆桶</button>
-                            <button type="button" id="toggle-edge-adjust-menu-btn" data-tool-action="edge" title="给边缘区域统一上色"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878"/><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878" stroke="black" stroke-opacity="0.2"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714" stroke="black" stroke-opacity="0.2"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538" stroke="black" stroke-opacity="0.2"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688" stroke="black" stroke-opacity="0.2"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031" stroke="black" stroke-opacity="0.2"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354" stroke="black" stroke-opacity="0.2"/></svg>边框上色</button>
+                            <button type="button" data-tool-action="brush" data-mobile-label="画笔" title="沿网格轨迹填色">画笔工具</button>
+                            <button type="button" id="toggle-fill-bucket-btn" data-tool-action="bucket" data-mobile-label="油漆" title="填充相连区域"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.66667 4.66634L12 1.33301M3.33874 8H14.6394M2.66656 11C2.56105 11.492 2.29199 11.9338 1.90323 12.2533C1.52323 12.5633 1.33323 12.93 1.33323 13.3167C1.33102 13.4932 1.36388 13.6683 1.4299 13.832C1.49592 13.9957 1.59378 14.1447 1.71781 14.2703C1.84184 14.3959 1.98958 14.4956 2.15244 14.5636C2.3153 14.6316 2.49006 14.6667 2.66656 14.6667C2.84307 14.6667 3.01782 14.6316 3.18069 14.5636C3.34355 14.4956 3.49128 14.3959 3.61531 14.2703C3.73935 14.1447 3.83721 13.9957 3.90323 13.832C3.96924 13.6683 4.0021 13.4932 3.9999 13.3167C3.9999 12.9333 3.81323 12.56 3.4299 12.2533C3.03951 11.9352 2.77006 11.4928 2.66656 11ZM10.3334 3.00026L8.90138 1.56826C8.75073 1.41763 8.54642 1.33301 8.33338 1.33301C8.12034 1.33301 7.91603 1.41763 7.76538 1.56826L2.90138 6.43226C2.75075 6.58291 2.66613 6.78722 2.66613 7.00026C2.66613 7.21329 2.75075 7.41761 2.90138 7.56826L7.96271 12.6296C8.41466 13.0815 9.0276 13.3353 9.66671 13.3353C10.3058 13.3353 10.9188 13.0815 11.3707 12.6296L13.9627 10.0376C14.4146 9.58564 14.6685 8.9727 14.6685 8.33359C14.6685 7.69448 14.4146 7.08154 13.9627 6.62959L12.22 4.88692"/></svg>油漆桶</button>
+                            <button type="button" id="toggle-edge-adjust-menu-btn" data-tool-action="edge" data-mobile-label="边框" title="给边缘区域统一上色"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878"/><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878" stroke="black" stroke-opacity="0.2"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714" stroke="black" stroke-opacity="0.2"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538" stroke="black" stroke-opacity="0.2"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688" stroke="black" stroke-opacity="0.2"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031" stroke="black" stroke-opacity="0.2"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354" stroke="black" stroke-opacity="0.2"/></svg>边框上色</button>
                         </div>
                     </div>
-                    <button id="eyedropper-tool-btn" class="workbench-tool-button" aria-label="吸管" title="吸管"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 6 2.3907 11.6093a1.3333 1.3333 0 0 0-.3907.9427v.896a1.3333 1.3333 0 0 0-.3907.9427h.896a1.3333 1.3333 0 0 0 .9427-.3907L10 8M12 6l.2667.2667a1.3333 1.3333 0 0 1 0 1.8853 1.3333 1.3333 0 0 1-1.8853 0L7.7333 5.7336a1.3333 1.3333 0 0 1 0-1.8853 1.3333 1.3333 0 0 1 1.8853 0L10 4l2.2667-2.2667a1.3333 1.3333 0 0 1 1.8853 0 1.3333 1.3333 0 0 1 0 1.8853zM1.3333 14.6667l.276-.276"/></svg></button>
+                    <button id="eyedropper-tool-btn" data-mobile-label="吸管" class="workbench-tool-button" aria-label="吸管" title="吸管"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 6 2.3907 11.6093a1.3333 1.3333 0 0 0-.3907.9427v.896a1.3333 1.3333 0 0 0-.3907.9427h.896a1.3333 1.3333 0 0 0 .9427-.3907L10 8M12 6l.2667.2667a1.3333 1.3333 0 0 1 0 1.8853 1.3333 1.3333 0 0 1-1.8853 0L7.7333 5.7336a1.3333 1.3333 0 0 1 0-1.8853 1.3333 1.3333 0 0 1 1.8853 0L10 4l2.2667-2.2667a1.3333 1.3333 0 0 1 1.8853 0 1.3333 1.3333 0 0 1 0 1.8853zM1.3333 14.6667l.276-.276"/></svg></button>
                     <div id="workbench-recent-colors" class="workbench-recent-colors hidden" aria-label="最近使用颜色" aria-hidden="true">
                         <button type="button" class="workbench-color-chip is-empty" data-recent-color="0" title="当前颜色"></button>
                         <button type="button" class="workbench-color-chip is-empty" data-recent-color="1" title="最近使用颜色"></button>
@@ -311,17 +323,17 @@
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
                     </button>
                     <div class="workbench-tool-group">
-                        <button id="toggle-delete-btn" class="workbench-tool-button" aria-label="橡皮工具" title="橡皮：逐格擦除，点击箭头打开更多擦除工具">
+                        <button id="toggle-delete-btn" data-mobile-label="橡皮" class="workbench-tool-button" aria-label="橡皮工具" title="橡皮：逐格擦除，点击箭头打开更多擦除工具">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 16 8.5-8.5a2.12 2.12 0 0 1 3 0l1 1a2.12 2.12 0 0 1 0 3L11 20H6l-3-3 4-4Z"/><path d="m6 20 5-5"/></svg>
                             <svg class="workbench-tool-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>
                         </button>
                         <div class="workbench-tool-menu" data-tool-menu="eraser">
-                            <button type="button" data-tool-action="eraser" title="逐格擦除色块">橡皮工具</button>
-                            <button type="button" id="toggle-clear-base-menu-btn" data-tool-action="area-erase" title="框选区域并擦除"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6667 14.6667L10 12M12.6667 9.33301C12.8436 9.33301 13.0131 9.26277 13.1382 9.13775C13.2632 9.01272 13.3334 8.84315 13.3334 8.66634V7.99967C13.3334 7.64605 13.1929 7.30691 12.9429 7.05687C12.6928 6.80682 12.3537 6.66634 12.0001 6.66634H10.0001C9.82327 6.66634 9.6537 6.5961 9.52868 6.47108C9.40365 6.34605 9.33341 6.17649 9.33341 5.99967V2.66634C9.33341 2.31272 9.19294 1.97358 8.94289 1.72353C8.69284 1.47348 8.3537 1.33301 8.00008 1.33301C7.64646 1.33301 7.30732 1.47348 7.05727 1.72353C6.80722 1.97358 6.66675 2.31272 6.66675 2.66634V5.99967C6.66675 6.17649 6.59651 6.34605 6.47149 6.47108C6.34646 6.5961 6.17689 6.66634 6.00008 6.66634H4.00008C3.64646 6.66634 3.30732 6.80682 3.05727 7.05687C2.80722 7.30691 2.66675 7.64605 2.66675 7.99967V8.66634C2.66675 8.84315 2.73699 9.01272 2.86201 9.13775C2.98703 9.26277 3.1566 9.33301 3.33341 9.33301M12.6668 9.33301H3.33344L2.0181 13.8443C1.99462 13.9424 1.99367 14.0444 2.01531 14.1429C2.03696 14.2413 2.08064 14.3335 2.14308 14.4127C2.20552 14.4918 2.28508 14.5557 2.37579 14.5997C2.46649 14.6436 2.56598 14.6664 2.66677 14.6663H13.3334C13.4342 14.6664 13.5337 14.6436 13.6244 14.5997C13.7151 14.5557 13.7947 14.4918 13.8571 14.4127C13.9196 14.3335 13.9633 14.2413 13.9849 14.1429C14.0065 14.0444 14.0056 13.9424 13.9821 13.8443L12.6668 9.33301ZM5.33325 14.6667L5.99992 12"/></svg>区域擦除</button>
-                            <button type="button" id="toggle-delete-color-menu-btn" data-tool-action="color-erase" title="点击一种颜色并擦除全部同色块">按颜色擦除</button>
+                            <button type="button" data-tool-action="eraser" data-mobile-label="橡皮" title="逐格擦除色块">橡皮工具</button>
+                            <button type="button" id="toggle-clear-base-menu-btn" data-tool-action="area-erase" data-mobile-label="区域擦除" title="框选区域并擦除"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6667 14.6667L10 12M12.6667 9.33301C12.8436 9.33301 13.0131 9.26277 13.1382 9.13775C13.2632 9.01272 13.3334 8.84315 13.3334 8.66634V7.99967C13.3334 7.64605 13.1929 7.30691 12.9429 7.05687C12.6928 6.80682 12.3537 6.66634 12.0001 6.66634H10.0001C9.82327 6.66634 9.6537 6.5961 9.52868 6.47108C9.40365 6.34605 9.33341 6.17649 9.33341 5.99967V2.66634C9.33341 2.31272 9.19294 1.97358 8.94289 1.72353C8.69284 1.47348 8.3537 1.33301 8.00008 1.33301C7.64646 1.33301 7.30732 1.47348 7.05727 1.72353C6.80722 1.97358 6.66675 2.31272 6.66675 2.66634V5.99967C6.66675 6.17649 6.59651 6.34605 6.47149 6.47108C6.34646 6.5961 6.17689 6.66634 6.00008 6.66634H4.00008C3.64646 6.66634 3.30732 6.80682 3.05727 7.05687C2.80722 7.30691 2.66675 7.64605 2.66675 7.99967V8.66634C2.66675 8.84315 2.73699 9.01272 2.86201 9.13775C2.98703 9.26277 3.1566 9.33301 3.33341 9.33301M12.6668 9.33301H3.33344L2.0181 13.8443C1.99462 13.9424 1.99367 14.0444 2.01531 14.1429C2.03696 14.2413 2.08064 14.3335 2.14308 14.4127C2.20552 14.4918 2.28508 14.5557 2.37579 14.5997C2.46649 14.6436 2.56598 14.6664 2.66677 14.6663H13.3334C13.4342 14.6664 13.5337 14.6436 13.6244 14.5997C13.7151 14.5557 13.7947 14.4918 13.8571 14.4127C13.9196 14.3335 13.9633 14.2413 13.9849 14.1429C14.0065 14.0444 14.0056 13.9424 13.9821 13.8443L12.6668 9.33301ZM5.33325 14.6667L5.99992 12"/></svg>区域擦除</button>
+                            <button type="button" id="toggle-delete-color-menu-btn" data-tool-action="color-erase" data-mobile-label="按颜色擦除" title="点击一种颜色并擦除全部同色块">按颜色擦除</button>
                         </div>
                     </div>
-                    <button id="toggle-palette-panel-btn" class="workbench-tool-button" aria-label="颜色清单" title="颜色清单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.3333 11.3333a2.6667 2.6667 0 1 1-5.3333 0V3.3333A1.3333 1.3333 0 0 1 3.3333 2H6a1.3333 1.3333 0 0 1 1.3333 1.3333zM11.1334 8.667h1.5333A1.3333 1.3333 0 0 1 14 10v2.6667A1.3333 1.3333 0 0 1 12.6667 14H4.6667M4.6667 11.333h.0067M7.3334 5.333l1.5333-1.5333a2.6667 2.6667 0 0 1 3.5333 0l1.264 1.264a2.6667 2.6667 0 0 1 .0173 3.7533L6.6001 13.2"/></svg></button>
+                    <button id="toggle-palette-panel-btn" data-mobile-label="色板" class="workbench-tool-button" aria-label="颜色清单" title="颜色清单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.3333 11.3333a2.6667 2.6667 0 1 1-5.3333 0V3.3333A1.3333 1.3333 0 0 1 3.3333 2H6a1.3333 1.3333 0 0 1 1.3333 1.3333zM11.1334 8.667h1.5333A1.3333 1.3333 0 0 1 14 10v2.6667A1.3333 1.3333 0 0 1 12.6667 14H4.6667M4.6667 11.333h.0067M7.3334 5.333l1.5333-1.5333a2.6667 2.6667 0 0 1 3.5333 0l1.264 1.264a2.6667 2.6667 0 0 1 .0173 3.7533L6.6001 13.2"/></svg></button>
                     <div class="workbench-hidden-actions" aria-hidden="true">
                         <button id="toggle-clear-base-btn">移除底色</button>
                         <button id="toggle-edge-adjust-btn">边缘调整</button>
@@ -346,7 +358,7 @@
                             <h3 class="text-sm font-bold text-gray-900">颜色清单</h3>
                             <p id="palette-panel-summary" class="text-xs text-gray-400 whitespace-nowrap">12色 · 3214颗</p>
                             <button id="figma-palette-sort" type="button"><span>排序：</span><strong>多到少</strong><img src="assets/figma-ui/palette-sort.svg" alt=""></button>
-                            <button id="close-palette-panel-btn" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
+                            <button id="close-palette-panel-btn" aria-label="关闭色板" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
                         </div>
                         <input id="palette-search-input" type="search" placeholder="搜索已用色号，例如 C29"
                             class="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
@@ -852,6 +864,8 @@
         </div>
     </section>
 
+    <dialog id="mobile-palette-dialog" aria-label="色板"></dialog>
+
     <div id="all-colors-panel"
         class="hidden fixed left-1/2 top-1/2 z-[100] w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] -translate-x-1/2 bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
         <div class="figma-palette-tabs" role="tablist" aria-label="色板视图">
@@ -862,7 +876,7 @@
             <div class="flex items-center justify-between gap-3">
                 <h3 class="text-sm font-bold text-gray-900">全部颜色</h3>
                 <p id="all-colors-panel-summary" class="text-xs text-gray-400 whitespace-nowrap"></p>
-                <button id="close-all-colors-panel-btn" type="button" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
+                <button id="close-all-colors-panel-btn" aria-label="关闭色板" type="button" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
             </div>
             <input id="all-colors-search-input" type="search" placeholder="搜索色号，例如 C29"
                 class="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">

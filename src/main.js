@@ -1,6 +1,7 @@
 /**
  * 拼豆图纸生成器 - 主入口与事件绑定
  */
+import { cancelFillSelection } from './features/adjust.js';
 import { AppState } from './state.js';
 import { beginMobileLoading, isMobileLoadingActive } from './features/mobile-loading.js?v=20261116-mobile-loading';
 import { installWorkbenchRename } from './features/pattern-rename.js';
@@ -82,6 +83,7 @@ import {
     updateAllColorsPanelQuery,
     handlePaletteColorSelect,
     handlePaletteAction,
+    dismissMobilePaletteHint,
     handleRecentColorSelect,
     startPalettePanelDrag,
     movePalettePanelDrag,
@@ -523,7 +525,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const togglePalettePanelBtn = document.getElementById('toggle-palette-panel-btn');
     if (togglePalettePanelBtn) {
-        togglePalettePanelBtn.addEventListener('click', togglePalettePanel);
+        togglePalettePanelBtn.addEventListener('click', () => {
+            if (AppState.workbenchViewportMode === 'mobile' && AppState.allColorsPanelOpen) {
+                closeAllColorsPanel();
+            } else {
+                togglePalettePanel();
+            }
+            if (AppState.workbenchViewportMode === 'mobile') updateWorkbenchUI();
+        });
     }
 
     const toggleAllColorsPanelBtn = document.getElementById('toggle-all-colors-panel-btn');
@@ -543,14 +552,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const mobilePaletteDialog = document.getElementById('mobile-palette-dialog');
+    const closeMobilePaletteSheet = () => {
+        closePalettePanel();
+        closeAllColorsPanel();
+        updateWorkbenchUI();
+    };
+    mobilePaletteDialog?.addEventListener('cancel', (event) => {
+        event.preventDefault();
+        closeMobilePaletteSheet();
+    });
+    mobilePaletteDialog?.addEventListener('click', (event) => {
+        if (event.target === mobilePaletteDialog) closeMobilePaletteSheet();
+    });
+    document.getElementById('mobile-palette-hint-dismiss')?.addEventListener('click', () => {
+        dismissMobilePaletteHint();
+        updateWorkbenchUI();
+    });
+
     const closePalettePanelBtn = document.getElementById('close-palette-panel-btn');
     if (closePalettePanelBtn) {
-        closePalettePanelBtn.addEventListener('click', closePalettePanel);
+        closePalettePanelBtn.addEventListener('click', () => {
+            closePalettePanel();
+            if (AppState.workbenchViewportMode === 'mobile') updateWorkbenchUI();
+        });
     }
 
     const closeAllColorsPanelBtn = document.getElementById('close-all-colors-panel-btn');
     if (closeAllColorsPanelBtn) {
-        closeAllColorsPanelBtn.addEventListener('click', closeAllColorsPanel);
+        closeAllColorsPanelBtn.addEventListener('click', () => {
+            closeAllColorsPanel();
+            if (AppState.workbenchViewportMode === 'mobile') updateWorkbenchUI();
+        });
     }
 
     const palettePanelDragHandle = document.getElementById('palette-panel-drag-handle');
@@ -593,6 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return handlePaletteColorSelect(button.getAttribute('data-palette-color-id'));
         };
         paletteColorGrid.addEventListener('keydown', (e) => {
+            if (AppState.workbenchViewportMode === 'mobile') return;
             const action = e.target.closest('[data-palette-action]');
             if (!action || !['Enter', ' '].includes(e.key)) return;
             const card = action.closest('button[data-palette-color-id]');
@@ -603,7 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handlePaletteAction(card.dataset.paletteColorId, action.dataset.paletteAction);
         });
         paletteColorGrid.addEventListener('pointerdown', (e) => {
-            if (e.button !== 0) return;
+            if (AppState.workbenchViewportMode === 'mobile' || e.button !== 0) return;
             const button = e.target.closest('button[data-palette-color-id]');
             if (!button) return;
             const action = e.target.closest('[data-palette-action]');
@@ -614,6 +648,12 @@ document.addEventListener('DOMContentLoaded', () => {
             else handlePaletteButton(button);
         });
         paletteColorGrid.addEventListener('click', (e) => {
+            if (AppState.workbenchViewportMode === 'mobile') {
+                const action = e.target.closest('button[data-palette-action]');
+                const row = action?.closest('[data-palette-color-id]');
+                if (row) handlePaletteAction(row.dataset.paletteColorId, action.dataset.paletteAction);
+                return;
+            }
             const button = e.target.closest('button[data-palette-color-id]');
             if (!button) return;
             const action = e.target.closest('[data-palette-action]');
@@ -756,6 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const toggleFillBtn = document.getElementById('toggle-fill-btn');
     const closeToolOverlays = () => {
+        dismissMobilePaletteHint();
         closePalettePanel({ restoreTool: false });
         closeAllColorsPanel({ restoreTool: false });
         if (AppState.batchReplace.origin === 'palette') resetBatchReplaceState();
@@ -763,6 +804,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (toggleFillBtn) {
         toggleFillBtn.addEventListener('click', () => {
             closeToolOverlays();
+            if (AppState.workbenchViewportMode === 'mobile') {
+                toolMenuActions[AppState.lastBrushTool || 'brush']();
+                return;
+            }
             toggleFillMode();
             setActiveEditorTool('brush');
             updateWorkbenchUI();
@@ -791,6 +836,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (toggleDeleteBtn) {
         toggleDeleteBtn.addEventListener('click', () => {
             closeToolOverlays();
+            if (AppState.workbenchViewportMode === 'mobile') {
+                const tool = AppState.lastEraserTool || 'eraser';
+                toolMenuActions[tool === 'color-eraser' ? 'color-erase' : tool]();
+                return;
+            }
             toggleDeleteMode();
             setActiveEditorTool('eraser');
             updateWorkbenchUI();
@@ -1054,19 +1104,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('pointerdown', (event) => {
-        if (!AppState.allColorsPanelOpen) return;
+        if (!AppState.allColorsPanelOpen || mobilePaletteDialog?.open) return;
         if (AppState.workbenchViewportMode === 'desktop' && document.getElementById('result-container')?.contains(event.target)) return;
         const panel = document.getElementById('all-colors-panel');
         const toggleBtn = document.getElementById('toggle-all-colors-panel-btn');
         const target = event.target;
-        if (panel?.contains(target) || toggleBtn?.contains(target) || document.getElementById('figma-main-palette-btn')?.contains(target)) return;
+        if (panel?.contains(target) || toggleBtn?.contains(target) || document.getElementById('figma-main-palette-btn')?.contains(target)
+            || (AppState.workbenchViewportMode === 'mobile' && togglePalettePanelBtn?.contains(target))) return;
         if (document.getElementById('result-container')?.contains(target)) AppState.paletteDismissClickUntil = Date.now() + 600;
         closeAllColorsPanel();
         updateWorkbenchUI();
     });
 
     document.addEventListener('pointerdown', (event) => {
-        if (!AppState.palettePanelOpen) return;
+        if (!AppState.palettePanelOpen || mobilePaletteDialog?.open) return;
         if (AppState.workbenchViewportMode === 'desktop' && document.getElementById('result-container')?.contains(event.target)) return;
         const panel = document.getElementById('palette-panel');
         const toggleBtn = document.getElementById('toggle-palette-panel-btn');
@@ -1182,6 +1233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 缩放与平移（features/zoom.js） ---
     const resultContainer = document.getElementById('result-container');
     const resultCanvas = document.getElementById('result-canvas');
+    document.getElementById('mobile-editor-reset-view')?.addEventListener('click', resetZoom);
     const zoomResetBtn = document.getElementById('zoom-reset-btn');
 
     if (zoomResetBtn) {
@@ -1190,11 +1242,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, (e) => {
         if (AppState.editMode === 'adjust' || AppState.editMode === 'delete') {
+            const undoCount = AppState.editor.undoStack.length;
             handleResultCanvasClickForAdjust(e);
+            if (AppState.editor.undoStack.length !== undoCount) dismissMobilePaletteHint();
             refreshQualityOverlay();
             updateWorkbenchUI();
         }
-    });
+    }, cancelFillSelection);
 
     initCanvasContextMenu(resultContainer, resultCanvas, () => {
         refreshQualityOverlay();
@@ -1216,6 +1270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         window.addEventListener('mouseup', () => {
             if (!endFillSelection()) return;
+            dismissMobilePaletteHint();
             refreshQualityOverlay();
             updateWorkbenchUI();
         });
@@ -1233,10 +1288,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
             }
         }, { passive: false });
-        window.addEventListener('touchcancel', () => { if (endFillSelection()) updateWorkbenchUI(); });
+        window.addEventListener('touchcancel', () => {
+            const finish = AppState.workbenchViewportMode === 'mobile' ? cancelFillSelection : endFillSelection;
+            if (finish()) updateWorkbenchUI();
+        });
         window.addEventListener('touchend', (e) => {
             if (e.touches && e.touches.length > 0) return;
             if (!endFillSelection()) return;
+            dismissMobilePaletteHint();
             refreshQualityOverlay();
             updateWorkbenchUI();
         });

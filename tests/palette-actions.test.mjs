@@ -9,7 +9,7 @@ const canvas = { id:'result-canvas', getContext:() => ctx, getBoundingClientRect
 const stats = Object.fromEntries(['total-beads-count','color-types-count','color-stats'].map(id=>[id,{}]));
 globalThis.document = {body:{dataset:{layout:'test'}}, getElementById:id => id === 'result-canvas' ? canvas : stats[id] || null, addEventListener(){} };
 globalThis.window = {innerWidth:1280,matchMedia:()=>({matches:false}),indexedDB:{open:()=>({})}};
-const { handlePaletteColorSelect, handlePaletteAction, handleAllColorsSelect, closePalettePanel, closeAllColorsPanel, toggleAllColorsPanel } = await import('../src/ui.js');
+const { handlePaletteColorSelect, handlePaletteAction, handleAllColorsSelect, closePalettePanel, closeAllColorsPanel, toggleAllColorsPanel, dismissMobilePaletteHint } = await import('../src/ui.js');
 function setup(tool='color-eraser') {
  Object.assign(AppState,{pixelData:[{...colors[0],a:255},{...colors[1],a:255},{...colors[0],a:255}],stagedPixelData:[{...colors[0],a:255},{...colors[1],a:255},{...colors[0],a:255}],gridWidth:3,gridHeight:1,renderedMinX:0,renderedMinY:0,renderedContentWidth:3,renderedContentHeight:1, zoomState:{scale:1}, colorSelectionPatternId:'palette-test',editMode:'delete',colorEraseMode:true,deleteMode:true,edgeSelectionMode:false,clearBaseMode:false,eyedropperMode:false,fillMode:false,paintColor:colors[2],fillColor:colors[2],fillColorId:colors[2].id,paintStroke:null,eraserStroke:null,eraserHoverColorId:null,eraserClickSuppressedUntil:0,paletteDismissClickUntil:0,highlightedColorId:null,paletteToolSnapshot:null,palettePanelOpen:false,allColorsPanelOpen:false,recentColors:[],stagedActions:[],lastBrushTool:'edge',lastEraserTool:'color-eraser'});
  Object.assign(AppState.editor,{activeTool:tool,undoStack:[],redoStack:[]});
@@ -70,4 +70,48 @@ test('closing already-closed panels does not erase replacement source highlight'
  setup();openPaletteToolSession();AppState.palettePanelOpen=true;handlePaletteAction(colors[0].id,'pick');
  closePalettePanel({restoreTool:false});closeAllColorsPanel({restoreTool:false});
  assert.equal(AppState.batchReplace.active,true);assert.equal(AppState.highlightedColorId,colors[0].id);
+});
+
+test('phone rows require an explicit button and view closes the sheet without editing', (t) => {
+    window.innerWidth = 375;
+    t.after(() => { dismissMobilePaletteHint(); window.innerWidth = 1280; });
+    setup();
+    AppState.palettePanelOpen = true;
+    const before = structuredClone(AppState.pixelData);
+    const colorId = colors[0].id;
+
+    assert.equal(handlePaletteColorSelect(colorId), false);
+    assert.equal(AppState.palettePanelOpen, true);
+    assert.equal(AppState.highlightedColorId, null);
+
+    assert.equal(handlePaletteAction(colorId, 'highlight'), true);
+    assert.equal(AppState.palettePanelOpen, false);
+    assert.equal(AppState.highlightedColorId, colorId);
+    assert.equal(AppState.editor.activeTool, 'color-eraser');
+    assert.deepEqual(AppState.pixelData, before);
+    assert.equal(AppState.editor.undoStack.length, 0);
+});
+
+test('phone replacement can be canceled or completed as one undoable edit and restores the tool', (t) => {
+    window.innerWidth = 375;
+    t.after(() => { dismissMobilePaletteHint(); window.innerWidth = 1280; });
+    setup();
+    AppState.palettePanelOpen = true;
+    const before = structuredClone(AppState.pixelData);
+    const [source, target] = colors;
+
+    assert.equal(handlePaletteAction(source.id, 'pick'), true);
+    assert.equal(AppState.palettePanelOpen, false);
+    dismissMobilePaletteHint();
+    assert.equal(AppState.batchReplace.active, false);
+    assert.equal(AppState.editor.activeTool, 'color-eraser');
+    assert.deepEqual(AppState.pixelData, before);
+
+    assert.equal(handlePaletteAction(source.id, 'pick'), true);
+    handleResultCanvasClickForAdjust({ clientX: 75, clientY: 45 });
+    assert.deepEqual(AppState.pixelData.map(pixel => pixel.id), [target.id, target.id, target.id]);
+    assert.equal(AppState.editor.activeTool, 'color-eraser');
+    assert.equal(AppState.editor.undoStack.length, 1);
+    undoGlobalEditorOperation();
+    assert.deepEqual(AppState.pixelData, before);
 });

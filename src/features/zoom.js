@@ -131,13 +131,52 @@ export function resetZoom() {
 
  */
 
-export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, handleCanvasClick) {
+export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, handleCanvasClick, cancelStroke) {
 
     if (!resultContainer || !resultCanvas) return;
 
     let panStartedInEditMode = false;
     let panDidMove = false;
     let suppressNextCanvasClick = false;
+    let mobileGesture = null;
+
+    function readMobileTouches(touches) {
+        const points = Array.from(touches).filter(touch => resultContainer.contains(touch.target));
+        if (points.length !== 2 || touches.length !== 2) return null;
+        const [first, second] = points;
+        return {
+            x: (first.clientX + second.clientX) / 2,
+            y: (first.clientY + second.clientY) / 2,
+            distance: Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY)
+        };
+    }
+
+    function endMobileGesture(event) {
+        if (!mobileGesture || (event.type !== 'touchcancel' && event.touches.length)) return;
+        mobileGesture = null;
+        AppState.zoomState.isDragging = false;
+    }
+
+    resultContainer.addEventListener('touchstart', (event) => {
+        if (AppState.workbenchViewportMode !== 'mobile') return;
+        if (event.touches.length === 1 && !mobileGesture) {
+            suppressNextCanvasClick = false;
+            return;
+        }
+
+        const points = readMobileTouches(event.touches);
+        if (!points && !mobileGesture) return;
+        event.preventDefault();
+        if (!mobileGesture) cancelStroke?.();
+        mobileGesture = { points };
+        suppressNextCanvasClick = true;
+        AppState.zoomState.isDragging = false;
+        panStartedInEditMode = false;
+        panDidMove = false;
+    }, { capture: true, passive: false });
+
+    window.addEventListener('touchend', endMobileGesture);
+    window.addEventListener('touchcancel', endMobileGesture);
 
 
 
@@ -223,7 +262,7 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     window.addEventListener('mousemove', (e) => {
 
-        if (!AppState.zoomState || !AppState.zoomState.isDragging) return;
+        if (mobileGesture || !AppState.zoomState || !AppState.zoomState.isDragging) return;
 
         const dx = e.clientX - AppState.zoomState.lastX;
 
@@ -275,6 +314,7 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
     resultContainer.addEventListener('touchstart', (e) => {
 
+        if (mobileGesture || (AppState.workbenchViewportMode === 'mobile' && e.touches.length !== 1)) return;
         if (!shouldStartPan(e, resultCanvas)) return;
 
         e.preventDefault();
@@ -312,6 +352,24 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
         if (!AppState.zoomState) return;
 
         e.preventDefault();
+
+        if (mobileGesture) {
+            const points = readMobileTouches(e.touches);
+            const previous = mobileGesture.points;
+            mobileGesture.points = points;
+            if (!points || !previous || !previous.distance) return;
+
+            const zoom = AppState.zoomState;
+            const nextScale = Math.min(Math.max(zoom.scale * points.distance / previous.distance, getMinZoomScale()), 10);
+            const factor = nextScale / zoom.scale;
+            const rect = resultCanvas.getBoundingClientRect();
+            zoom.x += points.x - previous.x - (previous.x - rect.left) * (factor - 1);
+            zoom.y += points.y - previous.y - (previous.y - rect.top) * (factor - 1);
+            zoom.scale = nextScale;
+            updateResultTransform(resultCanvas, zoom, zoomResetBtn);
+            return;
+        }
+        if (AppState.workbenchViewportMode === 'mobile' && e.touches.length !== 1) return;
 
         if (e.touches.length === 1 && AppState.zoomState.isDragging) {
 
@@ -377,7 +435,8 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
 
 
 
-    resultContainer.addEventListener('touchend', () => {
+    resultContainer.addEventListener('touchend', (event) => {
+        if (mobileGesture) event.preventDefault();
 
         if (panStartedInEditMode && panDidMove) suppressNextCanvasClick = true;
 
@@ -385,7 +444,7 @@ export function initZoomEvents(resultContainer, resultCanvas, zoomResetBtn, hand
         panStartedInEditMode = false;
         panDidMove = false;
 
-    });
+    }, { passive: false });
 
     resultContainer.addEventListener('touchcancel', () => {
         if (AppState.zoomState) {

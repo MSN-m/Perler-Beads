@@ -15,11 +15,11 @@ test('legacy draft is retained as first historical version',()=>{
  const saved=buildDraftWithVersions(draft('B'),draft('A'));assert.equal(saved.versions.length,2);
  assert.equal(unpackDraftVersion(saved,saved.versions[1]).pixelData[0].id,'A');
 });
-test('five-version cap and restoring old state preserves newer versions',()=>{
+test('three-version cap and restoring old state preserves newer versions',()=>{
  let saved=null;for(let i=0;i<15;i++) saved=buildDraftWithVersions(draft(String(i)),saved);
- assert.equal(saved.versions.length,5);const newest=saved.versions[0].id;
- const historical=unpackDraftVersion(saved,saved.versions[3]);saved=buildDraftWithVersions({...historical,updatedAt:new Date().toISOString()},saved);
- assert.equal(saved.versions.length,5);assert.equal(saved.versions[1].id,newest);assert.equal(unpackDraftVersion(saved,saved.versions[0]).pixelData[0].id,'11');
+ assert.deepEqual(saved.versions.map(version=>unpackDraftVersion(saved,version).pixelData[0].id),['14','13','12']);const newest=saved.versions[0].id;
+ const historical=unpackDraftVersion(saved,saved.versions[2]);saved=buildDraftWithVersions({...historical,updatedAt:new Date().toISOString()},saved);
+ assert.equal(saved.versions.length,3);assert.equal(saved.versions[1].id,newest);assert.equal(unpackDraftVersion(saved,saved.versions[0]).pixelData[0].id,'12');
 });
 test('shared current image occurs once; changed source images remain recoverable',()=>{
  let saved=buildDraftWithVersions(draft('A'));saved=buildDraftWithVersions(draft('B'),saved);assert.deepEqual(saved.versionSources,{});
@@ -42,7 +42,7 @@ test('old ten-version history survives unchanged saving and trims only after cha
  assert.equal(same.versions.length,10);
  assert.deepEqual(legacy,untouched);
  const changed=buildDraftWithVersions(draft('new'),same);
- assert.equal(changed.versions.length,5);
- assert.equal(changed.versions[1].id,'old-0');
+ assert.equal(changed.versions.length,3);
+ assert.deepEqual(changed.versions.slice(1).map(version=>version.id),['old-0','old-1']);
  assert.equal(same.versions.length,10);
 });

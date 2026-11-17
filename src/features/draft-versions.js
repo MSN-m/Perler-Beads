@@ -1,5 +1,5 @@
 /** Compact saved versions. Images are shared; editing undo history stays separate. */
-export const DRAFT_VERSION_LIMIT = 5;
+export const DRAFT_VERSION_LIMIT = 3;
 const clone = value => JSON.parse(JSON.stringify(value));
 const fields = ['name', 'patternName', 'gridWidth', 'gridHeight', 'brand', 'mardSet', 'colorCount', 'isMirrored', 'colorSelection', 'cropRect', 'generationSettings'];
 export function packDraftVersion(draft) {

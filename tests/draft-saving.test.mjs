@@ -180,7 +180,7 @@ test('failed changed save does not trim an existing ten-version history',async()
  records.set(saved.id,structuredClone(saved));
  const previous=structuredClone(saved);AppState.pixelData[0]={...colors[2]};fail=true;
  assert.equal(await saveWorkbenchDraft(),false);assert.deepEqual(AppState.drafts[0],previous);assert.deepEqual(records.get(saved.id),previous);
- fail=false;assert.equal(await saveWorkbenchDraft(),true);assert.equal(AppState.drafts[0].versions.length,5);assert.equal(records.get(saved.id).versions.length,5);
+ fail=false;assert.equal(await saveWorkbenchDraft(),true);assert.equal(AppState.drafts[0].versions.length,3);assert.equal(records.get(saved.id).versions.length,3);
 });
 
 test('PC save button saves without opening history or creating duplicate versions',async()=>{

@@ -7,9 +7,8 @@ const LEFT_RULER_WIDTH = 32;
 const MIN_DOT_SPACING = 8;
 let rulerFramePending = false;
 
-function isDesktopWorkbench() {
-    return document.getElementById('workbench-layout')?.dataset.viewport === 'desktop';
-}
+export const MOBILE_RULER_TOP = 20;
+export const MOBILE_RULER_LEFT = 22;
 
 function getLabelStep(cellSize, minSpacing) {
     return [1, 5, 10, 20].find(step => step * cellSize >= minSpacing) || 20;
@@ -93,12 +92,17 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
     ctx.restore();
 }
 
-function drawRulers(ctx, width, height, originX, originY, cellSize) {
-    const startX = firstVisibleCell(originX, cellSize, LEFT_RULER_WIDTH);
-    const endX = lastVisibleCell(originX, cellSize, width);
-    const startY = firstVisibleCell(originY, cellSize, TOP_RULER_HEIGHT);
-    const endY = lastVisibleCell(originY, cellSize, height);
-    ctx.font = '600 11px Arial';
+function drawRulers(ctx, width, height, originX, originY, cellSize, mobile) {
+    const left = mobile ? MOBILE_RULER_LEFT : LEFT_RULER_WIDTH;
+    const top = mobile ? MOBILE_RULER_TOP : TOP_RULER_HEIGHT;
+    const startX = Math.max(mobile ? 0 : -Infinity, firstVisibleCell(originX, cellSize, left));
+    const endX = Math.min(mobile ? AppState.gridWidth - 1 : Infinity, lastVisibleCell(originX, cellSize, width));
+    const startY = Math.max(mobile ? 0 : -Infinity, firstVisibleCell(originY, cellSize, top));
+    const endY = Math.min(mobile ? AppState.gridHeight - 1 : Infinity, lastVisibleCell(originY, cellSize, height));
+    const labelOffset = mobile ? 8 : 16;
+    const labelColor = mobile ? '#697180' : getThemeMutedColor();
+    const fontSize = mobile ? 10 : 11;
+    ctx.font = `600 ${fontSize}px Arial`;
     const labelWidth = Math.max(
         ctx.measureText(String(startX + 1)).width,
         ctx.measureText(String(endX + 1)).width
@@ -115,59 +119,59 @@ function drawRulers(ctx, width, height, originX, originY, cellSize) {
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(width, 0);
-    ctx.lineTo(width, TOP_RULER_HEIGHT);
-    ctx.lineTo(LEFT_RULER_WIDTH, TOP_RULER_HEIGHT);
-    ctx.lineTo(LEFT_RULER_WIDTH, height);
+    ctx.lineTo(width, top);
+    ctx.lineTo(left, top);
+    ctx.lineTo(left, height);
     ctx.lineTo(0, height);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
 
     ctx.save();
-    ctx.font = '600 11px Inter, Arial';
-    ctx.fillStyle = getThemeMutedColor();
+    ctx.font = `600 ${fontSize}px Inter, Arial`;
+    ctx.fillStyle = labelColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.beginPath();
-    ctx.rect(LEFT_RULER_WIDTH, 0, width - LEFT_RULER_WIDTH, TOP_RULER_HEIGHT);
+    ctx.rect(left, 0, width - left, top);
     ctx.clip();
     for (let x = startX; x <= endX; x++) {
         if (x % horizontalStep !== 0) continue;
         const center = originX + (x + 0.5) * cellSize;
-        if (center < LEFT_RULER_WIDTH || center > width) continue;
-        ctx.fillText(String(x + 1), center, 16);
+        if (center < left || center > width) continue;
+        ctx.fillText(String(x + 1), center, labelOffset);
     }
     ctx.fillStyle = getThemeMutedColor(0.6);
     for (let x = startX; x <= endX; x++) {
         if (x % tickStep !== 0) continue;
         const pos = originX + x * cellSize;
-        if (pos < LEFT_RULER_WIDTH || pos > width) continue;
-        const length = x % 10 === 0 ? 8 : 5;
-        ctx.fillRect(Math.round(pos), TOP_RULER_HEIGHT - length, 1, length);
+        if (pos < left || pos > width) continue;
+        const length = x % 10 === 0 ? (mobile ? 5 : 8) : (mobile ? 3 : 5);
+        ctx.fillRect(Math.round(pos), top - length, 1, length);
     }
     ctx.restore();
 
     ctx.save();
-    ctx.font = '600 11px Inter, Arial';
-    ctx.fillStyle = getThemeMutedColor();
+    ctx.font = `600 ${fontSize}px Inter, Arial`;
+    ctx.fillStyle = labelColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.beginPath();
-    ctx.rect(0, TOP_RULER_HEIGHT, LEFT_RULER_WIDTH, height - TOP_RULER_HEIGHT);
+    ctx.rect(0, top, left, height - top);
     ctx.clip();
     for (let y = startY; y <= endY; y++) {
         if (y % verticalStep !== 0) continue;
         const center = originY + (y + 0.5) * cellSize;
-        if (center < TOP_RULER_HEIGHT || center > height) continue;
-        ctx.fillText(String(y + 1), 16, center);
+        if (center < top || center > height) continue;
+        ctx.fillText(String(y + 1), labelOffset + (mobile ? 1 : 0), center);
     }
     ctx.fillStyle = getThemeMutedColor(0.6);
     for (let y = startY; y <= endY; y++) {
         if (y % tickStep !== 0) continue;
         const pos = originY + y * cellSize;
-        if (pos < TOP_RULER_HEIGHT || pos > height) continue;
-        const length = y % 10 === 0 ? 8 : 5;
-        ctx.fillRect(LEFT_RULER_WIDTH - length, Math.round(pos), length, 1);
+        if (pos < top || pos > height) continue;
+        const length = y % 10 === 0 ? (mobile ? 5 : 8) : (mobile ? 3 : 5);
+        ctx.fillRect(left - length, Math.round(pos), length, 1);
     }
     ctx.restore();
 }
@@ -186,12 +190,14 @@ function drawFixedRuler() {
     const rulerCanvas = document.getElementById('fixed-ruler-canvas');
     const resultCanvas = document.getElementById('result-canvas');
     const resultContainer = document.getElementById('result-container');
+    const viewport = document.getElementById('workbench-layout')?.dataset.viewport;
+    const mobile = viewport === 'mobile';
     const isVisible = Boolean(
         rulerCanvas
         && resultCanvas
         && resultContainer
         && !resultCanvas.classList.contains('hidden')
-        && isDesktopWorkbench()
+        && (viewport === 'desktop' || mobile)
         && AppState.currentStep === 3
     );
 
@@ -225,6 +231,6 @@ function drawFixedRuler() {
     const originX = canvasLeft + CELL_SIZE * zoom - minX * cellSize;
     const originY = canvasTop + CELL_SIZE * zoom - minY * cellSize;
 
-    drawGrid(ctx, width, height, originX, originY, cellSize);
-    drawRulers(ctx, width, height, originX, originY, cellSize);
+    if (!mobile) drawGrid(ctx, width, height, originX, originY, cellSize);
+    drawRulers(ctx, width, height, originX, originY, cellSize, mobile);
 }
