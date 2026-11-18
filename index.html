@@ -10,16 +10,16 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261117-mobile-toolbar-icons">
+    <link rel="stylesheet" href="css/style.css?v=20261118-mobile-history-size">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
         "imports": {
             "./src/state.js": "./src/state.js?v=20261116-mobile-preview-page",
             "./src/editor.js": "./src/editor.js?v=20261103-quality-review-1",
-            "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261117-mobile-palette-2",
-            "./src/renderer.js": "./src/renderer.js?v=20261117-mobile-palette-2",
-            "./src/ui.js": "./src/ui.js?v=20261117-mobile-toolbar-icons",
+            "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261118-mobile-grid-2",
+            "./src/renderer.js": "./src/renderer.js?v=20261118-mobile-grid-2",
+            "./src/ui.js": "./src/ui.js?v=20261118-return-clean",
             "./src/processor.js": "./src/processor.js?v=20261116-preview-first",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
             "./src/features/quality.js": "./src/features/quality.js?v=20261104-quality-nonmodal-1",
@@ -28,8 +28,9 @@
             "./src/features/adjust.js": "./src/features/adjust.js?v=20261117-mobile-palette-2",
             "./src/features/delete.js": "./src/features/delete.js?v=20261008-ruler-performance-1",
             "./src/features/zoom.js": "./src/features/zoom.js?v=20261117-mobile-palette-2",
-            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261117-history-limit-3",
-            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261008-ruler-performance-1",
+            "./src/features/draft-versions.js": "./src/features/draft-versions.js?v=20261118-manual-save",
+            "./src/features/tooltips.js": "./src/features/tooltips.js?v=20261118-alt-picker",
+            "./src/features/editor-shortcuts.js": "./src/features/editor-shortcuts.js?v=20261118-alt-picker",
             "./src/exporter.js": "./src/exporter.js?v=20261008-export-filenames-1",
             "./src/features/history-modal.js": "./src/features/history-modal.js?v=20261008-history-2",
             "./src/features/export-modal.js": "./src/features/export-modal.js?v=20261008-zip-export-1",
@@ -37,7 +38,7 @@
         }
     }
     </script>
-    <script type="module" src="src/main.js?v=20261117-mobile-palette-2"></script>
+    <script type="module" src="src/main.js?v=20261118-alt-picker"></script>
 </head>
 
 <body data-layout="workbench"
@@ -181,6 +182,7 @@
 
                 <div id="workbench-edit-stage" class="absolute inset-0 hidden">
                     <section id="compare-source-pane" class="hidden absolute inset-y-0 left-0 w-[34%] min-w-[280px] border-r border-white/80 bg-[#f3f6fb] overflow-hidden">
+                        <p id="mobile-compare-empty" class="hidden" role="status">这张图纸未保留原图，暂时无法查看</p>
                         <div class="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur rounded-xl border border-white shadow-sm px-3 py-2">
                             <p class="text-xs font-bold text-gray-800">原图对照</p>
                             <p class="text-[11px] text-gray-500 mt-1">滚轮缩放，按钮重置</p>
@@ -194,6 +196,7 @@
                         </button>
                     </section>
 
+                    <div id="mobile-compare-divider" class="hidden" role="separator" tabindex="0" aria-label="调整原图和图纸的上下占比" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span></span></div>
                     <div id="result-pane" class="absolute inset-y-0 left-0 right-0 overflow-hidden">
                         <button id="toggle-compare-preview-btn"
                             class="hidden absolute left-4 top-1/2 -translate-y-1/2 z-30 transition"
@@ -213,6 +216,7 @@
                         </div>
                         <div id="mobile-palette-hint" hidden>
                             <span id="mobile-palette-message" role="status"></span>
+                            <span id="mobile-tool-countdown" aria-hidden="true" hidden></span>
                             <button id="mobile-palette-hint-dismiss" type="button" aria-label="关闭提示" hidden>
                                 <img src="assets/figma-ui/palette-close.svg" alt="">
                             </button>
@@ -302,15 +306,16 @@
                 </div>
 
                 <div id="workbench-edit-toolbar" class="hidden workbench-glass-toolbar absolute left-1/2 bottom-6 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-2.5">
+                    <button id="mobile-pan-tool-btn" type="button" data-mobile-label="拖动" class="workbench-tool-button" aria-label="拖动画布" aria-pressed="false"></button>
                     <div class="workbench-tool-group">
                         <button id="toggle-fill-btn" data-mobile-label="画笔" class="workbench-tool-button" aria-label="画笔工具" title="画笔：沿网格轨迹填色，点击箭头打开更多工具">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4 5 5M13 6l5 5-8.5 8.5a2.12 2.12 0 0 1-3 0l-1-1a2.12 2.12 0 0 1 0-3L13 6Z"/><path d="m5 19-1 1M14 5l2-2 5 5-2 2"/></svg>
                             <svg class="workbench-tool-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>
                         </button>
                         <div class="workbench-tool-menu" data-tool-menu="brush">
-                            <button type="button" data-tool-action="brush" data-mobile-label="画笔" title="沿网格轨迹填色">画笔工具</button>
-                            <button type="button" id="toggle-fill-bucket-btn" data-tool-action="bucket" data-mobile-label="油漆" title="填充相连区域"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.66667 4.66634L12 1.33301M3.33874 8H14.6394M2.66656 11C2.56105 11.492 2.29199 11.9338 1.90323 12.2533C1.52323 12.5633 1.33323 12.93 1.33323 13.3167C1.33102 13.4932 1.36388 13.6683 1.4299 13.832C1.49592 13.9957 1.59378 14.1447 1.71781 14.2703C1.84184 14.3959 1.98958 14.4956 2.15244 14.5636C2.3153 14.6316 2.49006 14.6667 2.66656 14.6667C2.84307 14.6667 3.01782 14.6316 3.18069 14.5636C3.34355 14.4956 3.49128 14.3959 3.61531 14.2703C3.73935 14.1447 3.83721 13.9957 3.90323 13.832C3.96924 13.6683 4.0021 13.4932 3.9999 13.3167C3.9999 12.9333 3.81323 12.56 3.4299 12.2533C3.03951 11.9352 2.77006 11.4928 2.66656 11ZM10.3334 3.00026L8.90138 1.56826C8.75073 1.41763 8.54642 1.33301 8.33338 1.33301C8.12034 1.33301 7.91603 1.41763 7.76538 1.56826L2.90138 6.43226C2.75075 6.58291 2.66613 6.78722 2.66613 7.00026C2.66613 7.21329 2.75075 7.41761 2.90138 7.56826L7.96271 12.6296C8.41466 13.0815 9.0276 13.3353 9.66671 13.3353C10.3058 13.3353 10.9188 13.0815 11.3707 12.6296L13.9627 10.0376C14.4146 9.58564 14.6685 8.9727 14.6685 8.33359C14.6685 7.69448 14.4146 7.08154 13.9627 6.62959L12.22 4.88692"/></svg>油漆桶</button>
-                            <button type="button" id="toggle-edge-adjust-menu-btn" data-tool-action="edge" data-mobile-label="边框" title="给边缘区域统一上色"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878"/><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878" stroke="black" stroke-opacity="0.2"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714" stroke="black" stroke-opacity="0.2"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538" stroke="black" stroke-opacity="0.2"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688" stroke="black" stroke-opacity="0.2"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031" stroke="black" stroke-opacity="0.2"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354" stroke="black" stroke-opacity="0.2"/></svg>边框上色</button>
+                            <button type="button" data-tool-action="brush" data-mobile-label="画笔" title="沿网格轨迹填色">画笔工具<span class="mobile-brush-content"><span class="mobile-brush-icon" aria-hidden="true"></span><span class="mobile-brush-label">画笔</span><span class="mobile-brush-color" hidden></span></span></button>
+                            <button type="button" id="toggle-fill-bucket-btn" data-tool-action="bucket" data-mobile-label="油漆" title="填充相连区域"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.66667 4.66634L12 1.33301M3.33874 8H14.6394M2.66656 11C2.56105 11.492 2.29199 11.9338 1.90323 12.2533C1.52323 12.5633 1.33323 12.93 1.33323 13.3167C1.33102 13.4932 1.36388 13.6683 1.4299 13.832C1.49592 13.9957 1.59378 14.1447 1.71781 14.2703C1.84184 14.3959 1.98958 14.4956 2.15244 14.5636C2.3153 14.6316 2.49006 14.6667 2.66656 14.6667C2.84307 14.6667 3.01782 14.6316 3.18069 14.5636C3.34355 14.4956 3.49128 14.3959 3.61531 14.2703C3.73935 14.1447 3.83721 13.9957 3.90323 13.832C3.96924 13.6683 4.0021 13.4932 3.9999 13.3167C3.9999 12.9333 3.81323 12.56 3.4299 12.2533C3.03951 11.9352 2.77006 11.4928 2.66656 11ZM10.3334 3.00026L8.90138 1.56826C8.75073 1.41763 8.54642 1.33301 8.33338 1.33301C8.12034 1.33301 7.91603 1.41763 7.76538 1.56826L2.90138 6.43226C2.75075 6.58291 2.66613 6.78722 2.66613 7.00026C2.66613 7.21329 2.75075 7.41761 2.90138 7.56826L7.96271 12.6296C8.41466 13.0815 9.0276 13.3353 9.66671 13.3353C10.3058 13.3353 10.9188 13.0815 11.3707 12.6296L13.9627 10.0376C14.4146 9.58564 14.6685 8.9727 14.6685 8.33359C14.6685 7.69448 14.4146 7.08154 13.9627 6.62959L12.22 4.88692"/></svg>油漆桶<span class="mobile-brush-content"><span class="mobile-brush-icon" aria-hidden="true"></span><span class="mobile-brush-label">油漆</span><span class="mobile-brush-color" hidden></span></span></button>
+                            <button type="button" id="toggle-edge-adjust-menu-btn" data-tool-action="edge" data-mobile-label="边框" title="给边缘区域统一上色"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878"/><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878" stroke="black" stroke-opacity="0.2"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714" stroke="black" stroke-opacity="0.2"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538" stroke="black" stroke-opacity="0.2"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688" stroke="black" stroke-opacity="0.2"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031" stroke="black" stroke-opacity="0.2"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354" stroke="black" stroke-opacity="0.2"/></svg>边框上色<span class="mobile-brush-content"><span class="mobile-brush-icon" aria-hidden="true"></span><span class="mobile-brush-label">边框</span><span class="mobile-brush-color" hidden></span></span></button>
                         </div>
                     </div>
                     <button id="eyedropper-tool-btn" data-mobile-label="吸管" class="workbench-tool-button" aria-label="吸管" title="吸管"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 6 2.3907 11.6093a1.3333 1.3333 0 0 0-.3907.9427v.896a1.3333 1.3333 0 0 0-.3907.9427h.896a1.3333 1.3333 0 0 0 .9427-.3907L10 8M12 6l.2667.2667a1.3333 1.3333 0 0 1 0 1.8853 1.3333 1.3333 0 0 1-1.8853 0L7.7333 5.7336a1.3333 1.3333 0 0 1 0-1.8853 1.3333 1.3333 0 0 1 1.8853 0L10 4l2.2667-2.2667a1.3333 1.3333 0 0 1 1.8853 0 1.3333 1.3333 0 0 1 0 1.8853zM1.3333 14.6667l.276-.276"/></svg></button>
@@ -759,7 +764,7 @@
     <div id="workbench-history-modal" class="history-overlay" hidden>
         <section id="history-main-dialog" class="history-dialog" role="dialog" aria-modal="true" aria-labelledby="history-title" tabindex="-1">
             <button type="button" class="history-close" data-history-close aria-label="关闭草稿记录"><img src="assets/figma-ui/history-close.svg" alt=""></button>
-            <header class="history-header"><h2 id="history-title">草稿记录</h2><p>仅保存在当前浏览器</p></header>
+            <header class="history-header"><h2 id="history-title"><span class="history-title-desktop">草稿记录</span><span class="history-title-mobile">历史记录</span></h2><p>仅保存在当前浏览器</p></header>
             <section class="history-saved-section" aria-labelledby="history-saved-heading">
                 <h3 id="history-saved-heading">保存版本</h3>
                 <div id="history-version-list" class="history-version-list"></div>

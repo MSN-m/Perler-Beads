@@ -10,6 +10,7 @@ function fixture() {
         selectTool: tool => { calls.push(tool); context.tool = tool; },
         undo: () => calls.push('undo'), redo: () => calls.push('redo'),
         escape: () => calls.push('escape'),
+        beginTemporaryPicker: () => calls.push('pick-begin'), endTemporaryPicker: () => calls.push('pick-end'),
         beginTemporaryPan: () => calls.push('begin'), endTemporaryPan: () => calls.push('end'),
         stopPan: () => calls.push('stop'), defer: callback => callback()
     });
@@ -71,4 +72,32 @@ test('palette permits temporary pan, blocks button activation and restores after
     f.keyboard.pointerup(); assert.deepEqual(f.calls, ['begin', 'end']);
     f.context.panel = true; assert.equal(f.press(' ').prevented, undefined);
     assert.deepEqual(f.calls, ['begin', 'end']);
+});
+
+
+test('Alt/Option temporarily picks, ignores repeat and restores exactly once on release or blur', () => {
+    const f = fixture();
+    assert.equal(f.press('Alt', { altKey: true }).prevented, true);
+    assert.equal(f.keyboard.temporaryPicker, true);
+    f.press('Alt', { altKey: true, repeat: true }); f.press('b'); f.press(' ');
+    f.keyboard.keyup(f.event('Alt')); f.keyboard.keyup(f.event('Alt'));
+    assert.equal(f.keyboard.temporaryPicker, false);
+    assert.deepEqual(f.calls, ['pick-begin', 'pick-end']);
+    f.press('Alt', { altKey: true }); f.keyboard.blur();
+    assert.deepEqual(f.calls, ['pick-begin', 'pick-end', 'pick-begin', 'pick-end', 'stop']);
+});
+
+test('temporary picker respects typing, modal, gesture, touch layout and palette guards', () => {
+    for (const flag of ['typing', 'busy', 'modal', 'panel', 'palette', 'pickerBlocked']) {
+        const f = fixture(); f.context[flag] = true;
+        assert.equal(f.press('Alt', { altKey: true }).prevented, undefined);
+        assert.equal(f.keyboard.temporaryPicker, false);
+        assert.deepEqual(f.calls, []);
+    }
+    const f = fixture(); f.context.tool = 'brush'; f.press(' '); f.press('Alt', { altKey: true });
+    assert.deepEqual(f.calls, ['begin']);
+    for (const modifier of ['ctrlKey', 'metaKey', 'shiftKey']) {
+        const g = fixture(); g.press('Alt', { altKey: true, [modifier]: true });
+        assert.deepEqual(g.calls, []);
+    }
 });

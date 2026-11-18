@@ -28,18 +28,20 @@ function lastVisibleCell(origin, cellSize, viewportEnd) {
     return Math.ceil((viewportEnd - origin) / cellSize) + 1;
 }
 
-function drawGrid(ctx, width, height, originX, originY, cellSize) {
+function drawGrid(ctx, width, height, originX, originY, cellSize, mobile = false) {
+    const left = mobile ? MOBILE_RULER_LEFT : LEFT_RULER_WIDTH;
+    const top = mobile ? MOBILE_RULER_TOP : TOP_RULER_HEIGHT;
     const gridStep = getGridStep(cellSize);
     // Keep dots on grid/half-grid coordinates, with at least 8 CSS pixels between them.
     const dotStep = Math.max(gridStep / 2, Math.ceil(MIN_DOT_SPACING / (cellSize / 2)) / 2);
-    const startX = firstVisibleCell(originX, cellSize, LEFT_RULER_WIDTH);
+    const startX = firstVisibleCell(originX, cellSize, left);
     const endX = lastVisibleCell(originX, cellSize, width);
-    const startY = firstVisibleCell(originY, cellSize, TOP_RULER_HEIGHT);
+    const startY = firstVisibleCell(originY, cellSize, top);
     const endY = lastVisibleCell(originY, cellSize, height);
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(LEFT_RULER_WIDTH, TOP_RULER_HEIGHT, width - LEFT_RULER_WIDTH, height - TOP_RULER_HEIGHT);
+    ctx.rect(left, top, width - left, height - top);
     ctx.clip();
 
     // Batch the independent circles into one fill; anchor sampling to the grid origin.
@@ -50,10 +52,10 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
     const dotStartY = Math.ceil(startY / dotStep) * dotStep;
     for (let x = dotStartX; x <= endX; x += dotStep) {
         const dotX = originX + x * cellSize;
-        if (dotX < LEFT_RULER_WIDTH || dotX > width) continue;
+        if (dotX < left || dotX > width) continue;
         for (let y = dotStartY; y <= endY; y += dotStep) {
             const dotY = originY + y * cellSize;
-            if (dotY < TOP_RULER_HEIGHT || dotY > height) continue;
+            if (dotY < top || dotY > height) continue;
             ctx.moveTo(dotX + dotRadius, dotY);
             ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
         }
@@ -61,13 +63,13 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
     ctx.fill();
 
     // 继续保留每 5 格虚线和每 10 格深色实线。
-    for (let x = startX; x <= endX; x += gridStep) {
+    for (let x = mobile ? Math.ceil(startX / gridStep) * gridStep : startX; x <= endX; x += gridStep) {
         const pos = originX + x * cellSize;
         const isMajor = x % 10 === 0;
         const isMinor = x % 5 === 0;
         if (!isMajor && !isMinor) continue;
         ctx.beginPath();
-        ctx.moveTo(Math.round(pos) + 0.5, TOP_RULER_HEIGHT);
+        ctx.moveTo(Math.round(pos) + 0.5, top);
         ctx.lineTo(Math.round(pos) + 0.5, height);
         ctx.strokeStyle = isMajor ? 'rgba(206, 146, 168, 0.6)' : 'rgba(206, 146, 168, 0.4)';
         ctx.lineWidth = isMajor ? 1.4 : 1;
@@ -75,13 +77,13 @@ function drawGrid(ctx, width, height, originX, originY, cellSize) {
         ctx.stroke();
     }
 
-    for (let y = startY; y <= endY; y += gridStep) {
+    for (let y = mobile ? Math.ceil(startY / gridStep) * gridStep : startY; y <= endY; y += gridStep) {
         const pos = originY + y * cellSize;
         const isMajor = y % 10 === 0;
         const isMinor = y % 5 === 0;
         if (!isMajor && !isMinor) continue;
         ctx.beginPath();
-        ctx.moveTo(LEFT_RULER_WIDTH, Math.round(pos) + 0.5);
+        ctx.moveTo(left, Math.round(pos) + 0.5);
         ctx.lineTo(width, Math.round(pos) + 0.5);
         ctx.strokeStyle = isMajor ? 'rgba(206, 146, 168, 0.6)' : 'rgba(206, 146, 168, 0.4)';
         ctx.lineWidth = isMajor ? 1.4 : 1;
@@ -231,6 +233,6 @@ function drawFixedRuler() {
     const originX = canvasLeft + CELL_SIZE * zoom - minX * cellSize;
     const originY = canvasTop + CELL_SIZE * zoom - minY * cellSize;
 
-    if (!mobile) drawGrid(ctx, width, height, originX, originY, cellSize);
+    drawGrid(ctx, width, height, originX, originY, cellSize, mobile);
     drawRulers(ctx, width, height, originX, originY, cellSize, mobile);
 }

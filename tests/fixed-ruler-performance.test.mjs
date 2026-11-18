@@ -53,7 +53,9 @@ test('ruler coalesces requests, uses the latest geometry, bounds dots and preser
     labels.length = 0;
     renderFixedRuler(); frames.shift()();
     assert.equal(clears, 4);
-    assert.equal(dots.length, 0);
+    assert.ok(dots.length > 0);
+    assert.ok(dots.every(([x, y]) => x >= 22 && y >= 20));
+    assert.ok(dots.some(([x, y]) => x > 700 && y > 550), 'mobile grid extends beyond the pattern across the viewport');
     assert.ok(labels.some(label => label.label === '1' && label.x === 55 && label.y === 8));
     assert.ok(labels.some(label => label.label === '1' && label.x === 9 && label.y === 65));
     assert.ok(labels.every(label => Number(label.label) <= (label.y === 8 ? 20 : 15)));

@@ -5,7 +5,7 @@ const SCOPE = '#workbench-figma-main-toolbar, #workbench-figma-brush-toolbar, #w
 const TOOLS = {
     'figma-main-pan-btn': '拖动画布（H），按住空格临时拖动',
     'figma-main-brush-btn': '选择上色工具（B）',
-    'figma-main-eyedropper-btn': '从图纸取色（I）',
+    'figma-main-eyedropper-btn': '从图纸取色（I），按住 Alt/Option 临时吸色',
     'figma-main-palette-btn': '查看和选择颜色（C）',
     'figma-main-eraser-btn': '选择擦除工具（E）',
     'figma-main-undo-btn': '撤销上一步（Ctrl/⌘+Z）',

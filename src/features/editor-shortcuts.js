@@ -1,6 +1,7 @@
 /** PC editor keyboard policy; actions share the existing button/edit paths. */
 export function createEditorShortcuts(actions) {
     let spaceHeld = false;
+    let altHeld = false;
     let temporaryPan = false;
     let releasePending = false;
     const tools = { b: 'brush', h: 'pan', i: 'eyedropper', c: 'palette', e: 'eraser' };
@@ -10,10 +11,19 @@ export function createEditorShortcuts(actions) {
         releasePending = false;
     };
     return {
+        get temporaryPicker() { return altHeld; },
         keydown(event) {
             const context = actions.context(event);
             if (event.defaultPrevented || event.isComposing || event.keyCode === 229 || event.repeat || !context.enabled || context.typing || context.busy) return;
             const key = event.key.toLowerCase();
+            if (key === 'alt' && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+                if (altHeld || spaceHeld || context.modal || context.panel || context.palette || context.pickerBlocked) return;
+                event.preventDefault();
+                altHeld = true;
+                actions.beginTemporaryPicker();
+                return;
+            }
+            if (altHeld) return;
             if (key === 'escape' && !event.ctrlKey && !event.metaKey && !event.altKey) {
                 if (spaceHeld) return;
                 event.preventDefault();
@@ -46,6 +56,12 @@ export function createEditorShortcuts(actions) {
             actions.selectTool(tool);
         },
         keyup(event) {
+            if (event.key === 'Alt' && altHeld) {
+                event.preventDefault();
+                altHeld = false;
+                actions.endTemporaryPicker();
+                return;
+            }
             if (event.key !== ' ' || !spaceHeld) return;
             event.preventDefault();
             spaceHeld = false;
@@ -57,6 +73,8 @@ export function createEditorShortcuts(actions) {
             if (releasePending) actions.defer(finishPan);
         },
         blur() {
+            if (altHeld) actions.endTemporaryPicker();
+            altHeld = false;
             spaceHeld = false;
             actions.stopPan();
             finishPan();

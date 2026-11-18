@@ -34,7 +34,7 @@ function comparable(version) {
     if (value.colorSelection) delete value.colorSelection.updatedAt;
     return JSON.stringify(value);
 }
-export function buildDraftWithVersions(next, previous = null) {
+export function buildDraftWithVersions(next, previous = null, { forceVersion = false } = {}) {
     let past = [];
     if (previous) {
         if (Array.isArray(previous.versions) && previous.versions.length) {
@@ -44,7 +44,7 @@ export function buildDraftWithVersions(next, previous = null) {
         }
     }
     const newest = packDraftVersion(next);
-    const changed = !past.length || comparable(past[0].version) !== comparable(newest) || past[0].source !== (next.sourceImageDataUrl || null);
+    const changed = forceVersion || !past.length || comparable(past[0].version) !== comparable(newest) || past[0].source !== (next.sourceImageDataUrl || null);
     if (changed) {
         past.unshift({ version: newest, source: next.sourceImageDataUrl || null });
     }

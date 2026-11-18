@@ -197,11 +197,11 @@ export function renderResult(canvas, pixelArray, gridWidth, gridHeight, highligh
         }
     }
 
-    // PC editing uses the fixed overlay for 5/10-cell guides; retain other canvases.
+    // PC and mobile editing use the full-view fixed overlay for 5/10-cell guides.
     const useFixedGrid = canvas.id === 'result-canvas'
         && AppState.currentStep === 3
         && document.getElementById('fixed-ruler-canvas')
-        && document.getElementById('workbench-layout')?.dataset.viewport === 'desktop';
+        && ['desktop', 'mobile'].includes(document.getElementById('workbench-layout')?.dataset.viewport);
     // 5.3 辅助线 (基于全局坐标计算是否为 5/10 倍数)
     // 垂直辅助线
     for (let x = minX + 1; !useFixedGrid && x <= maxX; x++) {

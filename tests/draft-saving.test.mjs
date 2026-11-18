@@ -183,11 +183,11 @@ test('failed changed save does not trim an existing ten-version history',async()
  fail=false;assert.equal(await saveWorkbenchDraft(),true);assert.equal(AppState.drafts[0].versions.length,3);assert.equal(records.get(saved.id).versions.length,3);
 });
 
-test('PC save button saves without opening history or creating duplicate versions',async()=>{
+test('PC save button records every explicit save without opening history',async()=>{
  setup();AppState.workbenchViewportMode='desktop';AppState.draftDrawerOpen=false;
  assert.equal(await saveWorkbenchDraftFromButton(),true);assert.equal(AppState.draftDrawerOpen,false);
  const id=AppState.currentDraftId;assert.equal(await saveWorkbenchDraftFromButton(),true);
- assert.equal(AppState.currentDraftId,id);assert.equal(AppState.drafts[0].versions.length,1);assert.equal(records.size,1);
+ assert.equal(AppState.currentDraftId,id);assert.equal(AppState.drafts[0].versions.length,2);assert.equal(records.size,1);
 });
 test('PC save failure keeps history closed and preserves unsaved diagram',async()=>{
  setup();AppState.workbenchViewportMode='desktop';AppState.draftDrawerOpen=false;fail=true;
@@ -195,21 +195,22 @@ test('PC save failure keeps history closed and preserves unsaved diagram',async(
  assert.equal(await saveWorkbenchDraftFromButton(),false);assert.equal(AppState.draftDrawerOpen,false);
  assert.deepEqual(AppState.pixelData,before);assert.equal(records.size,0);assert.equal(alerts.length,1);
 });
-test('PAD/mobile save buttons retain save-then-open behavior',async()=>{
+test('phone save only saves while PAD retains save-then-open behavior',async()=>{
  for(const mode of ['tablet','mobile']){
   setup();AppState.workbenchViewportMode=mode;AppState.draftDrawerOpen=false;
-  assert.equal(await saveWorkbenchDraftFromButton(),true);assert.equal(AppState.draftDrawerOpen,true);
+  assert.equal(await saveWorkbenchDraftFromButton(),true);
+  assert.equal(AppState.draftDrawerOpen,mode==='tablet');
  }
 });
 
-test('PC button reports saving and saved, rejects repeat clicks, then restores its label',async()=>{
- setup();AppState.workbenchViewportMode='desktop';AppState.draftDrawerOpen=false;
+for (const mode of ['desktop', 'mobile']) test(mode+' button reports saving and saved, rejects repeat clicks, then restores its label',async()=>{
+ setup();AppState.workbenchViewportMode=mode;AppState.draftDrawerOpen=false;
  const label={textContent:'保存草稿'},attributes={};
  const classes=new Set();
  const button={disabled:false,querySelector:()=>label,setAttribute:(key,value)=>attributes[key]=value,classList:{toggle:(name,on)=>on?classes.add(name):classes.delete(name)}};
  const original=document.getElementById,timer=globalThis.setTimeout;let finishFeedback,finishMinimum;
  document.getElementById=id=>id==='save-draft-btn'?button:original(id);
- globalThis.setTimeout=(callback,delay)=>{if(delay===2000) finishFeedback=callback;else {assert.ok(delay>0 && delay<=1500);finishMinimum=callback;}return null;};
+ globalThis.setTimeout=(callback,delay)=>{if(delay===(mode==='mobile'?1000:2000)) finishFeedback=callback;else {assert.ok(delay>0 && delay<=1500);finishMinimum=callback;}return null;};
  try {
   const pending=saveWorkbenchDraftFromButton();
   assert.equal(label.textContent,'保存中…');assert.equal(button.disabled,true);assert.equal(attributes['aria-busy'],'true');
@@ -218,7 +219,7 @@ test('PC button reports saving and saved, rejects repeat clicks, then restores i
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(records.size,1);assert.equal(label.textContent,'保存中…');assert.equal(button.disabled,true);
   assert.equal(await saveWorkbenchDraftFromButton(),false);finishMinimum();
-  assert.equal(await pending,true);assert.equal(label.textContent,'已保存');assert.equal(button.disabled,false);
+  assert.equal(await pending,true);assert.equal(label.textContent,mode==='mobile'?'保存成功':'已保存');assert.equal(button.disabled,false);
   assert.equal(classes.has('is-saving'),false);
   assert.equal(records.size,1);assert.equal(AppState.draftDrawerOpen,false);
   finishFeedback();assert.equal(label.textContent,'保存草稿');assert.equal(attributes['aria-busy'],'false');

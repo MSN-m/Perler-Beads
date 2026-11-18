@@ -46,3 +46,15 @@ test('old ten-version history survives unchanged saving and trims only after cha
  assert.deepEqual(changed.versions.slice(1).map(version=>version.id),['old-0','old-1']);
  assert.equal(same.versions.length,10);
 });
+
+test('explicit save records unchanged pixels with a new timestamp and keeps the latest three',()=>{
+ let saved=buildDraftWithVersions({...draft(),updatedAt:'2026-11-18T01:00:00Z'});
+ for(let i=1;i<=4;i++){
+  const next={...draft(),updatedAt:`2026-11-18T01:00:0${i}Z`};
+  saved=buildDraftWithVersions(next,saved,{forceVersion:true});
+ }
+ assert.deepEqual(saved.versions.map(version=>version.savedAt),[
+  '2026-11-18T01:00:04Z','2026-11-18T01:00:03Z','2026-11-18T01:00:02Z']);
+ assert.equal(new Set(saved.versions.map(version=>version.id)).size,3);
+ assert.ok(saved.versions.every(version=>unpackDraftVersion(saved,version).pixelData[0].id==='A'));
+});

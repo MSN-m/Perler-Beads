@@ -648,6 +648,23 @@ function isPaletteReplacementPending() {
     return AppState.batchReplace?.active && AppState.batchReplace.origin === 'palette';
 }
 
+const mobileToolHints = {
+    pan: '拖动 · 单指移动画布',
+    eyedropper: '吸管 · 点按图纸取色',
+    eraser: '橡皮 · 滑过要擦除的格子',
+    'area-erase': '区域擦除 · 点按要擦除的区域',
+    'color-eraser': '按颜色擦除 · 点按要擦除的颜色'
+};
+const mobilePaintToolHints = {
+    brush: '画笔',
+    bucket: '油漆桶',
+    edge: '边框'
+};
+
+let mobileToolHintKey;
+let mobileToolHintUntil = 0;
+let mobileToolHintTimer;
+
 function syncMobilePaletteHint(enabled) {
     const hint = document.getElementById('mobile-palette-hint');
     if (!hint) return;
@@ -655,16 +672,51 @@ function syncMobilePaletteHint(enabled) {
     const isCurrent = notice && notice.patternId === AppState.colorSelectionPatternId;
     const kind = enabled && (isPaletteReplacementPending() ? 'replace' : isCurrent ? notice.kind : null);
     const colorId = kind === 'replace' ? AppState.batchReplace.sourceColorId : notice?.colorId;
-    const visible = Boolean(kind && (kind !== 'highlight' || AppState.highlightedColorId === colorId)
+    const showNotice = Boolean(kind && (kind !== 'highlight' || AppState.highlightedColorId === colorId)
         && (kind !== 'select' || (AppState.editor.activeTool === 'brush' && AppState.paintColor?.id === colorId)));
-    hint.hidden = !visible;
-    if (!visible) return;
-    const messages = { select: '已选中', highlight: '已选中所有', replace: '点击颜色替换' };
+    const tool = AppState.editor.activeTool;
+    const key = enabled ? JSON.stringify([AppState.colorSelectionPatternId, tool]) : null;
+    clearTimeout(mobileToolHintTimer);
+    if (key !== mobileToolHintKey && !showNotice) {
+        mobileToolHintKey = key;
+        mobileToolHintUntil = enabled ? Date.now() + 3000 : 0;
+    }
+    const remaining = enabled && key === mobileToolHintKey ? Math.max(0, mobileToolHintUntil - Date.now()) : 0;
+    if (remaining) {
+        const nextTick = remaining % 1000 || 1000;
+        mobileToolHintTimer = setTimeout(() => {
+            syncMobilePaletteHint(AppState.workbenchViewportMode === 'mobile' && AppState.currentStep === 3 && hasWorkbenchPattern());
+        }, nextTick);
+    }
+    const showCountdown = remaining > 0 && !showNotice;
+    const countdown = document.getElementById('mobile-tool-countdown');
+    if (countdown) {
+        countdown.hidden = !showCountdown;
+        if (showCountdown) countdown.textContent = `${Math.ceil(remaining / 1000)}s`;
+    }
+
+    const paintTool = mobilePaintToolHints[tool];
+    const color = paintTool && AppState.paintColor?.id !== 'NONE' ? AppState.paintColor : null;
+    let text = mobileToolHints[tool] || '';
+    if (paintTool && !color) text = `${paintTool} · 请先选色`;
+    if (color) {
+        if (tool === 'brush') text = '画笔 · 滑过要上色的格子';
+        if (tool === 'bucket') text = '油漆桶 · 点按填充相连的同色格';
+        if (tool === 'edge') text = '边框 · 点按高亮边缘上色';
+    }
+    if (showNotice) {
+        const messages = { select: '已选中', highlight: '已选中所有', replace: '点击颜色替换' };
+        text = messages[kind] + colorId;
+    } else if (!remaining) {
+        text = '';
+    }
+
+    hint.hidden = !enabled || !text;
+    if (hint.hidden) return;
     const message = document.getElementById('mobile-palette-message');
-    const text = messages[kind] + colorId;
     if (message.textContent !== text) message.textContent = text;
     const dismiss = document.getElementById('mobile-palette-hint-dismiss');
-    dismiss.hidden = kind === 'select';
+    dismiss.hidden = !showNotice || kind === 'select';
     dismiss.setAttribute('aria-label', kind === 'replace' ? '取消替换' : '取消高亮');
 }
 
@@ -1542,12 +1594,14 @@ function syncDraftSaveFeedback() {
     if (!button || !label) return;
     label.setAttribute?.('aria-live', 'polite');
     label.setAttribute?.('aria-atomic', 'true');
-    const active = AppState.workbenchViewportMode === 'desktop' && hasWorkbenchPattern()
+    const active = ['desktop', 'mobile'].includes(AppState.workbenchViewportMode) && hasWorkbenchPattern()
         && draftSaveFeedback?.patternId === AppState.colorSelectionPatternId;
     button.disabled = Boolean(active && draftSaveFeedback.phase === 'saving');
     button.setAttribute('aria-busy', button.disabled ? 'true' : 'false');
     button.classList?.toggle('is-saving', button.disabled);
-    if (active) label.textContent = draftSaveFeedback.phase === 'saving' ? '保存中…' : '已保存';
+    button.classList?.toggle('is-saved', Boolean(active && draftSaveFeedback.phase === 'saved'));
+    if (active) label.textContent = draftSaveFeedback.phase === 'saving' ? '保存中…'
+        : AppState.workbenchViewportMode === 'mobile' ? '保存成功' : '已保存';
     else if (hasWorkbenchPattern()) label.textContent = '保存草稿';
 }
 const DRAFT_SETTING_IDS = ['color-limit-toggle', 'max-colors-slider', 'dithering-toggle', 'precision-mode-select', 'color-match-mode-select'];
@@ -1563,7 +1617,7 @@ function captureDraftGenerationSettings() {
     }
     return settings;
 }
-export async function saveWorkbenchDraft({ saveAs = false, name = null, inlineError = false } = {}) {
+export async function saveWorkbenchDraft({ saveAs = false, name = null, inlineError = false, forceVersion = false } = {}) {
     if (!hasWorkbenchPattern() || savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
     savingDraft = true;
     try {
@@ -1589,7 +1643,7 @@ export async function saveWorkbenchDraft({ saveAs = false, name = null, inlineEr
             sourceImageDataUrl: AppState.image ? getCurrentSourceCanvasSnapshot() || AppState.draftSourceImageDataUrl || existing?.sourceImageDataUrl || null : AppState.draftSourceImageDataUrl || null,
             thumbnailDataUrl: createDraftThumbnail(pixels, AppState.gridWidth, AppState.gridHeight),
             pixelData: pixels
-        }, existing);
+        }, existing, { forceVersion });
         const autoRecordId = autoSaveKey();
         const savedPatternId = AppState.colorSelectionPatternId;
         if (saveAs) draft.colorSelection.patternId = `draft:${draft.id}`;
@@ -1625,17 +1679,17 @@ export async function saveWorkbenchDraftFromButton() {
     if (!AppState.pixelData?.length) { toggleDraftDrawer(); return false; }
     if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
     if (draftSaveFeedback?.phase === 'saving' && draftSaveFeedback.patternId === AppState.colorSelectionPatternId) return false;
-    const desktop = AppState.workbenchViewportMode === 'desktop';
+    const showFeedback = ['desktop', 'mobile'].includes(AppState.workbenchViewportMode);
     const patternId = AppState.colorSelectionPatternId;
     const feedbackStartedAt = Date.now();
-    const feedback = desktop ? { patternId, phase: 'saving' } : null;
-    if (desktop) {
+    const feedback = showFeedback ? { patternId, phase: 'saving' } : null;
+    if (showFeedback) {
         clearTimeout(draftSaveFeedbackTimer);
         draftSaveFeedback = feedback;
         syncDraftSaveFeedback();
     }
     try {
-        const saved = await saveWorkbenchDraft();
+        const saved = await saveWorkbenchDraft({ forceVersion: true });
         if (saved && feedback && AppState.colorSelectionPatternId === patternId) {
             const remaining = 1500 - (Date.now() - feedbackStartedAt);
             if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
@@ -1646,9 +1700,9 @@ export async function saveWorkbenchDraftFromButton() {
             if (saved) draftSaveFeedbackTimer = setTimeout(() => {
                 draftSaveFeedback = null;
                 syncDraftSaveFeedback();
-            }, 2000);
+            }, AppState.workbenchViewportMode === 'mobile' ? 1000 : 2000);
         }
-        if (!desktop && AppState.colorSelectionPatternId === patternId) {
+        if (AppState.workbenchViewportMode === 'tablet' && AppState.colorSelectionPatternId === patternId) {
             AppState.draftDrawerOpen = true;
             updateWorkbenchUI();
         }
@@ -1783,6 +1837,20 @@ export function hasUnsavedWorkbenchChanges() {
     }
     return JSON.stringify(AppState.cropRect || null) !== JSON.stringify(draft.cropRect || null);
 }
+let unsavedEntryBaseline = null;
+function captureWorkbenchReturnContent() {
+    return JSON.stringify({
+        pixels: AppState.stagedPixelData || AppState.pixelData,
+        width: AppState.gridWidth,
+        height: AppState.gridHeight,
+        brand: AppState.brand,
+        mardSet: AppState.mardSet,
+        mirrored: Boolean(AppState.isMirrored),
+        name: String(AppState.patternName || '').trim(),
+        crop: AppState.cropRect || null,
+        settings: captureDraftGenerationSettings()
+    });
+}
 let returningFromWorkbench = null;
 function exitWorkbenchToUpload() {
     resetGlobalEditorSession();
@@ -1810,7 +1878,10 @@ export async function returnFromWorkbench() {
     if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
     await workbenchDraftsReady;
     if (savingDraft || autoSaving || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke) return false;
-    if (!hasUnsavedWorkbenchChanges()) { exitWorkbenchToUpload(); return true; }
+    const hasSavedDraft = (AppState.drafts || []).some(draft => draft.id === AppState.currentDraftId);
+    const matchesEntry = !hasSavedDraft && unsavedEntryBaseline?.patternId === AppState.colorSelectionPatternId
+        && unsavedEntryBaseline.content === captureWorkbenchReturnContent();
+    if (matchesEntry || !hasUnsavedWorkbenchChanges()) { exitWorkbenchToUpload(); return true; }
     const modal = document.getElementById('workbench-exit-modal');
     const save = document.getElementById('workbench-exit-save');
     const discard = document.getElementById('workbench-exit-discard');
@@ -3256,7 +3327,7 @@ function updateWorkbenchComparePreview(resetScale = false) {
     );
 
     if (resetScale || !AppState.comparePreviewScale) {
-        AppState.comparePreviewScale = Math.max(fitScale, 0.1);
+        AppState.comparePreviewScale = Math.max(fitScale, isWorkbenchMobileLayout() ? 0.01 : 0.1);
         AppState.comparePreviewOffsetX = 0;
         AppState.comparePreviewOffsetY = 0;
         AppState.comparePreviewDragging = false;
@@ -3286,10 +3357,13 @@ export function resetWorkbenchComparePreview() {
 export function toggleWorkbenchComparePreview() {
     if (!isWorkbenchLayout() || !hasWorkbenchPattern()) return;
     AppState.comparePreviewVisible = !AppState.comparePreviewVisible;
-    if (AppState.comparePreviewVisible) {
-        updateWorkbenchComparePreview(true);
+    if (isWorkbenchMobileLayout()) {
+        updateWorkbenchUI();
+        if (AppState.comparePreviewVisible) updateWorkbenchComparePreview(true);
+    } else {
+        if (AppState.comparePreviewVisible) updateWorkbenchComparePreview(true);
+        updateWorkbenchUI();
     }
-    updateWorkbenchUI();
 }
 
 export function toggleWorkbenchSettingsPanel() {
@@ -3393,6 +3467,20 @@ function applyWorkbenchLayoutMode(hasPattern) {
     if (mobileHome) mobileHome.hidden = !showMobileHome;
     layout.classList.toggle('draft-modal-open', AppState.draftDrawerOpen);
     activeShell.dataset.mode = hasPattern ? 'editor' : 'setup';
+    const settingsButton = document.getElementById('show-workbench-settings-panel-btn');
+    const settingsParent = document.getElementById(isMobile && hasPattern ? 'workbench-name-editor' : 'workbench-top-title');
+    if (settingsButton && settingsParent && settingsButton.parentElement !== settingsParent) {
+        settingsParent.appendChild(settingsButton);
+    }
+    const mobileSettingsModal = document.getElementById('mobile-settings-modal');
+    const mobileUploadActions = document.getElementById('mobile-upload-actions');
+    if (mobileSettingsModal && mobileUploadActions?.parentElement) {
+        if (isMobile && hasPattern && mobileSettingsModal.parentElement !== document.body) {
+            document.body.appendChild(mobileSettingsModal);
+        } else if ((!isMobile || !hasPattern) && mobileSettingsModal.parentElement !== mobileUploadActions.parentElement) {
+            mobileUploadActions.before(mobileSettingsModal);
+        }
+    }
     if (hasPattern) {
         const editorDraftParent = topDraftSlot || sideDraftSlot;
         if (draftActions.parentElement !== editorDraftParent) editorDraftParent.appendChild(draftActions);
@@ -3540,6 +3628,7 @@ export function zoomWorkbenchComparePreview(deltaY) {
 }
 
 let desktopEntryPatternId = null;
+let mobileEntryPatternId = null;
 
 // Presentation only: closing a hint never cancels or changes the editing tool.
 let operationHintKey = null;
@@ -3585,7 +3674,21 @@ export function updateWorkbenchUI() {
     const hasPattern = hasWorkbenchPattern();
     setHidden('image-adjustments-panel', hasPattern || !hasImage);
     syncImageAdjustmentControls();
-    if (!hasPattern) desktopEntryPatternId = null;
+    if (!hasPattern) unsavedEntryBaseline = null;
+    if (hasPattern && unsavedEntryBaseline?.patternId !== AppState.colorSelectionPatternId) {
+        unsavedEntryBaseline = {
+            patternId: AppState.colorSelectionPatternId,
+            content: captureWorkbenchReturnContent()
+        };
+    }
+    if (!hasPattern) {
+        desktopEntryPatternId = null;
+        mobileEntryPatternId = null;
+    }
+    if (hasPattern && getWorkbenchViewportMode() === 'mobile' && mobileEntryPatternId !== AppState.colorSelectionPatternId) {
+        mobileEntryPatternId = AppState.colorSelectionPatternId;
+        setActiveEditorTool('pan');
+    }
     if (hasPattern && getWorkbenchViewportMode() === 'desktop' && desktopEntryPatternId !== AppState.colorSelectionPatternId) {
         desktopEntryPatternId = AppState.colorSelectionPatternId;
         AppState.editor.activeTool = 'pan';
@@ -3619,7 +3722,7 @@ export function updateWorkbenchUI() {
     setHidden('result-canvas', !hasPattern);
     setHidden('workbench-single-stage', hasPattern);
     setHidden('workbench-edit-stage', !hasPattern);
-    setHidden('toggle-compare-preview-btn', !hasPattern || (isMobile && !hasImage));
+    setHidden('toggle-compare-preview-btn', !hasPattern);
     setHidden('compare-source-pane', !compareVisible);
     // The tool palette stays available while editing; only the active tool changes.
     const desktopToolbar = getWorkbenchViewportMode() === 'desktop';
@@ -3813,10 +3916,20 @@ export function updateWorkbenchUI() {
             : ['brush', 'bucket', 'edge'].includes(activeTool) ? 'brush'
             : ['eraser', 'area-erase', 'color-eraser'].includes(activeTool) ? 'eraser' : activeTool;
         mobileToolbar.dataset.activeGroup = activeGroup;
+        document.getElementById('mobile-pan-tool-btn')?.setAttribute('aria-pressed', String(activeTool === 'pan' && !paletteOpen));
         for (const button of mobileToolbar.querySelectorAll('[data-tool-menu] [data-tool-action]')) {
             const selected = button.dataset.toolAction === activeTool
                 || (button.dataset.toolAction === 'color-erase' && activeTool === 'color-eraser');
             button.setAttribute('aria-pressed', String(selected));
+            const badge = button.querySelector('.mobile-brush-color');
+            const color = AppState.paintColor;
+            if (badge) {
+                badge.hidden = !selected || !color || color.id === 'NONE';
+                if (!badge.hidden) {
+                    badge.textContent = color.id;
+                    badge.style.setProperty('--mobile-brush-swatch', `rgb(${color.r}, ${color.g}, ${color.b})`);
+                }
+            }
         }
     }
     const compareSourceFrame = document.getElementById('compare-source-frame');
@@ -3831,12 +3944,40 @@ export function updateWorkbenchUI() {
     updateWorkbenchCursors(compareVisible);
     const compareBtn = document.getElementById('toggle-compare-preview-btn');
     if (compareBtn) {
-        compareBtn.textContent = compareVisible ? '收起原图' : '原图对照';
+        compareBtn.textContent = compareVisible ? '收起原图' : isMobile ? '查看原图' : '原图对照';
         compareBtn.setAttribute('aria-expanded', String(compareVisible));
     }
     const resultPane = document.getElementById('result-pane');
+    const editStage = document.getElementById('workbench-edit-stage');
+    const resultContainer = document.getElementById('result-container');
+    const resultCanvas = document.getElementById('result-canvas');
+    // Only mobile uses a vertical split. Preserve the viewed grid center and relative zoom.
+    const mobileCompare = isMobile && compareVisible;
+    const originalPane = document.getElementById('compare-source-pane');
+    if (originalPane) originalPane.dataset.hasOriginal = String(hasImage);
+    const splitChanged = editStage && (editStage.dataset.mobileCompare === 'true') !== mobileCompare;
+    const oldWidth = resultContainer?.clientWidth;
+    const oldHeight = resultContainer?.clientHeight;
+    if (editStage) editStage.dataset.mobileCompare = String(mobileCompare);
+    if (isMobile && splitChanged && resultCanvas && oldWidth && oldHeight) {
+        const nextFit = getResetZoomState(resultContainer, resultCanvas).fitScale;
+        const zoom = AppState.zoomState;
+        const ratio = nextFit / (zoom.fitScale || nextFit);
+        zoom.x = resultContainer.clientWidth / 2 - (oldWidth / 2 - zoom.x) * ratio;
+        zoom.y = resultContainer.clientHeight / 2 - (oldHeight / 2 - zoom.y) * ratio;
+        zoom.scale *= ratio;
+        zoom.fitScale = nextFit;
+        updateResultTransform(resultCanvas, zoom, document.getElementById('zoom-reset-btn'));
+    }
+    if (isMobile) {
+        const note = document.querySelector('#compare-source-pane p + p');
+        if (note) note.textContent = '双指缩放，拖动查看';
+    } else {
+        const note = document.querySelector('#compare-source-pane p + p');
+        if (note) note.textContent = '滚轮缩放，按钮重置';
+    }
     if (resultPane) {
-        const paneLeft = compareVisible ? '34%' : '0%';
+        const paneLeft = compareVisible && !isMobile ? '34%' : '0%';
         if (resultPane.style.left !== paneLeft) {
             resultPane.style.left = paneLeft;
             renderFixedRuler();

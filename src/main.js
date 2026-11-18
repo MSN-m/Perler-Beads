@@ -3,6 +3,7 @@
  */
 import { cancelFillSelection } from './features/adjust.js';
 import { AppState } from './state.js';
+import { installMobileCompareGestures, installMobileCompareDivider } from './features/mobile-compare.js?v=20261118-divider';
 import { beginMobileLoading, isMobileLoadingActive } from './features/mobile-loading.js?v=20261116-mobile-loading';
 import { installWorkbenchRename } from './features/pattern-rename.js';
 import { installWorkbenchTooltips, installPickerColorPreview } from './features/tooltips.js';
@@ -103,9 +104,10 @@ import {
 } from './ui.js';
 import { downloadImage, downloadRawImage, downloadMirroredImage } from './exporter.js';
 import { initZoomEvents, resetZoom } from './features/zoom.js';
+import { getGridHitFromEvent } from './features/adjust.js';
 import { initCanvasContextMenu } from './features/canvas-context-menu.js';
 import { installQualityReview } from './features/quality.js';
-import { setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState, restorePaletteToolSession } from './editor.js';
+import { rememberPaintColor, setActiveEditorTool, resetPatternColorSelection, resetBatchReplaceState, restorePaletteToolSession } from './editor.js';
 import { renderResult } from './renderer.js';
 import { createEditorShortcuts } from './features/editor-shortcuts.js';
 import { createWorkbenchExportModal } from './features/export-modal.js';
@@ -713,8 +715,10 @@ document.addEventListener('DOMContentLoaded', () => {
         cropOverlay.addEventListener('touchstart', startWorkbenchCropInteraction, { passive: false });
     }
 
+    installMobileCompareDivider(document.getElementById('mobile-compare-divider'));
     const compareSourceFrame = document.getElementById('compare-source-frame');
     if (compareSourceFrame) {
+        installMobileCompareGestures(compareSourceFrame);
         compareSourceFrame.addEventListener('wheel', (e) => {
             if (AppState.currentStep !== 3) return;
             e.preventDefault();
@@ -928,6 +932,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('figma-main-brush-btn')?.addEventListener('click', () => {
         toolMenuActions[AppState.lastBrushTool || 'brush']();
     });
+    document.getElementById('mobile-pan-tool-btn')?.addEventListener('click', () => {
+        if (AppState.workbenchViewportMode === 'mobile') document.getElementById('figma-main-pan-btn')?.click();
+    });
     document.getElementById('figma-main-pan-btn')?.addEventListener('click', () => {
         closeToolOverlays();
         setActiveEditorTool('pan');
@@ -964,6 +971,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let palettePreviousTool = null;
     let pickerPreviousTool = null;
     let temporaryPanTool = null;
+    let temporaryPickerTool = null;
     document.getElementById('figma-main-palette-btn')?.addEventListener('click', () => {
         if (!AppState.palettePanelOpen && !AppState.allColorsPanelOpen) palettePreviousTool = captureTool();
     }, true);
@@ -984,7 +992,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 modal: modalOpen(),
                 panel: AppState.draftDrawerOpen || Boolean(AppState.workbenchTabletPanel),
                 palette: AppState.palettePanelOpen || AppState.allColorsPanelOpen,
-                tool: AppState.editor.activeTool
+                tool: AppState.editor.activeTool,
+                pickerBlocked: AppState.workbenchViewportMode !== 'desktop' || AppState.batchReplace.active || AppState.adjustPhase === 'waiting_donor'
             };
         },
         selectTool(tool) {
@@ -996,6 +1005,16 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         undo: () => topUndoBtn?.click(),
         redo: () => topRedoBtn?.click(),
+        beginTemporaryPicker() {
+            temporaryPickerTool = captureTool();
+            temporaryPickerTool.state.selectedEdgeBeadsIndices = AppState.selectedEdgeBeadsIndices;
+            setActiveEditorTool('eyedropper');
+            updateWorkbenchUI();
+        },
+        endTemporaryPicker() {
+            if (AppState.workbenchViewportMode === 'desktop' && AppState.editor.activeTool === 'eyedropper') restoreTool(temporaryPickerTool);
+            temporaryPickerTool = null;
+        },
         beginTemporaryPan() {
             temporaryPanTool = captureTool();
             setActiveEditorTool('pan');
@@ -1256,6 +1275,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (resultCanvas) {
+        // Consume the entire picker click, including when Alt is released before mouseup.
+        let pickerMouseDown = false;
+        resultCanvas.addEventListener('mousedown', event => {
+            pickerMouseDown = false;
+            if (!keyboard.temporaryPicker || event.button !== 0) return;
+            pickerMouseDown = true;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (AppState.workbenchViewportMode !== 'desktop' || modalOpen()
+                || temporaryPickerTool?.patternId !== AppState.colorSelectionPatternId) return;
+            const hit = getGridHitFromEvent(event);
+            const color = hit && (AppState.stagedPixelData || AppState.pixelData)[hit.idx];
+            if (!color || color.id === 'NONE') return;
+            rememberPaintColor(color);
+            Object.assign(temporaryPickerTool.state, {
+                fillColor: AppState.fillColor, fillColorId: AppState.fillColorId,
+                fillSourceMode: 'palette', fillSourceIndex: null, fillSourceSample: null
+            });
+            updateWorkbenchUI();
+        }, true);
+        resultCanvas.addEventListener('click', event => {
+            if (!pickerMouseDown && !keyboard.temporaryPicker) return;
+            pickerMouseDown = false;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }, true);
         resultCanvas.addEventListener('mouseleave', () => updateEraserHover(null, resultCanvas));
         window.addEventListener('blur', () => { if (endFillSelection()) updateWorkbenchUI(); });
         resultCanvas.addEventListener('mousedown', (e) => {
