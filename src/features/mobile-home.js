@@ -25,6 +25,8 @@ function renderPatternCard(grid, record, openExample) {
 function installHomeIconMotion(home) {
     const scrollArea = home.querySelector('.mobile-home-scroll');
     const icons = home.querySelector('.mobile-home-icons');
+    const brand = home.querySelector('.mobile-home-brand');
+    const examples = home.querySelector('.mobile-home-grid');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let lastScrollTop = scrollArea.scrollTop;
     let lag = 0;
@@ -38,6 +40,8 @@ function installHomeIconMotion(home) {
         lag = 0;
         lastScrollTop = scrollArea.scrollTop;
         icons.style.removeProperty('--home-icon-lag');
+        brand.style.removeProperty('--home-brand-lag');
+        examples.style.removeProperty('--home-example-lag');
     };
 
     const settle = time => {
@@ -55,6 +59,8 @@ function installHomeIconMotion(home) {
             return;
         }
         icons.style.setProperty('--home-icon-lag', `${lag.toFixed(2)}px`);
+        brand.style.setProperty('--home-brand-lag', `${(lag * 1.7).toFixed(2)}px`);
+        examples.style.setProperty('--home-example-lag', `${(lag * 0.3).toFixed(2)}px`);
         frame = requestAnimationFrame(settle);
     };
 

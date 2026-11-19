@@ -3226,11 +3226,23 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         .mobile-home-icon {
             animation: mobile-home-float 5.6s ease-in-out var(--float-delay) infinite;
         }
+
+        .mobile-home-brand {
+            transform: translateY(var(--home-brand-lag, 0px));
+        }
+
+        .mobile-home-brand > img,
+        .mobile-home-brand > strong {
+            --float-down: 4px;
+            --float-up: -6px;
+            --float-tilt: 3deg;
+            animation: mobile-home-float 5.6s ease-in-out -1.2s infinite;
+        }
     }
 
     @keyframes mobile-home-float {
-        0%, 100% { transform: translateY(2px) rotate(-2deg); }
-        50% { transform: translateY(-3px) rotate(2deg); }
+        0%, 100% { transform: translateY(var(--float-down, 2px)) rotate(calc(-1 * var(--float-tilt, 2deg))); }
+        50% { transform: translateY(var(--float-up, -3px)) rotate(var(--float-tilt, 2deg)); }
     }
 
     .mobile-home-gallery {
@@ -3278,6 +3290,21 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         width: var(--cover-width);
         height: auto;
         image-rendering: pixelated;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .mobile-home-card {
+            animation: mobile-home-example-float 6.4s ease-in-out -0.8s infinite;
+        }
+
+        .mobile-home-card:nth-child(4n + 2) { animation-delay: -2.4s; }
+        .mobile-home-card:nth-child(4n + 3) { animation-delay: -4s; }
+        .mobile-home-card:nth-child(4n + 4) { animation-delay: -5.6s; }
+    }
+
+    @keyframes mobile-home-example-float {
+        0%, 100% { transform: translateY(calc(var(--home-example-lag, 0px) + 1.5px)) rotate(-0.4deg); }
+        50% { transform: translateY(calc(var(--home-example-lag, 0px) - 1.5px)) rotate(0.4deg); }
     }
 
     .mobile-home-actions {
@@ -3502,6 +3529,9 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 }
 
 @media (max-width: 767px) {
+    body:has(#mobile-draft-dialog[open]) .mobile-home-card,
+    body:has(#mobile-draft-dialog[open]) .mobile-home-brand > img,
+    body:has(#mobile-draft-dialog[open]) .mobile-home-brand > strong,
     body:has(#mobile-draft-dialog[open]) .mobile-home-icon,
     body:has(#mobile-draft-dialog[open]) .mobile-home-tagline {
         animation-play-state: paused;
@@ -3522,7 +3552,8 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         height: 100dvh;
         min-height: 0;
         overflow: hidden;
-        background: #fff;
+        padding-top: calc(44px + env(safe-area-inset-top, 0px));
+        background: linear-gradient(239.51deg, #fbeff8 16.76%, #def3f7 43.57%, #ebe3fb 71.42%);
     }
 
     #mobile-upload-title:not([hidden]),
@@ -3539,13 +3570,30 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         font-weight: 400;
     }
 
+    #mobile-upload-title:not([hidden]) {
+        height: 68px;
+        padding: 0 96px;
+        border-radius: 20px 20px 0 0;
+        align-content: center;
+        gap: 4px;
+        line-height: 16px;
+    }
+
+    #mobile-upload-title small {
+        color: var(--pb-color-muted);
+        font-size: 12px;
+        line-height: 12px;
+        font-weight: 400;
+        white-space: nowrap;
+    }
+
     #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="upload"] {
         --mobile-upload-stage-height: calc(clamp(280px, calc(46dvh + 23px), 402px) - 44px);
         --mobile-upload-panel-radius: 20px;
         flex: 1;
         min-height: 0;
-        margin-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
-        padding: 0;
+        margin-bottom: 0;
+        padding: 0 0 env(safe-area-inset-bottom, 0px);
         background: #fff;
         overflow-y: auto;
         overscroll-behavior-y: none;
@@ -3558,8 +3606,7 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         min-height: 100%;
         grid-template-rows: max-content minmax(auto, 1fr) !important;
         overflow: visible;
-        background: linear-gradient(240.83deg, #fbeff8 16.76%, #def3f7 43.57%, #ebe3fb 71.42%)
-            top / 100% calc(var(--mobile-upload-stage-height) + var(--mobile-upload-panel-radius)) no-repeat;
+        background: #fff;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="setup"][data-mobile-step="upload"] #workbench-side-draft-slot {
@@ -3570,8 +3617,9 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         height: var(--mobile-upload-stage-height);
         min-height: 0;
         border: 0;
-        border-radius: 0;
-        background: transparent;
+        margin-inline: 12px;
+        border-radius: 8px;
+        background: #f4eff2;
         box-shadow: none;
     }
 
@@ -3749,15 +3797,16 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 
     #mobile-upload-actions {
         position: fixed;
-        inset: auto 0 0;
+        inset: calc(44px + env(safe-area-inset-top, 0px)) 0 auto;
         z-index: 90;
-        display: grid;
-        grid-template-columns: minmax(85px, 112px) minmax(0, 216px);
-        justify-content: center;
-        gap: 16px;
-        padding: 18px 16px calc(26px + env(safe-area-inset-bottom, 0px));
-        background: white;
-        box-shadow: 0 -8px 8px rgb(0 0 0 / 5%);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 68px;
+        padding: 8px;
+        background: transparent;
+        box-shadow: none;
+        pointer-events: none;
     }
 
     #mobile-upload-actions button, #mobile-upload-exit-dialog button {
@@ -3774,6 +3823,28 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         border-color: var(--pb-color-primary);
         background: var(--pb-color-primary);
         color: white;
+    }
+
+    #mobile-upload-actions button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-height: 44px;
+        padding: 16px 20px;
+        border: 0;
+        font-size: 12px;
+        line-height: 12px;
+        pointer-events: auto;
+    }
+
+    #mobile-upload-actions #mobile-upload-back {
+        min-height: 48px;
+        background: #f4eff2;
+    }
+
+    #mobile-upload-actions #mobile-upload-preview {
+        box-shadow: 0 0 6px rgb(244 113 162 / 40%);
     }
 
     #mobile-upload-title[hidden], #mobile-upload-actions[hidden], #mobile-upload-tabs[hidden] {
@@ -3814,17 +3885,20 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        padding-top: var(--mobile-title-height);
-        background: #fff;
+        padding-top: calc(112px + env(safe-area-inset-top, 0px));
+        background: linear-gradient(239.51deg, #fbeff8 16.76%, #def3f7 43.57%, #ebe3fb 71.42%);
         color: var(--pb-color-deep);
         font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     }
 
-    /* Safari samples a viewport-fixed header for the status-bar background. */
+    /* Keep the preview header aligned with the mobile upload panel. */
     #pattern-preview-layer .pattern-preview-mobile-title {
         position: fixed;
-        inset: 0 0 auto;
+        inset: calc(44px + env(safe-area-inset-top, 0px)) 0 auto;
         z-index: 1;
+        height: 68px;
+        padding: 0 96px;
+        border-radius: 20px 20px 0 0;
     }
 
     #pattern-preview-layer .pattern-preview-layout {
@@ -3834,15 +3908,28 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         grid-template-rows: minmax(120px, 1fr) auto;
         overflow-y: auto;
         overscroll-behavior-y: none;
-        background: linear-gradient(239.15deg, #fbeff8 16.76%, #def3f7 43.57%, #ebe3fb 71.42%);
+        background: #fff;
     }
 
     #pattern-preview-layer .pattern-preview-image {
-        padding: clamp(16px, 7dvh, 56px) clamp(16px, 7.73vw, 36px);
+        position: relative;
+        padding: clamp(16px, 4dvh, 34px) 24px clamp(24px, 8dvh, 68px);
+        background: #fff;
+    }
+
+    #pattern-preview-layer .pattern-preview-image::before {
+        content: "";
+        position: absolute;
+        inset: 0 12px 12px;
+        border-radius: 8px;
+        background: #f4eff2;
+        pointer-events: none;
     }
 
     #pattern-preview-layer .pattern-preview-frame {
-        overflow: visible;
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
         border: 0;
         border-radius: 0;
         background: transparent;
@@ -3853,14 +3940,14 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         display: block;
         flex: none;
         background: #fff;
-        box-shadow: 0 4px 10px rgb(0 0 0 / 5%);
+        box-shadow: none;
     }
 
     #pattern-preview-layer .pattern-preview-panel {
         max-height: none;
         gap: 0;
         overflow: visible;
-        padding: 20px 0 0;
+        padding: 20px 0 env(safe-area-inset-bottom, 0px);
         border: 0;
         border-radius: 20px 20px 0 0;
         background: #fff;
@@ -3914,26 +4001,50 @@ body[data-layout="workbench"] .crop-edge-handle-x {
     }
 
     #pattern-preview-layer .pattern-preview-actions {
-        grid-template-columns: minmax(85px, 112px) minmax(0, 216px);
-        justify-content: center;
-        gap: 16px;
+        position: absolute;
+        inset: calc(44px + env(safe-area-inset-top, 0px)) 0 auto;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 68px;
         margin: 0;
-        padding: 18px 16px calc(26px + env(safe-area-inset-bottom, 0px));
-        background: url("../assets/figma-ui/mobile-preview-divider.svg") left top repeat-x;
+        padding: 8px;
+        background: transparent;
+        pointer-events: none;
     }
 
     #pattern-preview-layer .pattern-preview-actions button {
-        min-height: 56px;
-        padding: 0 10px;
-        border: 1px solid #ebe7ea;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-height: 44px;
+        padding: 16px 20px;
+        border: 0;
+        pointer-events: auto;
         border-radius: 30px;
         background: #fff;
         color: var(--pb-color-deep);
-        font-size: 16px;
+        font-size: 12px;
+        line-height: 12px;
         font-weight: 600;
     }
 
+    #pattern-preview-layer #pattern-preview-cancel-btn {
+        min-height: 48px;
+        background: #f4eff2;
+    }
+
+    #pattern-preview-layer #pattern-preview-cancel-btn::before {
+        content: "";
+        width: 16px;
+        height: 16px;
+        background: url("../assets/figma-ui/mobile-upload-chevron.svg") center no-repeat;
+    }
+
     #pattern-preview-layer #pattern-preview-confirm-btn {
+        box-shadow: 0 0 6px rgb(244 113 162 / 40%);
         border-color: var(--pb-color-primary);
         background: var(--pb-color-primary);
         color: #fff;
@@ -4024,43 +4135,86 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         width: 100%;
         margin: 0;
         box-sizing: border-box;
-        height: calc(56px + env(safe-area-inset-top, 0px));
-        min-height: calc(56px + env(safe-area-inset-top, 0px));
-        padding: calc(7px + env(safe-area-inset-top, 0px)) 12px 9px 4px;
+        height: calc(156px + env(safe-area-inset-top, 0px));
+        min-height: calc(156px + env(safe-area-inset-top, 0px));
+        padding: calc(96px + env(safe-area-inset-top, 0px)) 10px 12px 8px;
+        align-items: center;
         gap: 8px;
         border: 0;
-        background: #fdfcfd;
+        background: linear-gradient(239.51deg, #fbeff8 16.76%, #def3f7 43.57%, #ebe3fb 71.42%);
         box-shadow: none;
     }
 
+    #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-top-actions::before {
+        content: "";
+        position: absolute;
+        inset: auto 0 0;
+        height: 68px;
+        border-radius: 20px 20px 0 0;
+        background: #fff;
+        pointer-events: none;
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-top-draft-slot {
+        position: relative;
+    }
+
     #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-top-title {
+        min-width: 84px;
         gap: 0;
+        overflow: visible;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-top-title > div {
-        flex: 0 1 auto;
-        align-self: flex-start;
-        margin-top: 6px;
+        position: absolute;
+        top: calc(48px + env(safe-area-inset-top, 0px));
+        left: 50%;
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: calc(100% - 96px);
+        margin: 0;
+        text-align: center;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-name-editor {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 4px;
         min-width: 0;
         height: 22px;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-back-btn {
-        flex: 0 0 40px;
-        width: 40px;
-        height: 40px;
-        transform: translateY(4px);
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        flex: 0 0 84px;
+        width: 84px;
+        height: 48px;
+        padding: 0 16px;
+        border-radius: 30px;
+        background: #f4eff2;
+        transform: none;
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-back-btn::after {
+        content: "返回";
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-back-btn img {
+        width: 16px;
+        height: 16px;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-pattern-title {
         max-width: none;
-        font-size: 20px;
+        font-size: 16px;
         line-height: 20px;
         font-weight: 600;
         color: #272e3e;
@@ -4072,7 +4226,8 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         white-space: nowrap;
         margin-top: 4px;
         color: #a0a6b3;
-        line-height: 10px;
+        font-size: 12px;
+        line-height: 14px;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="editor"] #show-workbench-settings-panel-btn {
@@ -4096,7 +4251,7 @@ body[data-layout="workbench"] .crop-edge-handle-x {
 
     #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-top-draft-slot #workbench-draft-actions {
         display: flex;
-        gap: 16px;
+        gap: 12px;
     }
 
     #workbench-layout[data-viewport="mobile"][data-mode="editor"] #draft-primary-control {
@@ -4104,7 +4259,7 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         grid-template-columns: 48px 34px !important;
         flex: 0 0 82px;
         width: 82px;
-        height: 40px;
+        height: 48px;
         border-radius: 26px;
         background: #f4eff2;
         box-shadow: none;
@@ -4117,7 +4272,7 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         justify-content: center;
         width: 100%;
         min-width: 0;
-        height: 40px;
+        height: 48px;
         padding: 0;
         border: none;
         border-radius: 0;
@@ -4150,7 +4305,7 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         content: "";
         position: absolute;
         left: 0;
-        top: 15px;
+        top: 19px;
         width: 1px;
         height: 10px;
         background: #a0a6b3;
@@ -4170,11 +4325,11 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         gap: 8px;
         flex: 0 0 84px;
         width: 84px;
-        height: 40px;
-        min-height: 40px;
+        height: 48px;
+        min-height: 48px;
         padding: 0;
         border: 0;
-        border-radius: 20px;
+        border-radius: 30px;
         color: #fff;
         background: var(--pb-color-primary);
         box-shadow: none;
