@@ -442,6 +442,7 @@ function setCursor(id, cursor) {
 function getResultCanvasCursor() {
     if (!hasWorkbenchPattern()) return WORKBENCH_CURSORS.default;
     if (AppState.editor?.activeTool === 'pan') return AppState.zoomState?.isDragging ? WORKBENCH_CURSORS.grabbing : WORKBENCH_CURSORS.pan;
+    if (AppState.workbenchViewportMode === 'desktop' && AppState.editor?.activeTool === 'eyedropper') return WORKBENCH_CURSORS.eyedropper;
     if (['color-eraser', 'area-erase', 'bucket'].includes(AppState.editor?.activeTool)) return WORKBENCH_CURSORS.crosshair;
     if (AppState.deleteMode || AppState.clearBaseMode) return WORKBENCH_CURSORS.eraser;
     if (AppState.fillMode) {

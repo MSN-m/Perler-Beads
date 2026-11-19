@@ -1,0 +1,14 @@
+[
+  {
+    "file": "/Volumes/MSN的1TB/ChatGPT/AIcode/Perler-Beads/outputs/back-button-test/01-标准返回测试-A和B.zip",
+    "bytes": 4896,
+    "sha256": "a91bae347af3cd591fd7e0e951013c5ec6ff3a11faeec9ab2a8c2105fdb35510",
+    "status": "single-page diagnostic"
+  },
+  {
+    "file": "/Volumes/MSN的1TB/ChatGPT/AIcode/Perler-Beads/outputs/back-button-test/02-多页返回实验-C.zip",
+    "bytes": 5624,
+    "sha256": "069aa1346878b7d52c1720c5eccee711af949770b699fb9b9013bec27b4b8788",
+    "status": "EXPERIMENT: not a conforming single-page release"
+  }
+]

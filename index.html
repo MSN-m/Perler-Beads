@@ -10,7 +10,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <title>拼豆图案生成器 - 工作台测试版</title>
     <link rel="stylesheet" href="css/tailwind.generated.css">
-    <link rel="stylesheet" href="css/style.css?v=20261118-mobile-history-size">
+    <link rel="stylesheet" href="css/style.css?v=20261119-mobile-home-centered">
     <!-- Keep updated editor modules on the same release, including relative imports. -->
     <script type="importmap">
     {
@@ -19,7 +19,7 @@
             "./src/editor.js": "./src/editor.js?v=20261103-quality-review-1",
             "./src/features/fixed-ruler.js": "./src/features/fixed-ruler.js?v=20261118-mobile-grid-2",
             "./src/renderer.js": "./src/renderer.js?v=20261118-mobile-grid-2",
-            "./src/ui.js": "./src/ui.js?v=20261118-return-clean",
+            "./src/ui.js": "./src/ui.js?v=20261119-alt-picker-cursor",
             "./src/processor.js": "./src/processor.js?v=20261116-preview-first",
             "./src/utils.js": "./src/utils.js?v=20261008-ruler-performance-1",
             "./src/features/quality.js": "./src/features/quality.js?v=20261104-quality-nonmodal-1",
@@ -108,19 +108,13 @@
                         上传图片
                     </label>
                     <div id="mobile-home">
-                        <header class="mobile-home-header">
-                            <div class="mobile-home-brand">
-                                <img src="assets/app-icon-192.png" width="36" height="36" alt="">
-                                <div><strong>小豆鸡</strong><span>拼豆图纸生成工具</span></div>
-                            </div>
-                            <button id="mobile-home-drafts" type="button" aria-haspopup="dialog" aria-controls="mobile-draft-dialog">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V6a2 2 0 0 1 2-2h4l3 3h6a2 2 0 0 1 2 2v1M3 19a1 1 0 0 0 1 1h14a2 2 0 0 0 2-1.4l2-6a2 2 0 0 0-1.9-2.6H9a2 2 0 0 0-1.9 1.4L5 18"/></svg>
-                                我的草稿
-                            </button>
-                        </header>
                         <div class="mobile-home-scroll">
                             <div class="mobile-home-content">
                                 <div class="mobile-home-hero">
+                                    <div class="mobile-home-brand">
+                                        <img src="assets/app-icon-192.png" width="42" height="42" alt="">
+                                        <strong>小豆鸡</strong>
+                                    </div>
                                     <div class="mobile-home-icons" aria-hidden="true">
                                         <span class="mobile-home-icon mobile-home-pointer"><img src="assets/figma-ui/mobile-home-pointer.svg" width="14" height="14" alt=""></span>
                                         <span class="mobile-home-icon mobile-home-bucket"><img src="assets/figma-ui/mobile-home-bucket.svg" width="16" height="16" alt=""></span>
@@ -140,10 +134,16 @@
                                 </section>
                             </div>
                         </div>
-                        <button id="mobile-home-upload" type="button">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3M7 8l5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
-                            上传图片 开始制图
-                        </button>
+                        <footer class="mobile-home-actions">
+                            <button id="mobile-home-drafts" type="button" aria-haspopup="dialog" aria-controls="mobile-draft-dialog">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V6a2 2 0 0 1 2-2h4l3 3h6a2 2 0 0 1 2 2v1M3 19a1 1 0 0 0 1 1h14a2 2 0 0 0 2-1.4l2-6a2 2 0 0 0-1.9-2.6H9a2 2 0 0 0-1.9 1.4L5 18"/></svg>
+                                我的草稿
+                            </button>
+                            <button id="mobile-home-upload" type="button">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3M7 8l5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
+                                上传图片
+                            </button>
+                        </footer>
                     </div>
                     <div id="workbench-setup-draft-slot"></div>
                 </div>

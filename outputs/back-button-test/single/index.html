@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>返回测试 A/B · 独立实验</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body data-kind="single">
+<main>
+  <span id="badge">标准单页包 · A / B</span>
+  <h1 id="heading" tabindex="-1">系统返回测试</h1>
+  <p id="message">进入第二页后，按小红书顶部返回，观察是回到第一页还是退出。</p>
+  <p id="startup" role="status">正在准备测试；如果此提示一直不消失，请重新打开。</p>
+  <section id="menu">
+    <button id="case-a" type="button" disabled>开始 A：页面历史记录</button>
+    <button id="case-b" class="secondary" type="button" disabled>开始 B：地址片段记录</button>
+    <p class="small">每项测试前，退出小工具再重新打开，避免上一项留下的记录影响结果。</p>
+  </section>
+  <section id="screen" hidden>
+    <p id="result" role="status" aria-live="polite"></p>
+    <button id="next" type="button">进入第二页</button>
+    <button id="web-back" class="secondary" type="button" disabled>对照：网页内返回</button>
+    <p class="note">先测试顶部系统返回。这里的“网页内返回”只用于对照，不能代替系统按钮的测试结果。</p>
+  </section>
+  <details>
+    <summary>查看诊断记录（需要时截图）</summary>
+    <pre id="diagnostics"></pre>
+    <ol id="events"></ol>
+  </details>
+  <p class="small">独立测试页，不读取或修改拼豆图纸、草稿。</p>
+</main>
+</body>
+</html>

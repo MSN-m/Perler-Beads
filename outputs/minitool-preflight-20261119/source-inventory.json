@@ -1,0 +1,614 @@
+{
+  "scope": "source static inventory; NOT a validated release artifact",
+  "skill_version": "1.11.1",
+  "skill_sha256": "b9e7ba8265963ed19301084e3f73d3a26ba21dcec0cea9e4dc127abc2b928ed7",
+  "html_reference_count": 59,
+  "missing_references": [],
+  "external_resource_references": [],
+  "inline_event_attributes": [],
+  "scripts": [
+    {
+      "type": "importmap"
+    },
+    {
+      "type": "module",
+      "src": "src/main.js?v=20261118-alt-picker"
+    }
+  ],
+  "source_bytes": 1398816,
+  "files": [
+    {
+      "path": "assets/app-icon-192.png",
+      "bytes": 62988,
+      "sha256": "370a3e0dce2f4b4a5841dd1f352b3ab4b9fe2e82edd3b5493123e94032f9bf45"
+    },
+    {
+      "path": "assets/apple-touch-icon.png",
+      "bytes": 56095,
+      "sha256": "a8707fbb4939fcbead43910070f77f14db55783770cb0044bccef7ad48d6e3dc"
+    },
+    {
+      "path": "assets/cursors/figma/brush-cursor.svg",
+      "bytes": 12770,
+      "sha256": "bdb2ed96631fa836c2bdce9aeb6dca09423d53ffb07b9e34046a0146b25a880d"
+    },
+    {
+      "path": "assets/cursors/figma/bucket-cursor.svg",
+      "bytes": 3950,
+      "sha256": "36cc117c5e2d1a06c694cc2c4fd62426e820120b0e96ac86ecc5a7febe783bf5"
+    },
+    {
+      "path": "assets/cursors/figma/crosshair-cursor.svg",
+      "bytes": 3633,
+      "sha256": "dcd41208778678961c98cd9c480eaefe09331c2237e2e26fb4969727a786b44e"
+    },
+    {
+      "path": "assets/cursors/figma/default-cursor.svg",
+      "bytes": 3765,
+      "sha256": "129544ad2056b8af00fc2365f2918527e14a49d10eb3f9bd2e4f2b3b1cf95ba9"
+    },
+    {
+      "path": "assets/cursors/figma/eraser-cursor.svg",
+      "bytes": 9893,
+      "sha256": "2caf34db541a6387894afe15010bb3d7837f8ea986b466e5f7dcb01924523ef2"
+    },
+    {
+      "path": "assets/cursors/figma/eyedropper-cursor.svg",
+      "bytes": 5609,
+      "sha256": "3464ad2429d1bc794fb042060363d5af4a2c0abea62d64d738bbecdc9667bad9"
+    },
+    {
+      "path": "assets/cursors/figma/grabbing-cursor.svg",
+      "bytes": 23164,
+      "sha256": "afb636d01aeb8defc9f3cc43f6f6c70e7eac757d753648468f2c0bd456827d7e"
+    },
+    {
+      "path": "assets/cursors/figma/pan-cursor.svg",
+      "bytes": 20392,
+      "sha256": "3de79afaa0bca78c182437520f7ec9c9761823d44b30d05c7e9f8e4f155af95b"
+    },
+    {
+      "path": "assets/cursors/figma/pointer-cursor.svg",
+      "bytes": 4192,
+      "sha256": "6e4ea473e2fae43d3537d157140ca99e705eae0582818e1a9788570ef77374b6"
+    },
+    {
+      "path": "assets/cursors/move-horizontal.svg",
+      "bytes": 452,
+      "sha256": "69b0d1d48ce341947b381f0804ce8f7689fe2178fac36805885abae2c31d5309"
+    },
+    {
+      "path": "assets/cursors/move-vertical.svg",
+      "bytes": 450,
+      "sha256": "241de5d3676a6424e8bd401572119b8e430e2b59ce0e721381bb3bb3f27728e9"
+    },
+    {
+      "path": "assets/cursors/move.svg",
+      "bytes": 581,
+      "sha256": "5a7207bf4d220361abf0ed400dac639029cd030353b969230ca8c53c7f1e6a8e"
+    },
+    {
+      "path": "assets/data/mobile-home-patterns.json",
+      "bytes": 60498,
+      "sha256": "a05004bcee2176a4e564e354b7dd9183abac2e0eb09295ce57eff260713f21af"
+    },
+    {
+      "path": "assets/favicon-64.png",
+      "bytes": 8838,
+      "sha256": "795aecb81517313350f5a91588809379f444ac6f32791647928a0ff8b7e6dd11"
+    },
+    {
+      "path": "assets/figma-ui/back.svg",
+      "bytes": 313,
+      "sha256": "6d4b6a71aa83f79eed8719baf68ef7105b1af4d6f8bbd7f61142285aade2f85c"
+    },
+    {
+      "path": "assets/figma-ui/brush-bar-brush.svg",
+      "bytes": 1877,
+      "sha256": "0496cf5a2433e5e6b411b2f823a7ef87a2ec9cd6f3bcbec04e6bc1c036d7e686"
+    },
+    {
+      "path": "assets/figma-ui/brush-bar-bucket.svg",
+      "bytes": 1818,
+      "sha256": "84b62ebb9b1669f73eaf523c89e2c05e9b8f786cf61552a756c38087f2714f13"
+    },
+    {
+      "path": "assets/figma-ui/brush-bar-check.svg",
+      "bytes": 335,
+      "sha256": "269f45d2d4049631243dfe4c1d6d3d5781496353ee9a1cc042c6ef382d8efba1"
+    },
+    {
+      "path": "assets/figma-ui/brush-bar-edge.svg",
+      "bytes": 1562,
+      "sha256": "409548106932a98e87bc3debc90cd6ae022227435258bcacc491f565de9cdcc0"
+    },
+    {
+      "path": "assets/figma-ui/draft-list-dot-569.svg",
+      "bytes": 285,
+      "sha256": "c24333ccdadb9658a31b8fb2935ce83573589d331f7d1d6132d373c2e4c24df8"
+    },
+    {
+      "path": "assets/figma-ui/draft-list-line-569.svg",
+      "bytes": 284,
+      "sha256": "ada6dd2a4c40ed330417bf27eb7cd732b460239c95d6d1071fd3e39e7c08d6cd"
+    },
+    {
+      "path": "assets/figma-ui/draft-save-569.svg",
+      "bytes": 1256,
+      "sha256": "834841c2b6830c978fe28991394bb7ab7d09b7418c558e5274135fdb7c8d050f"
+    },
+    {
+      "path": "assets/figma-ui/edit.svg",
+      "bytes": 4283,
+      "sha256": "e6cd45f0b2c31aff2c7b8fd35a1cff013bef177be2b120298d6ef6d951a7ae82"
+    },
+    {
+      "path": "assets/figma-ui/eraser-bar-color.svg",
+      "bytes": 623,
+      "sha256": "82ba8f74eeaa17162a5bb7f1051720de32080620f09dddfa0c78d78f07cd433d"
+    },
+    {
+      "path": "assets/figma-ui/eraser-bar-outline.svg",
+      "bytes": 852,
+      "sha256": "eefe6cf3b2cc624b739e4a1f480491f288477fc8a705f50c9cb7f1461ec70758"
+    },
+    {
+      "path": "assets/figma-ui/eraser-bar-region.svg",
+      "bytes": 2165,
+      "sha256": "1b8b7a4e5e929b81a7277079eda402f8639dd9b5439c8ea7dcb5babaf991951b"
+    },
+    {
+      "path": "assets/figma-ui/eraser-bar-seam.svg",
+      "bytes": 327,
+      "sha256": "3626e83424b32c8bd6826b6238d3e14621a5791d2e06243ffd61a6b5f68bbcdd"
+    },
+    {
+      "path": "assets/figma-ui/export-check.svg",
+      "bytes": 442,
+      "sha256": "c1898eb0a112269df06d749a66c7259f16cb6eca337ad8c194c250c04f1c3220"
+    },
+    {
+      "path": "assets/figma-ui/export-close.svg",
+      "bytes": 485,
+      "sha256": "a6abc54b6abd8c260e23f46623efb9d34b1a21212f7caa8e6053d027714b5243"
+    },
+    {
+      "path": "assets/figma-ui/export-expand.svg",
+      "bytes": 1130,
+      "sha256": "64253471fb9672d2f1b81928ff7a37694576a21a1a92cde8d293b3d34fdd02a7"
+    },
+    {
+      "path": "assets/figma-ui/export-grid.svg",
+      "bytes": 891,
+      "sha256": "a5b668707221524c5fbf89b6a0246c8059e028dc83d07d4a35dc1bf1e96771e1"
+    },
+    {
+      "path": "assets/figma-ui/export-mirror.svg",
+      "bytes": 1150,
+      "sha256": "b6eea96cfde746d219dceea905fa0db4ae4cecb90b5494438e757291aea4bb60"
+    },
+    {
+      "path": "assets/figma-ui/export-raw.svg",
+      "bytes": 865,
+      "sha256": "b47d06a54dbe97f162e06b32cf845c4591f1c35b146886d29a3fdc2c9b131662"
+    },
+    {
+      "path": "assets/figma-ui/export-result-close.svg",
+      "bytes": 483,
+      "sha256": "ceb1d6c1fe94eb741bbd29e90294244c4cba020c6731502392bf7d882506e1ea"
+    },
+    {
+      "path": "assets/figma-ui/export-started.svg",
+      "bytes": 411,
+      "sha256": "3e500cb1d0127c026d723960b8694f4554c78ef8f1a6a283aa186a520a8b4014"
+    },
+    {
+      "path": "assets/figma-ui/export-unchecked.svg",
+      "bytes": 442,
+      "sha256": "fceb003de39a2d77b436bd2c3987e83fd380f63dc2483bfc466c43bcb99494ed"
+    },
+    {
+      "path": "assets/figma-ui/export.svg",
+      "bytes": 744,
+      "sha256": "f9285959626449d44194cf281ead575e32fa05ff750a2d7f54b939fa06919161"
+    },
+    {
+      "path": "assets/figma-ui/history-close.svg",
+      "bytes": 494,
+      "sha256": "3eb5baf269eac573eba0cc8e1848854b17cf1d74c88aa29a40dff6f99eb4cec2"
+    },
+    {
+      "path": "assets/figma-ui/history-expand.svg",
+      "bytes": 1308,
+      "sha256": "657590836cd06f88d1867256fcc094d6af3ea93ce48cdd2e03bd24a2766b627a"
+    },
+    {
+      "path": "assets/figma-ui/history-restore-hover.svg",
+      "bytes": 986,
+      "sha256": "ef44dca423abb6b35125aeb8391d88a6aeb9c412abe99fe6e41b80c498325cca"
+    },
+    {
+      "path": "assets/figma-ui/history-restore.svg",
+      "bytes": 992,
+      "sha256": "ceb06c565e5715b76b4c9e4d6d91f78442f03cd7a8d78abe3a85587ee66c3796"
+    },
+    {
+      "path": "assets/figma-ui/mirror.svg",
+      "bytes": 4135,
+      "sha256": "f21eff7b84ae0158f10a5fcdcf6db21647e898b946b12a0dfeb54f603d0fba73"
+    },
+    {
+      "path": "assets/figma-ui/mobile-draft-close.svg",
+      "bytes": 325,
+      "sha256": "7c6ac6e618ff50cf3987226ac83a3021c1914e25cfaf985e1a0324c3f7b1bc4c"
+    },
+    {
+      "path": "assets/figma-ui/mobile-draft-open.svg",
+      "bytes": 1225,
+      "sha256": "c4c274ff0c1ffa0f8790822c88bbd6684c691d36e7437ffe2daaa04d13b0b7fb"
+    },
+    {
+      "path": "assets/figma-ui/mobile-home-bucket.svg",
+      "bytes": 1409,
+      "sha256": "919f9a0ed09d759528ea3dee70303536063f7047e7a94ae74646e4c3d91403a7"
+    },
+    {
+      "path": "assets/figma-ui/mobile-home-eraser.svg",
+      "bytes": 965,
+      "sha256": "914b299af9b0305fff63028cb48c81f908c121235d7925d4ac5de8fe8a84b676"
+    },
+    {
+      "path": "assets/figma-ui/mobile-home-hand.svg",
+      "bytes": 1949,
+      "sha256": "f2993751fcf5ec415d6a22bbd8c63c4363d8df6f003b575d92abe7b595bb2fc6"
+    },
+    {
+      "path": "assets/figma-ui/mobile-home-pan.svg",
+      "bytes": 2935,
+      "sha256": "0ee01bc70514eb8db3301cfb228c8f01d4c82c68177cfeb687ed27bc2fb20bda"
+    },
+    {
+      "path": "assets/figma-ui/mobile-home-pencil.svg",
+      "bytes": 1347,
+      "sha256": "eb018e7f71224ed0b5b8c9a2c89a228e383d79f38558a9fd11bc6e77b6789972"
+    },
+    {
+      "path": "assets/figma-ui/mobile-home-pointer.svg",
+      "bytes": 976,
+      "sha256": "50508e1b2adf06360fbe00fcbd1e49705b6de24a9287703c9bcf9b20d0ebeb1d"
+    },
+    {
+      "path": "assets/figma-ui/mobile-preview-divider.svg",
+      "bytes": 237,
+      "sha256": "104e6a345ac884015a4f225ec27a2fcb1b4ecf67e6b92862557125902e8ebbcd"
+    },
+    {
+      "path": "assets/figma-ui/mobile-toolbar-brush.svg",
+      "bytes": 1462,
+      "sha256": "b3e6a53d61aae0a461897e2f670a13fafb5397b387da70ce998f9e803e54e513"
+    },
+    {
+      "path": "assets/figma-ui/mobile-toolbar-eraser.svg",
+      "bytes": 866,
+      "sha256": "31af549232ec8e21b0a6461f6ec45150ea213969136e50d484db4818ace26044"
+    },
+    {
+      "path": "assets/figma-ui/mobile-toolbar-eyedropper.svg",
+      "bytes": 1547,
+      "sha256": "b68c4b38472624698f39f2925da77970288dbd091399a8f8f370b8907ed664ad"
+    },
+    {
+      "path": "assets/figma-ui/mobile-toolbar-palette.svg",
+      "bytes": 3483,
+      "sha256": "df7fb7944cbf18ad124138e6f4a9e2c2fe8a8ead4766b49b1d1e1b9385295b5e"
+    },
+    {
+      "path": "assets/figma-ui/mobile-upload-chevron.svg",
+      "bytes": 297,
+      "sha256": "f26caa7f527d4e250e8bfea50e30f29f907e2fe4f219824b98decfe69b3557f0"
+    },
+    {
+      "path": "assets/figma-ui/mobile-upload-divider.svg",
+      "bytes": 237,
+      "sha256": "b7ffc991b6864c0842a37928cbd5771c455b32abaae66d64e7401b442bb0ff37"
+    },
+    {
+      "path": "assets/figma-ui/mobile-upload-handle.svg",
+      "bytes": 969,
+      "sha256": "d1311985cb1d7ad26d4e8999a141bc29d9a09d587a41675987c436ef0878a335"
+    },
+    {
+      "path": "assets/figma-ui/operation-color-caret.svg",
+      "bytes": 406,
+      "sha256": "24b35050fddb284b1750de0b79420e27c0de5a43a553278aececdab232ae0583"
+    },
+    {
+      "path": "assets/figma-ui/operation-edge.svg",
+      "bytes": 1558,
+      "sha256": "c2a7890b8565b966f3c623aa6f6af586bc62de9336a6fb823727b6caf793e087"
+    },
+    {
+      "path": "assets/figma-ui/original-compare-arrow.svg",
+      "bytes": 416,
+      "sha256": "8acaba707ff0ae10cf7b489fa950d8798baa5fe1e13b277c7aebf48d47c4e932"
+    },
+    {
+      "path": "assets/figma-ui/palette-close.svg",
+      "bytes": 483,
+      "sha256": "4988d76d47c20cb03e9dd2d3e4d4fc7cd914829b0f353ff348c939c4b5a0745b"
+    },
+    {
+      "path": "assets/figma-ui/palette-eye.svg",
+      "bytes": 980,
+      "sha256": "92ab5300c0d84718e9004da41c6fd6cc24a745df43a8fc0e6a9655ce07903099"
+    },
+    {
+      "path": "assets/figma-ui/palette-pointer.svg",
+      "bytes": 1033,
+      "sha256": "6aa8a9b45da3afaba4f24833d5e4b8c0e1725077fc3ed46d9f0bbbe12c9c9743"
+    },
+    {
+      "path": "assets/figma-ui/palette-replace.svg",
+      "bytes": 942,
+      "sha256": "242966d9ec9c886a63bc1db0e282b00916ef57ae956d461bfe5ccaac50e71047"
+    },
+    {
+      "path": "assets/figma-ui/palette-search.svg",
+      "bytes": 530,
+      "sha256": "a2e93133535c625b2ba7c2fde2d4f424f6314b06023ae9d2bd6a4a6f7736ea30"
+    },
+    {
+      "path": "assets/figma-ui/palette-sort.svg",
+      "bytes": 404,
+      "sha256": "231316dff3f6c65aca7ae6b54749f5d0a4128436da91ee9d2e6e3e31b958ebb8"
+    },
+    {
+      "path": "assets/figma-ui/save-caret.svg",
+      "bytes": 767,
+      "sha256": "12486d310493591d2d069c3cfe9be6f7585844d3929e48b7cfae1e5cffa8cd81"
+    },
+    {
+      "path": "assets/figma-ui/save.svg",
+      "bytes": 4454,
+      "sha256": "31c3577682398f96c41c627d04ef29cc078a4ad6c3e754ea58c4d052f01aa464"
+    },
+    {
+      "path": "assets/figma-ui/toolbar-brush.svg",
+      "bytes": 1878,
+      "sha256": "6c4a05ec6f6f36233425ed1da8074b4f4f4f3faceedec47174c3de91daf2c63f"
+    },
+    {
+      "path": "assets/figma-ui/toolbar-divider.svg",
+      "bytes": 237,
+      "sha256": "9aebbb7f5c29edd2ab46b48e4b3713464fd28534c2a0fb3bf9fd01749a0b39d6"
+    },
+    {
+      "path": "assets/figma-ui/toolbar-eraser.svg",
+      "bytes": 975,
+      "sha256": "7c8085c3fd443d992984227564928480869d0f11a8aab2f411957ceaf8025ca0"
+    },
+    {
+      "path": "assets/figma-ui/toolbar-eyedropper.svg",
+      "bytes": 1827,
+      "sha256": "cae8e7a7c18d56b891ab79cabbcbe95176ee09619a6051278d7f9a11e5cb0099"
+    },
+    {
+      "path": "assets/figma-ui/toolbar-hand.svg",
+      "bytes": 1914,
+      "sha256": "308a63602b6e22f281a89d1092aa7171eecb6ecec08aafccdfba37a4df500243"
+    },
+    {
+      "path": "assets/figma-ui/toolbar-palette.svg",
+      "bytes": 3638,
+      "sha256": "5b6539703835b84b4dbd9ee7d2b4d976054ec8bf0847df850012e011c6472142"
+    },
+    {
+      "path": "assets/figma-ui/toolbar-redo.svg",
+      "bytes": 596,
+      "sha256": "ad190e07dfd888d6972369e6738d662411e8610de8e85f0c6ce543e94666c4f7"
+    },
+    {
+      "path": "assets/figma-ui/toolbar-undo.svg",
+      "bytes": 596,
+      "sha256": "ad190e07dfd888d6972369e6738d662411e8610de8e85f0c6ce543e94666c4f7"
+    },
+    {
+      "path": "css/style.css",
+      "bytes": 192149,
+      "sha256": "4a44b34fa23de81a88de1d09787386ebfb901cde38747e601e57075f4702a9e1"
+    },
+    {
+      "path": "css/tailwind.generated.css",
+      "bytes": 44681,
+      "sha256": "301e04679edc527585b65bd93345a4d3129a3a5cfb15de474c70ebe77b29fa09"
+    },
+    {
+      "path": "index.html",
+      "bytes": 86342,
+      "sha256": "76c866edcb7ec1ecb25068c334cb9f092d4e843a4e835d9f8ee230a0fa626bb6"
+    },
+    {
+      "path": "manifest.webmanifest",
+      "bytes": 507,
+      "sha256": "bbbd653d66245d6504974e698fb3f1933bfbac320ee54a1da524f606f608959d"
+    },
+    {
+      "path": "src/constants.js",
+      "bytes": 29969,
+      "sha256": "0bd987b9eba3f8776c55d7dc3232477bdbf023ea93fb41478347f87d3489de35"
+    },
+    {
+      "path": "src/editor.js",
+      "bytes": 25353,
+      "sha256": "959f336536564dc3860a9ae2575149f7edc929d2e19ccbcdfefd968919e1c42f"
+    },
+    {
+      "path": "src/exporter.js",
+      "bytes": 22471,
+      "sha256": "3c89f5f13aa4af265bf369ae3562625b50c75ea52fc89fa17c99743b16d7f9ad"
+    },
+    {
+      "path": "src/features/adjust.js",
+      "bytes": 32263,
+      "sha256": "80f7cd17d9c6fe65ff1270c6099efd54c3cd53c521b38c4ee081ef4cef27843f"
+    },
+    {
+      "path": "src/features/canvas-context-menu.js",
+      "bytes": 8895,
+      "sha256": "28319e7e2cb332e321f37a86b5a91f8ca923f82abbb581f9379279fd9d6a5a1b"
+    },
+    {
+      "path": "src/features/delete.js",
+      "bytes": 12886,
+      "sha256": "8f71502d4d27f3bbef3db5d8274f864e460669d2ebace242ccb3c4f9ac8235bb"
+    },
+    {
+      "path": "src/features/draft-versions.js",
+      "bytes": 3793,
+      "sha256": "1f1b88b154ac46bf452214152f852412b31dd6e7587357e4851ff26b1df6ccfc"
+    },
+    {
+      "path": "src/features/edge.js",
+      "bytes": 2295,
+      "sha256": "fa82255858fb5c5e079e8c9f0988243dc23540c9c2e5de2a936894accfa28d5f"
+    },
+    {
+      "path": "src/features/editor-shortcuts.js",
+      "bytes": 3651,
+      "sha256": "3d16078de1ffa9b2961599b1719764061101a626ffb681433be04b29391bf8d1"
+    },
+    {
+      "path": "src/features/export-files.js",
+      "bytes": 2059,
+      "sha256": "9301908a724668c2b69f7cd62df404daff6c0218bf9a20ea77529afef464aa18"
+    },
+    {
+      "path": "src/features/export-modal.js",
+      "bytes": 10739,
+      "sha256": "20801aaa32f144d64b6a80803272730aced66480346d214e9dd5681952e7a693"
+    },
+    {
+      "path": "src/features/fixed-ruler.js",
+      "bytes": 9585,
+      "sha256": "118d227efc8d20a43e6c3896a8de491c3b6c9228a939e01790cb7f8a47021008"
+    },
+    {
+      "path": "src/features/history-modal.js",
+      "bytes": 12588,
+      "sha256": "89eb1b524314048219d7e2a7e8233a563accf46c29b706e97d2373eb6099fdc9"
+    },
+    {
+      "path": "src/features/image-adjustments.js",
+      "bytes": 1638,
+      "sha256": "0b4c23d9336ac46e8d02e9b5059b7b53fb0245207f188da3282a1aefc849c262"
+    },
+    {
+      "path": "src/features/mobile-compare.js",
+      "bytes": 6784,
+      "sha256": "34e670f07e5688f6e39546e45754a5581e540a38c1cb727518a2e94cbb216b98"
+    },
+    {
+      "path": "src/features/mobile-drafts.js",
+      "bytes": 8516,
+      "sha256": "750fc5fc135a99ddb673bc54b7834f2822537bb5da47b946a4fbfde5e62ec675"
+    },
+    {
+      "path": "src/features/mobile-home.js",
+      "bytes": 4050,
+      "sha256": "b54dba31ec5961d5ca6fbf28fc640bcbd29e5bb8f7b1d4f46b463412cf1268d8"
+    },
+    {
+      "path": "src/features/mobile-loading.js",
+      "bytes": 1023,
+      "sha256": "dd21c9a4b64fdaf75865b6e74c65939ee269d0125e562f5a06ed6487ab9e120c"
+    },
+    {
+      "path": "src/features/mobile-pattern-cover.js",
+      "bytes": 938,
+      "sha256": "85b40ace30614b5d0b6703ab6d355a44db244de91829189bac9ff0574880b355"
+    },
+    {
+      "path": "src/features/pattern-preview-zoom.js",
+      "bytes": 3461,
+      "sha256": "7c7a594cf82c5f9ab5f6a7e882071eccbb7d48bab7f28214cca722856fa39d6e"
+    },
+    {
+      "path": "src/features/pattern-rename.js",
+      "bytes": 3261,
+      "sha256": "474c77a62b0b150b0b0f07b2342f847e0f5b1be235117a4c4f32c5a696a0f3ab"
+    },
+    {
+      "path": "src/features/pixel-art-detection-worker.js",
+      "bytes": 193,
+      "sha256": "5b6eb3b78d6924cf0d820aae8ef913881d9343cf9b44888f07a5651135c13a46"
+    },
+    {
+      "path": "src/features/quality-analysis.js",
+      "bytes": 4078,
+      "sha256": "148d61dca0b1db6b45e6d6cecaaf2adc87b767000116f5c879f62532fdaea894"
+    },
+    {
+      "path": "src/features/quality.js",
+      "bytes": 24704,
+      "sha256": "48d9fe9fb121d1324683b16f1751a7dc4f8d3a65d452b72f96a0dfbd94602206"
+    },
+    {
+      "path": "src/features/recent-color-motion.js",
+      "bytes": 2615,
+      "sha256": "d139137dd1567bcc2733f4625e63854ae760fa62fceec3830d5e6795c355ffe5"
+    },
+    {
+      "path": "src/features/tooltips.js",
+      "bytes": 9221,
+      "sha256": "67da5c145926096cf65237e666f2816cb3ff1ebdf10d3e75e9c74a0265f1019b"
+    },
+    {
+      "path": "src/features/zoom.js",
+      "bytes": 13627,
+      "sha256": "f805a8ec705373feed5b4dabaed9948ab96a003896d6a1a13fed2d36c5f38fa8"
+    },
+    {
+      "path": "src/main.js",
+      "bytes": 59018,
+      "sha256": "ea0604ea017424a9564978511550876ff9252523a6e1263bb11ecc5c55689762"
+    },
+    {
+      "path": "src/processor.js",
+      "bytes": 65170,
+      "sha256": "f50656fc62d1e9702dab4739edfcb6b0b81e753865bc5f6e12353532faa219f1"
+    },
+    {
+      "path": "src/renderer.js",
+      "bytes": 17653,
+      "sha256": "9d25f76203eb76f09f174d5098f55f1bbd7760b9859320bb7a5323c737a5a1d2"
+    },
+    {
+      "path": "src/state.js",
+      "bytes": 3538,
+      "sha256": "1051e44679f906dddcfaadaf13ca71e9d529ad931545092c2ee068462a70bd91"
+    },
+    {
+      "path": "src/ui.js",
+      "bytes": 225301,
+      "sha256": "4c0e3a3ac528bdaf15ee1fa19e43aac88c909fd297f4afbbbf24dabe136e5296"
+    },
+    {
+      "path": "src/utils.js",
+      "bytes": 2532,
+      "sha256": "d584fa69503ecfe0625da284b478f17d8999f3fbf66d88d406310eb914b18e04"
+    },
+    {
+      "path": "src/vendor/fflate-0.8.2.js",
+      "bytes": 89198,
+      "sha256": "8cc1f687e0159e977addb6b85e274dbd11e622cf151f4fcb7b85d49622ea43e7"
+    }
+  ],
+  "limitations": [
+    "Runtime-computed paths require separate verification.",
+    "Not a full JS/CSS parser or compatibility test.",
+    "Export decision pending; no release ZIP generated."
+  ],
+  "runtime_paths_to_verify": [
+    "assets/figma-ui/palette-${icon}.svg: pointer / eye / replace files exist; runtime branches still need testing."
+  ]
+}

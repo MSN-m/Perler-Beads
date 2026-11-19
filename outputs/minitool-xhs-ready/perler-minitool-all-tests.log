@@ -1,0 +1,1070 @@
+TAP version 13
+# Subtest: a region-delete click releases the gesture lock so Ctrl+Z and redo can use its history
+ok 1 - a region-delete click releases the gesture lock so Ctrl+Z and redo can use its history
+  ---
+  duration_ms: 1.65875
+  type: 'test'
+  ...
+# Subtest: context pick exits replacement and erase, remembers exact color without editing
+ok 2 - context pick exits replacement and erase, remembers exact color without editing
+  ---
+  duration_ms: 1.104209
+  type: 'test'
+  ...
+# Subtest: view all switches from destructive preview to inspection, toggles and does not edit
+ok 3 - view all switches from destructive preview to inspection, toggles and does not edit
+  ---
+  duration_ms: 0.164
+  type: 'test'
+  ...
+# Subtest: context deletes only the target cell, preserves tool and one reversible history entry
+ok 4 - context deletes only the target cell, preserves tool and one reversible history entry
+  ---
+  duration_ms: 0.379375
+  type: 'test'
+  ...
+# Subtest: context keeps the final bead and rejects transparent or invalid targets
+ok 5 - context keeps the final bead and rejects transparent or invalid targets
+  ---
+  duration_ms: 0.0905
+  type: 'test'
+  ...
+# Subtest: centering preserves zoom and fits center geometry; PC gate excludes touch tablet and mobile
+ok 6 - centering preserves zoom and fits center geometry; PC gate excludes touch tablet and mobile
+  ---
+  duration_ms: 0.098542
+  type: 'test'
+  ...
+# Subtest: default uses most-used nontransparent color and seeds the first recent slot without changing pixels
+ok 7 - default uses most-used nontransparent color and seeds the first recent slot without changing pixels
+  ---
+  duration_ms: 1.816042
+  type: 'test'
+  ...
+# Subtest: five unique selections, newest first; reselecting moves to front
+ok 8 - five unique selections, newest first; reselecting moves to front
+  ---
+  duration_ms: 0.44575
+  type: 'test'
+  ...
+# Subtest: transient color clears and editor sessions do not lose manual choice
+ok 9 - transient color clears and editor sessions do not lose manual choice
+  ---
+  duration_ms: 0.212375
+  type: 'test'
+  ...
+# Subtest: draft metadata and newer local selections retain current color and last subtool
+ok 10 - draft metadata and newer local selections retain current color and last subtool
+  ---
+  duration_ms: 0.971417
+  type: 'test'
+  ...
+# Subtest: new pattern and old draft are isolated; imported invalid IDs are ignored
+ok 11 - new pattern and old draft are isolated; imported invalid IDs are ignored
+  ---
+  duration_ms: 0.764792
+  type: 'test'
+  ...
+# Subtest: undo/redo changes pixels only, not selected color or recent order
+ok 12 - undo/redo changes pixels only, not selected color or recent order
+  ---
+  duration_ms: 0.437541
+  type: 'test'
+  ...
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: save updates one identity, save-as copies, restore version retains newer data; imported history survives
+ok 13 - save updates one identity, save-as copies, restore version retains newer data; imported history survives
+  ---
+  duration_ms: 4.549416
+  type: 'test'
+  ...
+# Subtest: aborted storage transaction leaves pixels, draft list and saved identity untouched
+ok 14 - aborted storage transaction leaves pixels, draft list and saved identity untouched
+  ---
+  duration_ms: 1.027334
+  type: 'test'
+  ...
+# Subtest: save-as page dialog validates, submits once, creates copy, and cancels without native prompt
+ok 15 - save-as page dialog validates, submits once, creates copy, and cancels without native prompt
+  ---
+  duration_ms: 0.607958
+  type: 'test'
+  ...
+# Subtest: return warning compares content with saved draft, including undo and older saved versions
+ok 16 - return warning compares content with saved draft, including undo and older saved versions
+  ---
+  duration_ms: 0.519542
+  type: 'test'
+  ...
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: return dialog cancels or stays open on storage failure, without native browser dialogs
+ok 17 - return dialog cancels or stays open on storage failure, without native browser dialogs
+  ---
+  duration_ms: 4.982666
+  type: 'test'
+  ...
+# Automatic draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Pattern export failed. Error: export failed
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:160:62
+#     at downloadAndSaveWorkbenchDraft (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/src/ui.js:1798:74)
+#     at TestContext.<anonymous> (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:160:21)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: return saves before exiting, discard preserves saved drafts, clean draft exits directly
+ok 18 - return saves before exiting, discard preserves saved drafts, clean draft exits directly
+  ---
+  duration_ms: 3.706084
+  type: 'test'
+  ...
+# Subtest: automatic recovery overwrites one separate record, skips unchanged, and manual save clears it without extra history
+ok 19 - automatic recovery overwrites one separate record, skips unchanged, and manual save clears it without extra history
+  ---
+  duration_ms: 0.911834
+  type: 'test'
+  ...
+# Subtest: automatic save skips live strokes and reports failure while keeping previous recovery data
+ok 20 - automatic save skips live strokes and reports failure while keeping previous recovery data
+  ---
+  duration_ms: 0.367792
+  type: 'test'
+  ...
+# Subtest: five-minute timer installs once, defers busy gestures, and saves after the gesture ends
+ok 21 - five-minute timer installs once, defers busy gestures, and saves after the gesture ends
+  ---
+  duration_ms: 0.611583
+  type: 'test'
+  ...
+# Subtest: undo back to the manual save removes stale automatic recovery on the next check
+ok 22 - undo back to the manual save removes stale automatic recovery on the next check
+  ---
+  duration_ms: 0.383542
+  type: 'test'
+  ...
+# Subtest: export saves the matching staged diagram, repeated export does not duplicate versions, later edits warn on exit
+ok 23 - export saves the matching staged diagram, repeated export does not duplicate versions, later edits warn on exit
+  ---
+  duration_ms: 0.281
+  type: 'test'
+  ...
+# Subtest: failed draft save still triggers download and retains exit warning; failed export does not mark saved
+ok 24 - failed draft save still triggers download and retains exit warning; failed export does not mark saved
+  ---
+  duration_ms: 0.364208
+  type: 'test'
+  ...
+# Subtest: editor automatic recovery requires confirmation and rejects another document record
+ok 25 - editor automatic recovery requires confirmation and rejects another document record
+  ---
+  duration_ms: 0.328584
+  type: 'test'
+  ...
+# Subtest: failed changed save does not trim an existing ten-version history
+ok 26 - failed changed save does not trim an existing ten-version history
+  ---
+  duration_ms: 0.4635
+  type: 'test'
+  ...
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: PC save button records every explicit save without opening history
+ok 27 - PC save button records every explicit save without opening history
+  ---
+  duration_ms: 3003.297
+  type: 'test'
+  ...
+# Subtest: PC save failure keeps history closed and preserves unsaved diagram
+ok 28 - PC save failure keeps history closed and preserves unsaved diagram
+  ---
+  duration_ms: 1.35325
+  type: 'test'
+  ...
+# Subtest: phone save only saves while PAD retains save-then-open behavior
+ok 29 - phone save only saves while PAD retains save-then-open behavior
+  ---
+  duration_ms: 1503.1675
+  type: 'test'
+  ...
+# Subtest: desktop button reports saving and saved, rejects repeat clicks, then restores its label
+ok 30 - desktop button reports saving and saved, rejects repeat clicks, then restores its label
+  ---
+  duration_ms: 2.295333
+  type: 'test'
+  ...
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: mobile button reports saving and saved, rejects repeat clicks, then restores its label
+ok 31 - mobile button reports saving and saved, rejects repeat clicks, then restores its label
+  ---
+  duration_ms: 1.430084
+  type: 'test'
+  ...
+# Subtest: PC failed save restores button without reporting saved; delayed feedback does not cross documents
+ok 32 - PC failed save restores button without reporting saved; delayed feedback does not cross documents
+  ---
+  duration_ms: 1.349542
+  type: 'test'
+  ...
+# Subtest: drafts save confirmed image adjustments, restore versions and default old drafts to neutral
+ok 33 - drafts save confirmed image adjustments, restore versions and default old drafts to neutral
+  ---
+  duration_ms: 1.623041
+  type: 'test'
+  ...
+# Subtest: automatic records capture confirmed adjustments without storing pending controls
+ok 34 - automatic records capture confirmed adjustments without storing pending controls
+  ---
+  duration_ms: 0.253791
+  type: 'test'
+  ...
+# Subtest: saved versions round trip pixels, alpha, dimensions, image and settings
+ok 35 - saved versions round trip pixels, alpha, dimensions, image and settings
+  ---
+  duration_ms: 8.429041
+  type: 'test'
+  ...
+# Subtest: unchanged saves do not create versions, including selection timestamps
+ok 36 - unchanged saves do not create versions, including selection timestamps
+  ---
+  duration_ms: 0.184458
+  type: 'test'
+  ...
+# Subtest: legacy draft is retained as first historical version
+ok 37 - legacy draft is retained as first historical version
+  ---
+  duration_ms: 0.104291
+  type: 'test'
+  ...
+# Subtest: three-version cap and restoring old state preserves newer versions
+ok 38 - three-version cap and restoring old state preserves newer versions
+  ---
+  duration_ms: 0.463292
+  type: 'test'
+  ...
+# Subtest: shared current image occurs once; changed source images remain recoverable
+ok 39 - shared current image occurs once; changed source images remain recoverable
+  ---
+  duration_ms: 0.387542
+  type: 'test'
+  ...
+# Subtest: corrupt compact data is rejected
+ok 40 - corrupt compact data is rejected
+  ---
+  duration_ms: 0.201375
+  type: 'test'
+  ...
+# Subtest: old ten-version history survives unchanged saving and trims only after changed save
+ok 41 - old ten-version history survives unchanged saving and trims only after changed save
+  ---
+  duration_ms: 0.818292
+  type: 'test'
+  ...
+# Subtest: explicit save records unchanged pixels with a new timestamp and keeps the latest three
+ok 42 - explicit save records unchanged pixels with a new timestamp and keeps the latest three
+  ---
+  duration_ms: 0.24525
+  type: 'test'
+  ...
+# Subtest: visible editor only, repeated keys and active tool family do nothing
+ok 43 - visible editor only, repeated keys and active tool family do nothing
+  ---
+  duration_ms: 1.71475
+  type: 'test'
+  ...
+# Subtest: typing, composition, gestures and confirmation modal block tool changes
+ok 44 - typing, composition, gestures and confirmation modal block tool changes
+  ---
+  duration_ms: 0.163583
+  type: 'test'
+  ...
+# Subtest: C does not toggle an open palette; other tools can leave it
+ok 45 - C does not toggle an open palette; other tools can leave it
+  ---
+  duration_ms: 0.045291
+  type: 'test'
+  ...
+# Subtest: Windows and Mac undo/redo prevent browser handling; unrelated combinations stay intact
+ok 46 - Windows and Mac undo/redo prevent browser handling; unrelated combinations stay intact
+  ---
+  duration_ms: 0.26
+  type: 'test'
+  ...
+# Subtest: space restores once; early release waits for gesture completion
+ok 47 - space restores once; early release waits for gesture completion
+  ---
+  duration_ms: 0.27025
+  type: 'test'
+  ...
+# Subtest: blur restores temporary pan, Esc can close a modal but does not interrupt gestures
+ok 48 - blur restores temporary pan, Esc can close a modal but does not interrupt gestures
+  ---
+  duration_ms: 0.234166
+  type: 'test'
+  ...
+# Subtest: palette permits temporary pan, blocks button activation and restores after release
+ok 49 - palette permits temporary pan, blocks button activation and restores after release
+  ---
+  duration_ms: 0.146042
+  type: 'test'
+  ...
+# Subtest: Alt/Option temporarily picks, ignores repeat and restores exactly once on release or blur
+ok 50 - Alt/Option temporarily picks, ignores repeat and restores exactly once on release or blur
+  ---
+  duration_ms: 0.115459
+  type: 'test'
+  ...
+# Subtest: temporary picker respects typing, modal, gesture, touch layout and palette guards
+ok 51 - temporary picker respects typing, modal, gesture, touch layout and palette guards
+  ---
+  duration_ms: 0.4375
+  type: 'test'
+  ...
+# Subtest: eraser -> edge -> eraser clears incompatible modes and preserves pixels/history
+ok 52 - eraser -> edge -> eraser clears incompatible modes and preserves pixels/history
+  ---
+  duration_ms: 2.183958
+  type: 'test'
+  ...
+# Subtest: area-erase -> edge -> eraser clears incompatible modes and preserves pixels/history
+ok 53 - area-erase -> edge -> eraser clears incompatible modes and preserves pixels/history
+  ---
+  duration_ms: 0.370917
+  type: 'test'
+  ...
+# Subtest: color-eraser -> edge -> eraser clears incompatible modes and preserves pixels/history
+ok 54 - color-eraser -> edge -> eraser clears incompatible modes and preserves pixels/history
+  ---
+  duration_ms: 1.955583
+  type: 'test'
+  ...
+# Subtest: color erase -> brush cannot retain the color deletion branch
+ok 55 - color erase -> brush cannot retain the color deletion branch
+  ---
+  duration_ms: 0.27175
+  type: 'test'
+  ...
+# Subtest: color erase -> bucket cannot retain the color deletion branch
+ok 56 - color erase -> bucket cannot retain the color deletion branch
+  ---
+  duration_ms: 0.540083
+  type: 'test'
+  ...
+# Subtest: color erase -> eyedropper cannot retain the color deletion branch
+ok 57 - color erase -> eyedropper cannot retain the color deletion branch
+  ---
+  duration_ms: 0.923292
+  type: 'test'
+  ...
+# Subtest: color erase -> area-erase cannot retain the color deletion branch
+ok 58 - color erase -> area-erase cannot retain the color deletion branch
+  ---
+  duration_ms: 0.236209
+  type: 'test'
+  ...
+# Subtest: edge clicks use current color, reject interior cells and never start a brush stroke
+ok 59 - edge clicks use current color, reject interior cells and never start a brush stroke
+  ---
+  duration_ms: 0.286792
+  type: 'test'
+  ...
+# Subtest: edge highlighting uses staged transparency and refreshes after undo/redo
+ok 60 - edge highlighting uses staged transparency and refreshes after undo/redo
+  ---
+  duration_ms: 0.896208
+  type: 'test'
+  ...
+# Subtest: area is four-neighbor same-color, excludes diagonals and row wrapping
+ok 61 - area is four-neighbor same-color, excludes diagonals and row wrapping
+  ---
+  duration_ms: 0.882
+  type: 'test'
+  ...
+# Subtest: color erase removes disconnected cells as one undo action
+ok 62 - color erase removes disconnected cells as one undo action
+  ---
+  duration_ms: 0.119291
+  type: 'test'
+  ...
+# Subtest: drag interpolates skipped cells, commits once, and supports undo and redo
+ok 63 - drag interpolates skipped cells, commits once, and supports undo and redo
+  ---
+  duration_ms: 0.164125
+  type: 'test'
+  ...
+# Subtest: whole-pattern deletion is rejected; continuous erasing retains the last bead
+ok 64 - whole-pattern deletion is rejected; continuous erasing retains the last bead
+  ---
+  duration_ms: 0.200417
+  type: 'test'
+  ...
+# Subtest: hover follows color and clears on transparent cells, leave and tool changes
+ok 65 - hover follows color and clears on transparent cells, leave and tool changes
+  ---
+  duration_ms: 0.119542
+  type: 'test'
+  ...
+# Subtest: eraser activation is idempotent, remembers subtool and keeps history and brush color
+ok 66 - eraser activation is idempotent, remembers subtool and keeps history and brush color
+  ---
+  duration_ms: 0.078583
+  type: 'test'
+  ...
+# Subtest: starting an erase cannot become a pan after the first cell turns transparent
+ok 67 - starting an erase cannot become a pan after the first cell turns transparent
+  ---
+  duration_ms: 4.957584
+  type: 'test'
+  ...
+# Subtest: single selection downloads the original PNG synchronously without ZIP or object URLs
+ok 68 - single selection downloads the original PNG synchronously without ZIP or object URLs
+  ---
+  duration_ms: 1.089333
+  type: 'test'
+  ...
+# Subtest: all two/three image combinations produce one ZIP with exact PNG bytes and UTF8 names
+ok 69 - all two/three image combinations produce one ZIP with exact PNG bytes and UTF8 names
+  ---
+  duration_ms: 2.342875
+  type: 'test'
+  ...
+# Subtest: empty selection starts no download or allocation
+ok 70 - empty selection starts no download or allocation
+  ---
+  duration_ms: 0.206792
+  type: 'test'
+  ...
+# Subtest: invalid image data prevents the whole archive download
+ok 71 - invalid image data prevents the whole archive download
+  ---
+  duration_ms: 0.099041
+  type: 'test'
+  ...
+# Subtest: duplicate or path filenames cannot silently drop an image or create ZIP folders
+ok 72 - duplicate or path filenames cannot silently drop an image or create ZIP folders
+  ---
+  duration_ms: 0.17775
+  type: 'test'
+  ...
+# Subtest: ZIP creation failure downloads and saves nothing; retry keeps the same render snapshot
+ok 73 - ZIP creation failure downloads and saves nothing; retry keeps the same render snapshot
+  ---
+  duration_ms: 0.210208
+  type: 'test'
+  ...
+# Subtest: download request exception revokes the allocated ZIP URL immediately
+ok 74 - download request exception revokes the allocated ZIP URL immediately
+  ---
+  duration_ms: 0.122208
+  type: 'test'
+  ...
+# Subtest: object URL allocation failure cannot start downloads or draft saving
+ok 75 - object URL allocation failure cannot start downloads or draft saving
+  ---
+  duration_ms: 0.093125
+  type: 'test'
+  ...
+# Subtest: draft-save retry never starts another ZIP download
+ok 76 - draft-save retry never starts another ZIP download
+  ---
+  duration_ms: 0.875959
+  type: 'test'
+  ...
+# Subtest: all seven selections request exactly one file with the original draft-save rules
+ok 77 - all seven selections request exactly one file with the original draft-save rules
+  ---
+  duration_ms: 0.995167
+  type: 'test'
+  ...
+# Subtest: all selected downloads start before exactly one draft save
+ok 78 - all selected downloads start before exactly one draft save
+  ---
+  duration_ms: 0.66275
+  type: 'test'
+  ...
+# Subtest: every nonempty combination downloads only selections; raw alone does not save
+ok 79 - every nonempty combination downloads only selections; raw alone does not save
+  ---
+  duration_ms: 0.219917
+  type: 'test'
+  ...
+# Subtest: no selections never prepare, download or save
+ok 80 - no selections never prepare, download or save
+  ---
+  duration_ms: 0.089208
+  type: 'test'
+  ...
+# Subtest: save failure retains retry state; retry saves without redownloading
+ok 81 - save failure retains retry state; retry saves without redownloading
+  ---
+  duration_ms: 0.0835
+  type: 'test'
+  ...
+# Subtest: prepare failure starts no partial downloads and saves nothing
+ok 82 - prepare failure starts no partial downloads and saves nothing
+  ---
+  duration_ms: 0.243792
+  type: 'test'
+  ...
+# Subtest: reset after dismissal drops the old retry state
+ok 83 - reset after dismissal drops the old retry state
+  ---
+  duration_ms: 0.073417
+  type: 'test'
+  ...
+# Subtest: preview render uses staged pixels, draws labels and never downloads or changes editor state
+ok 84 - preview render uses staged pixels, draws labels and never downloads or changes editor state
+  ---
+  duration_ms: 1.82625
+  type: 'test'
+  ...
+# Subtest: mirrored export reverses current pixels even when editor mirror is already on
+ok 85 - mirrored export reverses current pixels even when editor mirror is already on
+  ---
+  duration_ms: 1.700542
+  type: 'test'
+  ...
+# Subtest: raw render has no labels or grids and leaves empty cells transparent
+ok 86 - raw render has no labels or grids and leaves empty cells transparent
+  ---
+  duration_ms: 0.153792
+  type: 'test'
+  ...
+# Subtest: selected exports are encoded before downloads, uniquely named and preserve staged data
+ok 87 - selected exports are encoded before downloads, uniquely named and preserve staged data
+  ---
+  duration_ms: 0.685458
+  type: 'test'
+  ...
+# Subtest: legacy single-download entry points still request one PNG each
+ok 88 - legacy single-download entry points still request one PNG each
+  ---
+  duration_ms: 0.45525
+  type: 'test'
+  ...
+# Subtest: PC batches and PAD/mobile single exports share sanitized title and Chinese type names
+ok 89 - PC batches and PAD/mobile single exports share sanitized title and Chinese type names
+  ---
+  duration_ms: 1.479875
+  type: 'test'
+  ...
+# Subtest: ruler coalesces requests, uses the latest geometry, bounds dots and preserves its backing store
+ok 90 - ruler coalesces requests, uses the latest geometry, bounds dots and preserves its backing store
+  ---
+  duration_ms: 6.982917
+  type: 'test'
+  ...
+# Subtest: editor history isolates current draft and its single latest automatic record
+ok 91 - editor history isolates current draft and its single latest automatic record
+  ---
+  duration_ms: 0.847417
+  type: 'test'
+  ...
+# Subtest: unsaved document has no manual versions and only its own unassociated recovery record
+ok 92 - unsaved document has no manual versions and only its own unassociated recovery record
+  ---
+  duration_ms: 0.107834
+  type: 'test'
+  ...
+# Subtest: legacy version remains available and corrupt compact version cannot be restored
+ok 93 - legacy version remains available and corrupt compact version cannot be restored
+  ---
+  duration_ms: 0.122167
+  type: 'test'
+  ...
+# Subtest: opening isolates background and closing restores focus without changing editor data
+ok 94 - opening isolates background and closing restores focus without changing editor data
+  ---
+  duration_ms: 1.350958
+  type: 'test'
+  ...
+# Subtest: version restore waits for confirmation, cancel preserves data, confirm restores once
+ok 95 - version restore waits for confirmation, cancel preserves data, confirm restores once
+  ---
+  duration_ms: 0.437333
+  type: 'test'
+  ...
+# Subtest: automatic restore is enabled in editing but requires confirmation
+ok 96 - automatic restore is enabled in editing but requires confirmation
+  ---
+  duration_ms: 0.727292
+  type: 'test'
+  ...
+# Subtest: document change while confirmation is pending never restores the stale target
+ok 97 - document change while confirmation is pending never restores the stale target
+  ---
+  duration_ms: 0.140417
+  type: 'test'
+  ...
+# Subtest: preview renders saved pixels and Escape returns to list before closing
+ok 98 - preview renders saved pixels and Escape returns to list before closing
+  ---
+  duration_ms: 0.123667
+  type: 'test'
+  ...
+# Subtest: neutral and normalized settings preserve exact source; invalid values are bounded integers
+ok 99 - neutral and normalized settings preserve exact source; invalid values are bounded integers
+  ---
+  duration_ms: 0.77075
+  type: 'test'
+  ...
+# Subtest: brightness moves both ways without mutating source or alpha, including transparent hidden RGB
+ok 100 - brightness moves both ways without mutating source or alpha, including transparent hidden RGB
+  ---
+  duration_ms: 0.126917
+  type: 'test'
+  ...
+# Subtest: contrast expands and compresses around mid gray; saturation -10 gives grayscale
+ok 101 - contrast expands and compresses around mid gray; saturation -10 gives grayscale
+  ---
+  duration_ms: 0.620833
+  type: 'test'
+  ...
+# Subtest: combined extreme adjustments stay finite and preserve all alpha bytes and source pixels
+ok 102 - combined extreme adjustments stay finite and preserve all alpha bytes and source pixels
+  ---
+  duration_ms: 0.251667
+  type: 'test'
+  ...
+# Subtest: native drafts round-trip large Unicode and source images without exceeding a single-key quota
+ok 103 - native drafts round-trip large Unicode and source images without exceeding a single-key quota
+  ---
+  duration_ms: 4.668
+  type: 'test'
+  ...
+# Subtest: a failed new chunk keeps the previous saved draft and cleans only the failed generation
+ok 104 - a failed new chunk keeps the previous saved draft and cleans only the failed generation
+  ---
+  duration_ms: 0.508834
+  type: 'test'
+  ...
+# Subtest: pointer commit failure preserves previous chunks and pointer; no false success
+ok 105 - pointer commit failure preserves previous chunks and pointer; no false success
+  ---
+  duration_ms: 0.281583
+  type: 'test'
+  ...
+# Subtest: missing chunk is a read error rather than an empty library
+ok 106 - missing chunk is a read error rather than an empty library
+  ---
+  duration_ms: 0.142917
+  type: 'test'
+  ...
+# Subtest: storage quota failure leaves existing data untouched
+ok 107 - storage quota failure leaves existing data untouched
+  ---
+  duration_ms: 0.23475
+  type: 'test'
+  ...
+# Subtest: unsupported or unknown client version never writes to native or browser storage
+ok 108 - unsupported or unknown client version never writes to native or browser storage
+  ---
+  duration_ms: 0.707125
+  type: 'test'
+  ...
+# Subtest: native recent colors and submission metadata do not become draft records
+ok 109 - native recent colors and submission metadata do not become draft records
+  ---
+  duration_ms: 0.935542
+  type: 'test'
+  ...
+# Subtest: deleting one draft leaves other drafts and their chunks intact
+ok 110 - deleting one draft leaves other drafts and their chunks intact
+  ---
+  duration_ms: 0.581375
+  type: 'test'
+  ...
+# Subtest: all seven image combinations save first, including unannotated-only output
+ok 111 - all seven image combinations save first, including unannotated-only output
+  ---
+  duration_ms: 1.151833
+  type: 'test'
+  ...
+# Subtest: save failure prevents rendering, album and publishing
+ok 112 - save failure prevents rendering, album and publishing
+  ---
+  duration_ms: 0.473791
+  type: 'test'
+  ...
+# Subtest: partial album failure retries only remaining images and saves the draft once
+ok 113 - partial album failure retries only remaining images and saves the draft once
+  ---
+  duration_ms: 0.355375
+  type: 'test'
+  ...
+# Subtest: cancelled publishing preserves saved draft and never marks a submitted version
+ok 114 - cancelled publishing preserves saved draft and never marks a submitted version
+  ---
+  duration_ms: 0.267959
+  type: 'test'
+  ...
+# Subtest: post uses all images in one note and marks the saved version only after a successful receipt
+ok 115 - post uses all images in one note and marks the saved version only after a successful receipt
+  ---
+  duration_ms: 0.238084
+  type: 'test'
+  ...
+# Subtest: double submission is ignored and changed document cannot use a stale output batch
+ok 116 - double submission is ignored and changed document cannot use a stale output batch
+  ---
+  duration_ms: 0.110084
+  type: 'test'
+  ...
+# Subtest: mobile original pinch keeps its focus, pans and cannot trigger a color pick after release
+ok 117 - mobile original pinch keeps its focus, pans and cannot trigger a color pick after release
+  ---
+  duration_ms: 0.642333
+  type: 'test'
+  ...
+# Subtest: mobile split limits keep both panes usable on tall and short screens
+ok 118 - mobile split limits keep both panes usable on tall and short screens
+  ---
+  duration_ms: 0.109875
+  type: 'test'
+  ...
+# Subtest: mobile editor moves with two fingers, keeps the pinch center and releases without editing
+ok 119 - mobile editor moves with two fingers, keeps the pinch center and releases without editing
+  ---
+  duration_ms: 1.6
+  type: 'test'
+  ...
+# Subtest: card selects color, closes palette, remembers recent and enters brush without editing
+ok 120 - card selects color, closes palette, remembers recent and enters brush without editing
+  ---
+  duration_ms: 3.340875
+  type: 'test'
+  ...
+# Subtest: pointer selects color, closes palette, remembers recent and enters brush without editing
+ok 121 - pointer selects color, closes palette, remembers recent and enters brush without editing
+  ---
+  duration_ms: 0.496666
+  type: 'test'
+  ...
+# Subtest: all-colors selects color, closes palette, remembers recent and enters brush without editing
+ok 122 - all-colors selects color, closes palette, remembers recent and enters brush without editing
+  ---
+  duration_ms: 0.436542
+  type: 'test'
+  ...
+# Subtest: eye toggles, switches a single highlight and leaves palette and pixels intact
+ok 123 - eye toggles, switches a single highlight and leaves palette and pixels intact
+  ---
+  duration_ms: 0.524916
+  type: 'test'
+  ...
+# Subtest: closing without selecting restores exact prior eraser and current paint
+ok 124 - closing without selecting restores exact prior eraser and current paint
+  ---
+  duration_ms: 0.242
+  type: 'test'
+  ...
+# Subtest: closing without selecting restores exact prior eraser and current paint
+ok 125 - closing without selecting restores exact prior eraser and current paint
+  ---
+  duration_ms: 0.147208
+  type: 'test'
+  ...
+# Subtest: replacement closes and awaits click, replaces every source cell as one reversible action then restores tool
+ok 126 - replacement closes and awaits click, replaces every source cell as one reversible action then restores tool
+  ---
+  duration_ms: 1.057584
+  type: 'test'
+  ...
+# Subtest: same-color replacement is a no-op and restoring across patterns is rejected
+ok 127 - same-color replacement is a no-op and restoring across patterns is rejected
+  ---
+  duration_ms: 0.743084
+  type: 'test'
+  ...
+# Subtest: outside-dismiss click cannot paint or erase the canvas
+ok 128 - outside-dismiss click cannot paint or erase the canvas
+  ---
+  duration_ms: 0.497
+  type: 'test'
+  ...
+# Subtest: palette close clears eye highlight, restoreTool=true
+ok 129 - palette close clears eye highlight, restoreTool=true
+  ---
+  duration_ms: 0.530834
+  type: 'test'
+  ...
+# Subtest: palette close clears eye highlight, restoreTool=false
+ok 130 - palette close clears eye highlight, restoreTool=false
+  ---
+  duration_ms: 0.161833
+  type: 'test'
+  ...
+# Subtest: palette close clears eye highlight, restoreTool=true
+ok 131 - palette close clears eye highlight, restoreTool=true
+  ---
+  duration_ms: 0.102209
+  type: 'test'
+  ...
+# Subtest: palette close clears eye highlight, restoreTool=false
+ok 132 - palette close clears eye highlight, restoreTool=false
+  ---
+  duration_ms: 0.196458
+  type: 'test'
+  ...
+# Subtest: main palette toggle clears eye highlight and reopening does not restore it
+ok 133 - main palette toggle clears eye highlight and reopening does not restore it
+  ---
+  duration_ms: 0.139708
+  type: 'test'
+  ...
+# Subtest: closing already-closed panels does not erase replacement source highlight
+ok 134 - closing already-closed panels does not erase replacement source highlight
+  ---
+  duration_ms: 0.266417
+  type: 'test'
+  ...
+# Subtest: phone rows require an explicit button and view closes the sheet without editing
+ok 135 - phone rows require an explicit button and view closes the sheet without editing
+  ---
+  duration_ms: 0.742375
+  type: 'test'
+  ...
+# Subtest: phone replacement can be canceled or completed as one undoable edit and restores the tool
+ok 136 - phone replacement can be canceled or completed as one undoable edit and restores the tool
+  ---
+  duration_ms: 1.348167
+  type: 'test'
+  ...
+# Subtest: desktop used palette drag clamps to viewport without changing pixels or history
+ok 137 - desktop used palette drag clamps to viewport without changing pixels or history
+  ---
+  duration_ms: 0.772833
+  type: 'test'
+  ...
+# Subtest: desktop all palette drag clamps to viewport without changing pixels or history
+ok 138 - desktop all palette drag clamps to viewport without changing pixels or history
+  ---
+  duration_ms: 0.158583
+  type: 'test'
+  ...
+# Subtest: controls, grid scroll area and secondary mouse button do not start panel drag
+ok 139 - controls, grid scroll area and secondary mouse button do not start panel drag
+  ---
+  duration_ms: 0.056709
+  type: 'test'
+  ...
+# Subtest: existing mobile palette uses stage-relative position and bounds
+ok 140 - existing mobile palette uses stage-relative position and bounds
+  ---
+  duration_ms: 0.098459
+  type: 'test'
+  ...
+# Subtest: inline rename commits only on confirmation, without saving or editing pixels
+ok 141 - inline rename commits only on confirmation, without saving or editing pixels
+  ---
+  duration_ms: 0.465542
+  type: 'test'
+  ...
+# Subtest: cancel keeps the original name, empty name uses existing placeholder semantics, length is bounded
+ok 142 - cancel keeps the original name, empty name uses existing placeholder semantics, length is bounded
+  ---
+  duration_ms: 0.076333
+  type: 'test'
+  ...
+# Subtest: switching diagrams cannot commit the previous input into a new diagram
+ok 143 - switching diagrams cannot commit the previous input into a new diagram
+  ---
+  duration_ms: 0.099459
+  type: 'test'
+  ...
+# Subtest: PAD/mobile and setup do not activate the new PC editor
+ok 144 - PAD/mobile and setup do not activate the new PC editor
+  ---
+  duration_ms: 0.081708
+  type: 'test'
+  ...
+# Subtest: eight-neighbor singleton definition preserves diagonal details and skips transparent cells
+ok 145 - eight-neighbor singleton definition preserves diagonal details and skips transparent cells
+  ---
+  duration_ms: 0.595709
+  type: 'test'
+  ...
+# Subtest: edge neighbors never wrap across rows; one-row and invalid grids are safe
+ok 146 - edge neighbors never wrap across rows; one-row and invalid grids are safe
+  ---
+  duration_ms: 0.104792
+  type: 'test'
+  ...
+# Subtest: unique majority recommends an existing neighboring color and does not mutate snapshot
+ok 147 - unique majority recommends an existing neighboring color and does not mutate snapshot
+  ---
+  duration_ms: 0.213542
+  type: 'test'
+  ...
+# Subtest: plurality without majority is opt-in and tied winners require manual handling
+ok 148 - plurality without majority is opt-in and tied winners require manual handling
+  ---
+  duration_ms: 0.063125
+  type: 'test'
+  ...
+# Subtest: transparent neighbors do not vote and erased suggestions cannot clear the entire pattern
+ok 149 - transparent neighbors do not vote and erased suggestions cannot clear the entire pattern
+  ---
+  duration_ms: 0.06225
+  type: 'test'
+  ...
+# Subtest: PC repairs accept unique plurality and resolve tied colors by spatial priority
+ok 150 - PC repairs accept unique plurality and resolve tied colors by spatial priority
+  ---
+  duration_ms: 0.118917
+  type: 'test'
+  ...
+# Subtest: PC tie fallback skips transparency in each direction and never wraps at boundaries
+ok 151 - PC tie fallback skips transparency in each direction and never wraps at boundaries
+  ---
+  duration_ms: 0.125333
+  type: 'test'
+  ...
+# Subtest: ignored or changed items are excluded; transparent cells cannot become target colors
+ok 152 - ignored or changed items are excluded; transparent cells cannot become target colors
+  ---
+  duration_ms: 0.036333
+  type: 'test'
+  ...
+# Subtest: mixed recolors and erase commit once, sync staged data and undo/redo every original field
+ok 153 - mixed recolors and erase commit once, sync staged data and undo/redo every original field
+  ---
+  duration_ms: 0.59575
+  type: 'test'
+  ...
+# Subtest: suggestions use the same snapshot regardless of issue order
+ok 154 - suggestions use the same snapshot regardless of issue order
+  ---
+  duration_ms: 0.344625
+  type: 'test'
+  ...
+# Subtest: stale snapshots, empty selection, busy gestures and clearing last bead refuse without history
+ok 155 - stale snapshots, empty selection, busy gestures and clearing last bead refuse without history
+  ---
+  duration_ms: 0.314
+  type: 'test'
+  ...
+# Subtest: mixed batch undo and redo remain aligned after mirroring
+ok 156 - mixed batch undo and redo remain aligned after mirroring
+  ---
+  duration_ms: 0.257875
+  type: 'test'
+  ...
+# Subtest: adjacent isolated colors use frozen suggestions without cascading or promising elimination
+ok 157 - adjacent isolated colors use frozen suggestions without cascading or promising elimination
+  ---
+  duration_ms: 0.299084
+  type: 'test'
+  ...
+# Subtest: reordered colors animate from their own old position, not the old slot content
+ok 158 - reordered colors animate from their own old position, not the old slot content
+  ---
+  duration_ms: 0.474625
+  type: 'test'
+  ...
+# Subtest: unchanged UI refresh does not replay movement
+ok 159 - unchanged UI refresh does not replay movement
+  ---
+  duration_ms: 0.059792
+  type: 'test'
+  ...
+# Subtest: new color enters with opacity feedback
+ok 160 - new color enters with opacity feedback
+  ---
+  duration_ms: 0.391542
+  type: 'test'
+  ...
+# Subtest: restoring another pattern or reduced motion does not animate old colors across patterns
+ok 161 - restoring another pattern or reduced motion does not animate old colors across patterns
+  ---
+  duration_ms: 0.067625
+  type: 'test'
+  ...
+# Subtest: only the PC editor with a fixed overlay omits embedded guides; fine grid and labels remain
+not ok 162 - only the PC editor with a fixed overlay omits embedded guides; fine grid and labels remain
+  ---
+  duration_ms: 2.018709
+  type: 'test'
+  location: '/Volumes/MSN的1TB/ChatGPT/AIcode/Perler-Beads/tests/renderer-grid-layer.test.mjs:6:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 4
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 4
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/renderer-grid-layer.test.mjs:25:51)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: color inspection retains all occupied labels with muted contrast and restores original styles
+ok 163 - color inspection retains all occupied labels with muted contrast and restores original styles
+  ---
+  duration_ms: 0.297875
+  type: 'test'
+  ...
+# Subtest: pan explains both persistent H and temporary Space interaction
+ok 164 - pan explains both persistent H and temporary Space interaction
+  ---
+  duration_ms: 0.414792
+  type: 'test'
+  ...
+# Subtest: palette action help takes priority over card selection help
+ok 165 - palette action help takes priority over card selection help
+  ---
+  duration_ms: 0.097834
+  type: 'test'
+  ...
+# Subtest: every brush and eraser subtool has help; empty recent slots have none
+ok 166 - every brush and eraser subtool has help; empty recent slots have none
+  ---
+  duration_ms: 0.092167
+  type: 'test'
+  ...
+1..166
+# tests 166
+# suites 0
+# pass 165
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4609.950459

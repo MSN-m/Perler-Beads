@@ -1,0 +1,104 @@
+TAP version 13
+# Native output did not complete. saveImageToPhotosAlbum Error: permission
+#     at Object.saveImageToPhotosAlbum (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/minitool.test.mjs:99:144)
+#     at invoke (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/src/platform/minitool/output.js:15:39)
+#     at Object.run (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/src/platform/minitool/output.js:47:47)
+#     at async waitForActual (node:assert:566:5)
+#     at async Function.rejects (node:assert:687:25)
+#     at async TestContext.<anonymous> (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/minitool.test.mjs:127:5)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Native output did not complete. postNote { errMsg: 'postNote:fail cancel' }
+# Subtest: native drafts round-trip large Unicode and source images without exceeding a single-key quota
+ok 1 - native drafts round-trip large Unicode and source images without exceeding a single-key quota
+  ---
+  duration_ms: 4.444792
+  type: 'test'
+  ...
+# Subtest: a failed new chunk keeps the previous saved draft and cleans only the failed generation
+ok 2 - a failed new chunk keeps the previous saved draft and cleans only the failed generation
+  ---
+  duration_ms: 0.377208
+  type: 'test'
+  ...
+# Subtest: pointer commit failure preserves previous chunks and pointer; no false success
+ok 3 - pointer commit failure preserves previous chunks and pointer; no false success
+  ---
+  duration_ms: 0.196084
+  type: 'test'
+  ...
+# Subtest: missing chunk is a read error rather than an empty library
+ok 4 - missing chunk is a read error rather than an empty library
+  ---
+  duration_ms: 0.094917
+  type: 'test'
+  ...
+# Subtest: storage quota failure leaves existing data untouched
+ok 5 - storage quota failure leaves existing data untouched
+  ---
+  duration_ms: 0.172541
+  type: 'test'
+  ...
+# Subtest: unsupported or unknown client version never writes to native or browser storage
+ok 6 - unsupported or unknown client version never writes to native or browser storage
+  ---
+  duration_ms: 0.367209
+  type: 'test'
+  ...
+# Subtest: native recent colors and submission metadata do not become draft records
+ok 7 - native recent colors and submission metadata do not become draft records
+  ---
+  duration_ms: 2.623208
+  type: 'test'
+  ...
+# Subtest: deleting one draft leaves other drafts and their chunks intact
+ok 8 - deleting one draft leaves other drafts and their chunks intact
+  ---
+  duration_ms: 0.196875
+  type: 'test'
+  ...
+# Subtest: all seven image combinations save first, including unannotated-only output
+ok 9 - all seven image combinations save first, including unannotated-only output
+  ---
+  duration_ms: 0.483458
+  type: 'test'
+  ...
+# Subtest: save failure prevents rendering, album and publishing
+ok 10 - save failure prevents rendering, album and publishing
+  ---
+  duration_ms: 0.203166
+  type: 'test'
+  ...
+# Subtest: partial album failure retries only remaining images and saves the draft once
+ok 11 - partial album failure retries only remaining images and saves the draft once
+  ---
+  duration_ms: 0.612458
+  type: 'test'
+  ...
+# Subtest: cancelled publishing preserves saved draft and never marks a submitted version
+ok 12 - cancelled publishing preserves saved draft and never marks a submitted version
+  ---
+  duration_ms: 0.144458
+  type: 'test'
+  ...
+# Subtest: post uses all images in one note and marks the saved version only after a successful receipt
+ok 13 - post uses all images in one note and marks the saved version only after a successful receipt
+  ---
+  duration_ms: 0.097708
+  type: 'test'
+  ...
+# Subtest: double submission is ignored and changed document cannot use a stale output batch
+ok 14 - double submission is ignored and changed document cannot use a stale output batch
+  ---
+  duration_ms: 0.057917
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 42.904709
