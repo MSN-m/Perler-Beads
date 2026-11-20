@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff" media="(max-width: 767px)">
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png?v=20261006-1">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=20261006-1">
+    <title>拼豆图案生成器 - 小工具</title>
+    <!-- Keep updated editor modules on the same release, including relative imports. -->
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./progress-extra.css"><script defer src="./fixture.js"></script><script defer src="./app.js"></script>
+</head>
+
+<body data-layout="workbench"
+    class="bg-[#E7EBEE] text-gray-800 font-sans min-h-screen overflow-hidden selection:bg-primary selection:text-white">
+
+    <section id="step-home" class="step-section"></section>
+
+    <section id="step-settings" class="step-section active bg-[#E7EBEE]">
+        <input id="file-upload" type="file" accept="image/*" class="hidden">
+        <div id="canvas-container" class="hidden">
+            <canvas id="source-canvas"></canvas>
+        </div>
+
+        <h1 id="mobile-upload-title" hidden><span>上传图片</span><small>背景可以在后面处理哦</small></h1>
+        <div id="workbench-layout" class="h-screen grid grid-cols-[minmax(0,1fr)_380px] gap-5 p-5">
+            <div id="workbench-top-actions" class="hidden bg-white rounded-2xl border border-white shadow-sm p-3 items-center gap-3">
+                <div id="workbench-top-title" class="min-w-0 flex-1 flex items-center gap-3">
+                    <button id="workbench-back-btn" type="button" class="workbench-header-icon" aria-label="返回" title="返回"><img class="workbench-header-back-icon" src="assets/figma-ui/back.svg" alt=""></button>
+                    <div class="min-w-0">
+                        <div id="workbench-name-editor">
+                            <span id="workbench-pattern-title" class="block min-w-0 truncate text-base font-black text-gray-900">未命名图纸</span>
+                            <button id="workbench-rename-btn" type="button" aria-label="修改图纸名称" title="修改图纸名称"><img src="assets/figma-ui/edit.svg" alt=""></button>
+                            <form id="workbench-rename-form" hidden aria-label="修改图纸名称">
+                                <input id="workbench-rename-input" type="text" maxlength="40" aria-label="图纸名称" placeholder="未命名图纸" autocomplete="off">
+                                <button type="submit" class="workbench-rename-confirm">确认</button>
+                                <button id="workbench-rename-cancel" type="button">取消</button>
+                            </form>
+                        </div>
+                        <span id="workbench-autosave-status" role="status" class="hidden text-xs text-red-500"></span>
+                        <span id="workbench-pattern-meta" class="block mt-0.5 text-[10px] text-gray-400">32x32 · MARD 221色</span>
+                    </div>
+                    <button id="show-workbench-settings-panel-btn" type="button"
+                        class="workbench-header-icon shrink-0" aria-label="重命名和设置" title="重命名和设置">
+                        <img class="workbench-header-edit-icon" src="assets/figma-ui/edit.svg" alt=""><span>编辑图纸</span>
+                    </button>
+                </div>
+                <div id="workbench-tablet-panel-tabs" class="hidden items-center gap-2">
+                    <button id="show-workbench-colors-panel-btn" type="button"
+                        class="px-4 py-3 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 active:scale-95 transition">
+                        颜色清单
+                    </button>
+                </div>
+                <div id="workbench-top-edit-actions" class="hidden items-center gap-1.5">
+                    <button id="workbench-top-undo-btn" type="button" class="workbench-top-action-button" title="撤销最近一次编辑">
+                        <svg class="workbench-top-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V13H9"/><path d="M21 17C21 14.6131 20.0518 12.3239 18.364 10.636C16.6761 8.94821 14.3869 8 12 8C9.78512 8.00226 7.64885 8.82116 6 10.3L3 13"/></svg><span>撤销</span>
+                    </button>
+                    <button id="workbench-top-redo-btn" type="button" class="workbench-top-action-button" title="重做最近一次撤销" disabled>
+                        <svg class="workbench-top-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 7V13H15"/><path d="M3 17C3 14.6131 3.94821 12.3239 5.63604 10.636C7.32387 8.94821 9.61305 8 12 8C14.2149 8.00226 16.3511 8.82116 18 10.3L21 13"/></svg><span>重做</span>
+                    </button>
+                    <button id="workbench-top-cancel-btn" type="button" class="workbench-top-action-button is-muted" title="放弃当前编辑">
+                        <span>放弃修改</span>
+                    </button>
+                </div>
+                <button id="quality-check-btn" type="button" class="quality-check-entry" aria-label="单格排查" aria-pressed="false" title="检查落单单格">
+                    <!-- Lucide scan-search, ISC license: assets/lucide-LICENSE.txt -->
+                    <svg class="quality-check-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/></svg>
+                    <span id="quality-check-label">排查</span>
+                </button>
+                <button type="button" id="workbench-top-mirror-visual" aria-label="左右镜像图纸" aria-pressed="false"><img src="assets/figma-ui/mirror.svg" alt=""><span>镜像</span></button>
+                <div id="workbench-top-draft-slot" class="min-w-0"></div>
+            </div>
+
+            <main id="workbench-stage" class="min-w-0 relative bg-[#f8fafc] overflow-hidden rounded-2xl border border-white shadow-sm">
+                <div id="workbench-upload-empty" class="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20">
+                    <label for="file-upload"
+                        class="bg-white px-16 py-7 text-xl font-bold rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:text-primary hover:shadow-md transition">
+                        上传图片
+                    </label>
+                    <div id="mobile-home">
+                        <div class="mobile-home-scroll">
+                            <div class="mobile-home-content">
+                                <div class="mobile-home-hero">
+                                    <div class="mobile-home-brand">
+                                        <img src="assets/app-icon-192.png" width="42" height="42" alt="">
+                                        <strong>小豆鸡</strong>
+                                    </div>
+                                    <div class="mobile-home-icons" aria-hidden="true">
+                                        <span class="mobile-home-icon mobile-home-pointer"><img src="assets/figma-ui/mobile-home-pointer.svg" width="14" height="14" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-bucket"><img src="assets/figma-ui/mobile-home-bucket.svg" width="16" height="16" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-eraser"><img src="assets/figma-ui/mobile-home-eraser.svg" width="17" height="15" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-pencil"><img src="assets/figma-ui/mobile-home-pencil.svg" width="16" height="16" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-hand"><img src="assets/figma-ui/mobile-home-hand.svg" width="15" height="15" alt=""></span>
+                                        <span class="mobile-home-icon mobile-home-pan"><img src="assets/figma-ui/mobile-home-pan.svg" width="17" height="16" alt=""></span>
+                                    </div>
+                                    <p class="mobile-home-tagline">快速生成 · 灵活修改 · 辅助检查</p>
+                                    <h1>一秒转图纸<br>一格一格改喜欢</h1>
+                                </div>
+                                <section class="mobile-home-gallery" aria-labelledby="mobile-home-gallery-title">
+                                    <h2 id="mobile-home-gallery-title">示例图纸</h2>
+                                    <p>可免费下载/使用哦</p>
+                                    <div class="mobile-home-grid" id="mobile-home-grid"></div>
+                                    <p id="mobile-home-error" role="status" hidden></p>
+                                </section>
+                            </div>
+                        </div>
+                        <footer class="mobile-home-actions">
+                            <button id="mobile-home-drafts" type="button" aria-haspopup="dialog" aria-controls="mobile-draft-dialog">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V6a2 2 0 0 1 2-2h4l3 3h6a2 2 0 0 1 2 2v1M3 19a1 1 0 0 0 1 1h14a2 2 0 0 0 2-1.4l2-6a2 2 0 0 0-1.9-2.6H9a2 2 0 0 0-1.9 1.4L5 18"/></svg>
+                                我的草稿
+                            </button>
+                            <button id="mobile-home-upload" type="button">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3M7 8l5-5 5 5M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/></svg>
+                                上传图片
+                            </button>
+                        </footer>
+                    </div>
+                    <div id="workbench-setup-draft-slot"></div>
+                </div>
+
+                <div id="workbench-preview-empty" class="absolute inset-0 hidden items-center justify-center z-10 pointer-events-none">
+                    <div class="bg-white/90 px-8 py-5 text-center rounded-xl shadow-sm border border-gray-100">
+                        <p class="text-lg font-bold">已上传图片</p>
+                        <p class="text-sm text-gray-500 mt-2">调整右侧参数后点击“生成图纸”</p>
+                    </div>
+                </div>
+
+                <div id="mobile-upload-crop-tools" role="group" aria-label="裁剪操作" hidden>
+                    <button type="button" id="mobile-upload-crop-confirm" aria-label="确认裁剪" title="确认裁剪">
+                        <svg aria-hidden="true" viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 10 3.5 3.5 7.5-7.5"/></svg>
+                    </button>
+                    <button type="button" id="mobile-upload-crop-undo" aria-label="撤回裁剪" title="撤回裁剪">
+                        <img src="assets/figma-ui/toolbar-undo.svg" width="20" height="20" alt="">
+                    </button>
+                    <button type="button" id="mobile-upload-crop-cancel" aria-label="取消本轮裁剪" title="取消本轮裁剪">
+                        <svg aria-hidden="true" viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="m5.5 5.5 9 9m0-9-9 9"/></svg>
+                    </button>
+                </div>
+                <div id="workbench-crop-overlay" class="hidden absolute inset-0 z-20">
+                    <div id="workbench-crop-mask" class="absolute inset-0 pointer-events-none"></div>
+                    <div id="workbench-crop-box" class="absolute hidden border-2 border-primary shadow-[0_0_0_9999px_rgba(15,23,42,0.28)] bg-transparent">
+                        <div data-crop-handle="n" class="crop-edge-handle crop-edge-handle-y left-4 right-4 -top-3"></div>
+                        <div data-crop-handle="s" class="crop-edge-handle crop-edge-handle-y left-4 right-4 -bottom-3"></div>
+                        <div data-crop-handle="w" class="crop-edge-handle crop-edge-handle-x -left-3 top-4 bottom-4"></div>
+                        <div data-crop-handle="e" class="crop-edge-handle crop-edge-handle-x -right-3 top-4 bottom-4"></div>
+                        <div data-crop-handle="nw" class="crop-handle -left-2 -top-2"></div>
+                        <div data-crop-handle="ne" class="crop-handle -right-2 -top-2"></div>
+                        <div data-crop-handle="sw" class="crop-handle -left-2 -bottom-2"></div>
+                        <div data-crop-handle="se" class="crop-handle -right-2 -bottom-2"></div>
+                    </div>
+                </div>
+
+                <div id="workbench-edit-stage" class="absolute inset-0 hidden">
+                    <section id="compare-source-pane" class="hidden absolute inset-y-0 left-0 w-[34%] min-w-[280px] border-r border-white/80 bg-[#f3f6fb] overflow-hidden">
+                        <p id="mobile-compare-empty" class="hidden" role="status">这张图纸未保留原图，暂时无法查看</p>
+                        <div class="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur rounded-xl border border-white shadow-sm px-3 py-2">
+                            <p class="text-xs font-bold text-gray-800">原图对照</p>
+                            <p class="text-[11px] text-gray-500 mt-1">滚轮缩放，按钮重置</p>
+                        </div>
+                        <div id="compare-source-frame" class="absolute inset-0 overflow-hidden">
+                            <canvas id="compare-source-preview" class="absolute image-pixelated"></canvas>
+                        </div>
+                        <button id="compare-source-reset-btn"
+                            class="absolute bottom-4 right-4 z-20 px-3 py-2 bg-white/90 backdrop-blur shadow-lg rounded-xl text-xs font-bold text-primary hover:scale-105 active:scale-95 transition">
+                            原图重置
+                        </button>
+                    </section>
+
+                    <div id="mobile-compare-divider" class="hidden" role="separator" tabindex="0" aria-label="调整原图和图纸的上下占比" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><span></span></div>
+                    <div id="result-pane" class="absolute inset-y-0 left-0 right-0 overflow-hidden">
+                        <button id="toggle-compare-preview-btn"
+                            class="hidden absolute left-4 top-1/2 -translate-y-1/2 z-30 transition"
+                            aria-controls="compare-source-pane" aria-expanded="false">
+                            原图对照
+                        </button>
+                        <div class="absolute inset-0 overflow-hidden" id="result-container">
+                            <canvas id="fixed-ruler-canvas" class="hidden" aria-hidden="true"></canvas>
+                            <canvas id="result-canvas" class="hidden absolute top-0 left-0 image-pixelated cursor-grab"></canvas>
+                            <button id="zoom-reset-btn"
+                                class="absolute bottom-6 right-6 p-2.5 bg-white/90 backdrop-blur shadow-xl rounded-full text-primary hover:scale-110 active:scale-95 transition-all opacity-0 pointer-events-none z-20">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="mobile-palette-hint" hidden>
+                            <span id="mobile-palette-message" role="status"></span>
+                            <span id="mobile-tool-countdown" aria-hidden="true" hidden></span>
+                            <button id="mobile-palette-hint-dismiss" type="button" aria-label="关闭提示" hidden>
+                                <img src="assets/figma-ui/palette-close.svg" alt="">
+                            </button>
+                        </div>
+                        <div id="mobile-editor-view-controls" class="hidden">
+                            <div class="mobile-editor-zoom" role="group" aria-label="视图缩放">
+                                <output id="mobile-editor-zoom-ratio" aria-label="当前缩放比例">100%</output>
+                                <button id="mobile-editor-reset-view" type="button" aria-label="重置视图">重置</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="workbench-single-stage" class="absolute inset-0">
+                    <div class="absolute inset-0 overflow-hidden" id="result-container-single">
+                        <canvas id="workbench-source-preview" class="hidden absolute image-pixelated"></canvas>
+                    </div>
+                    <div id="mobile-crop-actions" class="hidden absolute left-4 right-4 top-4 z-30 flex items-center justify-end gap-2">
+                        <button id="mobile-recrop-btn" type="button"
+                            class="rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-gray-800 shadow-sm border border-white active:scale-95 transition">
+                            重新裁剪
+                        </button>
+                        <button id="mobile-remove-image-btn" type="button"
+                            class="rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-primary shadow-sm border border-white active:scale-95 transition">
+                            移除图片
+                        </button>
+                    </div>
+                    <div id="mobile-crop-confirm-actions" class="hidden absolute left-4 right-4 bottom-4 z-30 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+                        <label for="file-upload"
+                            class="min-h-12 rounded-2xl bg-gray-100 text-sm font-bold text-gray-800 shadow-sm active:scale-95 transition flex items-center justify-center">
+                            重新选择图片
+                        </label>
+                        <button id="mobile-confirm-range-btn" type="button"
+                            class="min-h-12 rounded-2xl bg-gray-900 text-sm font-bold text-white shadow-sm active:scale-95 transition">
+                            确认范围
+                        </button>
+                    </div>
+                </div>
+
+                <div id="workbench-operation-hint" class="hidden" role="status" aria-live="polite">
+                    <img class="operation-hint-icon" src="assets/figma-ui/operation-edge.svg" alt="">
+                    <span class="operation-hint-message"></span>
+                    <span class="operation-hint-current">当前：</span>
+                    <span class="operation-hint-color"></span>
+                    <span class="operation-hint-escape">Esc 取消。</span>
+                    <button type="button" class="operation-hint-close" aria-label="关闭操作提示" title="关闭提示"><img src="assets/figma-ui/operation-color-caret.svg" alt=""></button>
+                </div>
+
+                <div id="workbench-figma-brush-toolbar" class="hidden" aria-label="画笔工具栏">
+                    <div class="figma-brush-tools" role="group" aria-label="画笔子工具">
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="brush" data-mobile-label="画笔" aria-label="画笔"><span class="figma-brush-icon" aria-hidden="true"></span><span>画笔</span></button>
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="bucket" data-mobile-label="油漆" aria-label="油漆"><span class="figma-brush-icon figma-brush-bucket-icon" aria-hidden="true"></span><span>油漆</span></button>
+                        <button type="button" class="figma-brush-tool-button" data-tool-action="edge" data-mobile-label="边框" aria-label="边框"><span class="figma-brush-icon" aria-hidden="true"></span><span>边框</span></button>
+                    </div>
+                    <div class="figma-brush-recent"><span class="figma-brush-recent-label">最近：</span><div class="figma-brush-color-list" aria-label="最近使用颜色">
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="0" disabled>--</button>
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="1" disabled>--</button>
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="2" disabled>--</button>
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="3" disabled>--</button>
+                        <button type="button" class="figma-brush-color is-empty" data-recent-color="4" disabled>--</button>
+                    </div></div>
+                </div>
+
+                <div id="workbench-figma-eraser-toolbar" class="hidden" aria-label="橡皮工具栏">
+                    <div class="figma-brush-tools figma-eraser-tools" role="group" aria-label="橡皮子工具">
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="eraser" data-mobile-label="橡皮" aria-label="橡皮工具"><span class="figma-eraser-icon figma-eraser-basic-icon" aria-hidden="true"><span class="figma-eraser-outline"></span><span class="figma-eraser-seam"></span></span><span>橡皮工具</span></button>
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="area-erase" data-mobile-label="区域擦除" aria-label="按区域擦除"><span class="figma-eraser-icon figma-eraser-region-icon" aria-hidden="true"></span><span>按区域擦除</span></button>
+                        <button type="button" class="figma-brush-tool-button figma-eraser-tool-button" data-tool-action="color-erase" data-mobile-label="按颜色擦除" aria-label="按颜色擦除"><span class="figma-eraser-icon figma-eraser-color-icon" aria-hidden="true"></span><span>按颜色擦除</span></button>
+                    </div>
+                </div>
+
+                <div id="workbench-figma-main-toolbar" class="hidden absolute left-1/2 bottom-[67px] -translate-x-1/2 z-30" aria-label="主工具栏">
+                    <div class="figma-main-toolbar-content">
+                    <div class="figma-main-tool-group">
+                        <button type="button" id="figma-main-pan-btn" data-main-tool="pan" class="figma-main-tool-button" aria-label="拖动" title="拖动画布（H）"><img src="assets/figma-ui/toolbar-hand.svg" alt=""><span>拖动(H)</span></button>
+                        <div class="figma-main-tool-wrap workbench-tool-group" id="figma-main-brush-wrap"><button type="button" id="figma-main-brush-btn" data-main-tool="brush" class="figma-main-tool-button" aria-label="画笔" title="画笔（B）"><span class="figma-main-brush-icon" aria-hidden="true"></span><span>画笔(B)</span></button></div>
+                        <button type="button" id="figma-main-eyedropper-btn" data-main-tool="eyedropper" class="figma-main-tool-button" aria-label="吸管" title="吸管（I）"><img src="assets/figma-ui/toolbar-eyedropper.svg" alt=""><span>吸管(I)</span></button>
+                        <div class="figma-main-tool-wrap workbench-tool-group" id="figma-main-eraser-wrap"><button type="button" id="figma-main-eraser-btn" data-main-tool="eraser" class="figma-main-tool-button" aria-label="橡皮" title="橡皮（E）"><img src="assets/figma-ui/toolbar-eraser.svg" alt=""><span>橡皮(E)</span></button></div>
+                        <button type="button" id="figma-main-palette-btn" data-main-tool="palette" class="figma-main-tool-button" aria-label="色板" title="色板（C）"><img src="assets/figma-ui/toolbar-palette.svg" alt=""><span>色板(C)</span></button>
+                    </div>
+                    <div class="figma-main-divider-slot" aria-hidden="true"><img class="figma-main-divider" src="assets/figma-ui/toolbar-divider.svg" alt=""></div>
+                    <div class="figma-main-history-group">
+                        <button type="button" id="figma-main-undo-btn" class="figma-main-history-button" aria-label="撤销" title="撤销"><img src="assets/figma-ui/toolbar-undo.svg" alt=""></button>
+                        <button type="button" id="figma-main-redo-btn" class="figma-main-history-button" aria-label="重做" title="重做"><img src="assets/figma-ui/toolbar-redo.svg" alt=""></button>
+                    </div>
+                    </div>
+                </div>
+
+                <div id="workbench-edit-toolbar" class="hidden workbench-glass-toolbar absolute left-1/2 bottom-6 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-2.5">
+                    <button id="mobile-pan-tool-btn" type="button" data-mobile-label="拖动" class="workbench-tool-button" aria-label="拖动画布" aria-pressed="false"></button>
+                    <div class="workbench-tool-group">
+                        <button id="toggle-fill-btn" data-mobile-label="画笔" class="workbench-tool-button" aria-label="画笔工具" title="画笔：沿网格轨迹填色，点击箭头打开更多工具">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4 5 5M13 6l5 5-8.5 8.5a2.12 2.12 0 0 1-3 0l-1-1a2.12 2.12 0 0 1 0-3L13 6Z"/><path d="m5 19-1 1M14 5l2-2 5 5-2 2"/></svg>
+                            <svg class="workbench-tool-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>
+                        </button>
+                        <div class="workbench-tool-menu" data-tool-menu="brush">
+                            <button type="button" data-tool-action="brush" data-mobile-label="画笔" title="沿网格轨迹填色">画笔工具<span class="mobile-brush-content"><span class="mobile-brush-icon" aria-hidden="true"></span><span class="mobile-brush-label">画笔</span><span class="mobile-brush-color" hidden></span></span></button>
+                            <button type="button" id="toggle-fill-bucket-btn" data-tool-action="bucket" data-mobile-label="油漆" title="填充相连区域"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8.66667 4.66634L12 1.33301M3.33874 8H14.6394M2.66656 11C2.56105 11.492 2.29199 11.9338 1.90323 12.2533C1.52323 12.5633 1.33323 12.93 1.33323 13.3167C1.33102 13.4932 1.36388 13.6683 1.4299 13.832C1.49592 13.9957 1.59378 14.1447 1.71781 14.2703C1.84184 14.3959 1.98958 14.4956 2.15244 14.5636C2.3153 14.6316 2.49006 14.6667 2.66656 14.6667C2.84307 14.6667 3.01782 14.6316 3.18069 14.5636C3.34355 14.4956 3.49128 14.3959 3.61531 14.2703C3.73935 14.1447 3.83721 13.9957 3.90323 13.832C3.96924 13.6683 4.0021 13.4932 3.9999 13.3167C3.9999 12.9333 3.81323 12.56 3.4299 12.2533C3.03951 11.9352 2.77006 11.4928 2.66656 11ZM10.3334 3.00026L8.90138 1.56826C8.75073 1.41763 8.54642 1.33301 8.33338 1.33301C8.12034 1.33301 7.91603 1.41763 7.76538 1.56826L2.90138 6.43226C2.75075 6.58291 2.66613 6.78722 2.66613 7.00026C2.66613 7.21329 2.75075 7.41761 2.90138 7.56826L7.96271 12.6296C8.41466 13.0815 9.0276 13.3353 9.66671 13.3353C10.3058 13.3353 10.9188 13.0815 11.3707 12.6296L13.9627 10.0376C14.4146 9.58564 14.6685 8.9727 14.6685 8.33359C14.6685 7.69448 14.4146 7.08154 13.9627 6.62959L12.22 4.88692"/></svg>油漆桶<span class="mobile-brush-content"><span class="mobile-brush-icon" aria-hidden="true"></span><span class="mobile-brush-label">油漆</span><span class="mobile-brush-color" hidden></span></span></button>
+                            <button type="button" id="toggle-edge-adjust-menu-btn" data-tool-action="edge" data-mobile-label="边框" title="给边缘区域统一上色"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878"/><path d="M9.18007 2.02878C8.39394 1.9878 7.6062 1.9878 6.82007 2.02878" stroke="black" stroke-opacity="0.2"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714"/><path d="M9.18074 13.9707C8.39443 14.0132 7.6064 14.0134 6.82007 13.9714" stroke="black" stroke-opacity="0.2"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538"/><path d="M13.4534 11.8271C13.1134 12.5938 12.5934 13.1138 11.8274 13.4538" stroke="black" stroke-opacity="0.2"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688"/><path d="M13.4533 4.17221C13.1133 3.40687 12.5927 2.88621 11.8267 2.54688" stroke="black" stroke-opacity="0.2"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031"/><path d="M13.9714 6.82031C14.0137 7.60641 14.0137 8.39421 13.9714 9.18031" stroke="black" stroke-opacity="0.2"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098"/><path d="M2.02871 6.82031C1.98793 7.60668 1.98815 8.39464 2.02938 9.18098" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271"/><path d="M4.1733 13.4525C3.40663 13.1138 2.88663 12.5925 2.54663 11.8271" stroke="black" stroke-opacity="0.2"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354"/><path d="M4.1733 2.54688C3.4073 2.88688 2.88663 3.40754 2.54663 4.17354" stroke="black" stroke-opacity="0.2"/></svg>边框上色<span class="mobile-brush-content"><span class="mobile-brush-icon" aria-hidden="true"></span><span class="mobile-brush-label">边框</span><span class="mobile-brush-color" hidden></span></span></button>
+                        </div>
+                    </div>
+                    <button id="eyedropper-tool-btn" data-mobile-label="吸管" class="workbench-tool-button" aria-label="吸管" title="吸管"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 6 2.3907 11.6093a1.3333 1.3333 0 0 0-.3907.9427v.896a1.3333 1.3333 0 0 0-.3907.9427h.896a1.3333 1.3333 0 0 0 .9427-.3907L10 8M12 6l.2667.2667a1.3333 1.3333 0 0 1 0 1.8853 1.3333 1.3333 0 0 1-1.8853 0L7.7333 5.7336a1.3333 1.3333 0 0 1 0-1.8853 1.3333 1.3333 0 0 1 1.8853 0L10 4l2.2667-2.2667a1.3333 1.3333 0 0 1 1.8853 0 1.3333 1.3333 0 0 1 0 1.8853zM1.3333 14.6667l.276-.276"/></svg></button>
+                    <div id="workbench-recent-colors" class="workbench-recent-colors hidden" aria-label="最近使用颜色" aria-hidden="true">
+                        <button type="button" class="workbench-color-chip is-empty" data-recent-color="0" title="当前颜色"></button>
+                        <button type="button" class="workbench-color-chip is-empty" data-recent-color="1" title="最近使用颜色"></button>
+                        <button type="button" class="workbench-color-chip is-empty" data-recent-color="2" title="最近使用颜色"></button>
+                    </div>
+                    <button id="toggle-all-colors-panel-btn" class="workbench-tool-button" aria-label="全部颜色" title="全部颜色">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+                    </button>
+                    <div class="workbench-tool-group">
+                        <button id="toggle-delete-btn" data-mobile-label="橡皮" class="workbench-tool-button" aria-label="橡皮工具" title="橡皮：逐格擦除，点击箭头打开更多擦除工具">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 16 8.5-8.5a2.12 2.12 0 0 1 3 0l1 1a2.12 2.12 0 0 1 0 3L11 20H6l-3-3 4-4Z"/><path d="m6 20 5-5"/></svg>
+                            <svg class="workbench-tool-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M4.5 2.5L2.5 0.5L0.5 2.5"/></svg>
+                        </button>
+                        <div class="workbench-tool-menu" data-tool-menu="eraser">
+                            <button type="button" data-tool-action="eraser" data-mobile-label="橡皮" title="逐格擦除色块">橡皮工具</button>
+                            <button type="button" id="toggle-clear-base-menu-btn" data-tool-action="area-erase" data-mobile-label="区域擦除" title="框选区域并擦除"><svg class="tool-menu-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6667 14.6667L10 12M12.6667 9.33301C12.8436 9.33301 13.0131 9.26277 13.1382 9.13775C13.2632 9.01272 13.3334 8.84315 13.3334 8.66634V7.99967C13.3334 7.64605 13.1929 7.30691 12.9429 7.05687C12.6928 6.80682 12.3537 6.66634 12.0001 6.66634H10.0001C9.82327 6.66634 9.6537 6.5961 9.52868 6.47108C9.40365 6.34605 9.33341 6.17649 9.33341 5.99967V2.66634C9.33341 2.31272 9.19294 1.97358 8.94289 1.72353C8.69284 1.47348 8.3537 1.33301 8.00008 1.33301C7.64646 1.33301 7.30732 1.47348 7.05727 1.72353C6.80722 1.97358 6.66675 2.31272 6.66675 2.66634V5.99967C6.66675 6.17649 6.59651 6.34605 6.47149 6.47108C6.34646 6.5961 6.17689 6.66634 6.00008 6.66634H4.00008C3.64646 6.66634 3.30732 6.80682 3.05727 7.05687C2.80722 7.30691 2.66675 7.64605 2.66675 7.99967V8.66634C2.66675 8.84315 2.73699 9.01272 2.86201 9.13775C2.98703 9.26277 3.1566 9.33301 3.33341 9.33301M12.6668 9.33301H3.33344L2.0181 13.8443C1.99462 13.9424 1.99367 14.0444 2.01531 14.1429C2.03696 14.2413 2.08064 14.3335 2.14308 14.4127C2.20552 14.4918 2.28508 14.5557 2.37579 14.5997C2.46649 14.6436 2.56598 14.6664 2.66677 14.6663H13.3334C13.4342 14.6664 13.5337 14.6436 13.6244 14.5997C13.7151 14.5557 13.7947 14.4918 13.8571 14.4127C13.9196 14.3335 13.9633 14.2413 13.9849 14.1429C14.0065 14.0444 14.0056 13.9424 13.9821 13.8443L12.6668 9.33301ZM5.33325 14.6667L5.99992 12"/></svg>区域擦除</button>
+                            <button type="button" id="toggle-delete-color-menu-btn" data-tool-action="color-erase" data-mobile-label="按颜色擦除" title="点击一种颜色并擦除全部同色块">按颜色擦除</button>
+                        </div>
+                    </div>
+                    <button id="toggle-palette-panel-btn" data-mobile-label="色板" class="workbench-tool-button" aria-label="颜色清单" title="颜色清单"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.3333 11.3333a2.6667 2.6667 0 1 1-5.3333 0V3.3333A1.3333 1.3333 0 0 1 3.3333 2H6a1.3333 1.3333 0 0 1 1.3333 1.3333zM11.1334 8.667h1.5333A1.3333 1.3333 0 0 1 14 10v2.6667A1.3333 1.3333 0 0 1 12.6667 14H4.6667M4.6667 11.333h.0067M7.3334 5.333l1.5333-1.5333a2.6667 2.6667 0 0 1 3.5333 0l1.264 1.264a2.6667 2.6667 0 0 1 .0173 3.7533L6.6001 13.2"/></svg></button>
+                    <div class="workbench-hidden-actions" aria-hidden="true">
+                        <button id="toggle-clear-base-btn">移除底色</button>
+                        <button id="toggle-edge-adjust-btn">边缘调整</button>
+                        <button id="reset-pattern-btn">重置图纸</button>
+                        <button id="collapse-edit-toolbar-btn">收起</button>
+                    </div>
+                </div>
+
+                <button id="expand-edit-toolbar-btn"
+                    class="hidden absolute right-6 bottom-6 z-30 bg-white/95 backdrop-blur shadow-lg rounded-2xl border border-white px-5 py-3 text-sm font-bold hover:text-primary">
+                    编辑图纸
+                </button>
+
+                <div id="palette-panel"
+                    class="hidden absolute right-6 bottom-24 z-40 w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
+                    <div class="figma-palette-tabs" role="tablist" aria-label="色板视图">
+                        <button type="button" data-palette-view="used" role="tab" aria-selected="true">图纸颜色</button>
+                        <button type="button" data-palette-view="all" role="tab" aria-selected="false">全部颜色</button>
+                    </div>
+                    <div id="palette-panel-drag-handle" class="p-4 border-b border-gray-100 cursor-move select-none">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold text-gray-900">颜色清单</h3>
+                            <p id="palette-panel-summary" class="text-xs text-gray-400 whitespace-nowrap">12色 · 3214颗</p>
+                            <button id="figma-palette-sort" type="button"><span>排序：</span><strong>多到少</strong><img src="assets/figma-ui/palette-sort.svg" alt=""></button>
+                            <button id="close-palette-panel-btn" aria-label="关闭色板" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
+                        </div>
+                        <input id="palette-search-input" type="search" placeholder="搜索已用色号，例如 C29"
+                            class="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div id="palette-color-grid" class="grid grid-cols-5 gap-2 p-4 overflow-y-auto max-h-[48vh] no-scrollbar"></div>
+                </div>
+            </main>
+
+            <aside id="workbench-side-panel" class="min-h-0 flex flex-col gap-4">
+                <section id="workbench-settings-panel" class="bg-white p-5 rounded-2xl border border-white shadow-sm">
+                    <button id="toggle-workbench-settings-btn" type="button"
+                        class="w-full flex items-center justify-between gap-3 text-left">
+                        <span>
+                            <span class="block text-sm font-bold text-gray-900">生成设置</span>
+                            <span id="workbench-settings-summary" class="block mt-1 text-xs text-gray-500">32x32 · MARD 221色 · 最多24色</span>
+                        </span>
+                        <span id="workbench-settings-toggle-label" class="shrink-0 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full">收起</span>
+                    </button>
+
+                    <div id="mobile-settings-preview-card" class="hidden">
+                        <div class="flex items-center gap-3">
+                            <div class="w-24 h-24 shrink-0 rounded-2xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
+                                <canvas id="mobile-settings-thumbnail" class="max-w-full max-h-full image-pixelated"></canvas>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-bold text-gray-900">已选择图片</p>
+                                <p id="mobile-settings-thumbnail-summary" class="mt-1 text-xs text-gray-500">裁剪范围已确认</p>
+                                <div class="mt-3 flex items-center gap-2">
+                                    <button id="mobile-settings-recrop-btn" type="button" class="px-3 py-2 rounded-xl bg-gray-100 text-xs font-bold text-gray-700 active:scale-95 transition">重新裁剪</button>
+                                    <button id="mobile-settings-remove-image-btn" type="button" class="px-3 py-2 rounded-xl bg-primary/10 text-xs font-bold text-primary active:scale-95 transition">移除图片</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mobile-upload-tabs" role="group" aria-label="上传设置" hidden>
+                        <button type="button" data-upload-tab="pattern" aria-pressed="true">图纸设置</button>
+                        <button type="button" data-upload-tab="image" aria-pressed="false">图片调整</button>
+                    </div>
+                    <div id="workbench-settings-content" class="mt-5 space-y-5">
+                    <div id="mobile-upload-pattern-settings" hidden>
+                        <div class="mobile-upload-setting-row">
+                            <span>图纸名称</span>
+                            <button type="button" id="mobile-upload-name" aria-label="修改图纸名称"><span id="mobile-upload-name-value">未命名图纸</span></button>
+                        </div>
+                        <div class="mobile-upload-setting-row">
+                            <span>拼豆品牌</span>
+                            <button type="button" id="mobile-upload-brand" aria-label="选择拼豆品牌"><span id="mobile-upload-brand-value"></span><img src="assets/figma-ui/mobile-upload-chevron.svg" width="16" height="16" alt=""></button>
+                        </div>
+                        <div class="mobile-upload-setting-row">
+                            <span>图纸尺寸</span>
+                            <div class="mobile-upload-options" role="group" aria-label="图纸尺寸">
+                                <button type="button" data-upload-size="40" aria-pressed="true"></button>
+                                <button type="button" data-upload-size="70" aria-pressed="false"></button>
+                                <button type="button" data-upload-size="100" aria-pressed="false"></button>
+                            </div>
+                        </div>
+                        <div class="mobile-upload-setting-row">
+                            <span>颜色限制</span>
+                            <div class="mobile-upload-options" role="group" aria-label="颜色上限">
+                                <button type="button" data-upload-colors="4" aria-pressed="true">4色</button>
+                                <button type="button" data-upload-colors="8" aria-pressed="false">8色</button>
+                                <button type="button" data-upload-colors="12" aria-pressed="false">12色</button>
+                                <button type="button" data-upload-colors="16" aria-pressed="false">16色</button>
+                            </div>
+                        </div>
+                    </div>
+                    <label id="workbench-change-image" for="file-upload"
+                        class="hidden block w-full text-center py-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold cursor-pointer">
+                        更换图片
+                    </label>
+                    <div>
+                        <label class="text-sm font-bold text-gray-800 mb-2 block">图纸名称</label>
+                        <input id="pattern-name-input" type="text" maxlength="40" placeholder="未命名图纸"
+                            class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                                <label class="text-sm font-bold text-gray-800 mb-2 block">拼豆品牌</label>
+                                <select id="brand-select"
+                                    class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                                <option value="mard">MARD</option>
+                                <option value="perler" disabled>Perler</option>
+                                <option value="hama" disabled>Hama</option>
+                                <option value="artkal" disabled>Artkal</option>
+                            </select>
+                        </div>
+                        <div id="mard-set-container">
+                            <label class="text-sm font-bold text-gray-800 mb-2 block">规格</label>
+                            <select id="mard-set-select"
+                                class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary">
+                                <option value="264">264色</option>
+                                <option value="221" selected>221色</option>
+                                <option value="216">216色</option>
+                                <option value="144">144色</option>
+                                <option value="120">120色</option>
+                                <option value="96">96色</option>
+                                <option value="72">72色</option>
+                                <option value="48">48色</option>
+                                <option value="24">24色</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-bold text-gray-800">图纸尺寸</label>
+                            <span id="grid-size-display"
+                                class="text-xs font-mono bg-gray-100 px-2 py-1 rounded-lg text-primary font-bold">60x60</span>
+                        </div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span id="board-size-display" class="text-[10px] px-1.5 py-0.5 rounded-md font-bold"></span>
+                        </div>
+                        <input type="range" id="grid-size-slider" min="16" max="104" step="4" value="60"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                    </div>
+
+                    <div id="image-adjustments-panel">
+                        <div class="image-adjustments-heading">
+                            <span>图片调整</span>
+                            <button id="image-adjustments-reset" type="button">重置</button>
+                        </div>
+                        <div class="image-adjustment-control">
+                            <div class="image-adjustment-label">
+                                <label for="image-brightness-slider">亮度</label>
+                                <output id="image-brightness-display" for="image-brightness-slider">0</output>
+                            </div>
+                            <input type="range" id="image-brightness-slider" min="-10" max="10" step="1" value="0">
+                        </div>
+                        <div class="image-adjustment-control">
+                            <div class="image-adjustment-label">
+                                <label for="image-contrast-slider">对比度</label>
+                                <output id="image-contrast-display" for="image-contrast-slider">0</output>
+                            </div>
+                            <input type="range" id="image-contrast-slider" min="-10" max="10" step="1" value="0">
+                        </div>
+                        <div class="image-adjustment-control">
+                            <div class="image-adjustment-label">
+                                <label for="image-saturation-slider">饱和度</label>
+                                <output id="image-saturation-display" for="image-saturation-slider">0</output>
+                            </div>
+                            <input type="range" id="image-saturation-slider" min="-10" max="10" step="1" value="0">
+                        </div>
+                        <p class="image-adjustments-help">实时预览图片，生成后查看拼豆效果</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 space-y-4 rounded-xl border border-gray-100">
+                        <div class="hidden space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm font-bold text-gray-800">像素风调整</label>
+                                <span id="pixel-art-status" class="text-[11px] text-gray-400">未生成预览</span>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-gray-500">对比度</span>
+                                    <span id="pixel-contrast-display" class="text-xs font-mono text-primary">0</span>
+                                </div>
+                                <input type="range" id="pixel-contrast-slider" min="-30" max="50" value="0" step="1"
+                                    class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-gray-500">锐化强度</span>
+                                    <span id="pixel-sharpen-display" class="text-xs font-mono text-primary">0</span>
+                                </div>
+                                <input type="range" id="pixel-sharpen-slider" min="0" max="100" value="0" step="1"
+                                    class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-xs text-gray-500">主色保留</span>
+                                    <span id="pixel-dominant-display" class="text-xs font-mono text-primary">50</span>
+                                </div>
+                                <input type="range" id="pixel-dominant-slider" min="0" max="100" value="50" step="1"
+                                    class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-bold text-gray-800 mb-2 block">转换精度</label>
+                            <select id="precision-mode-select"
+                                class="hidden w-full p-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
+                                <option value="high" selected>忠实还原（推荐）</option>
+                                <option value="standard">标准模式（回退）</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-bold text-gray-800 mb-2 block">颜色匹配</label>
+                            <select id="color-match-mode-select"
+                                class="hidden w-full p-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition">
+                                <option value="deltae" selected>感知优化 DeltaE（推荐）</option>
+                                <option value="redmean">标准匹配（回退）</option>
+                            </select>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-bold text-gray-800">数量限制</label>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="color-limit-toggle" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                        </div>
+                        <div id="color-limit-controls" class="space-y-3 transition-opacity">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500">最大颜色种类</span>
+                        <span id="max-colors-display"
+                                    class="text-xs font-mono font-bold text-primary bg-white px-2 py-0.5 rounded border border-primary/20">20</span>
+                            </div>
+                            <input type="range" id="max-colors-slider" min="2" max="64" value="20" step="1"
+                                class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                            <label class="hidden flex items-start gap-2 text-xs text-gray-500">
+                                <input type="checkbox" id="dithering-toggle" checked
+                                    class="mt-0.5 w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary">
+                                <span>启用抖动算法</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    </div>
+
+                    <div id="mobile-settings-modal" class="hidden fixed inset-0 z-[260]">
+                        <button id="mobile-settings-backdrop" type="button" class="absolute inset-0 bg-gray-900/30" aria-label="关闭设置"></button>
+                        <section class="absolute left-3 right-3 bottom-3 bg-white rounded-3xl shadow-2xl border border-gray-100 p-4">
+                            <div id="mobile-name-panel" class="hidden space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-base font-bold text-gray-900">图纸名称</h3>
+                                    <button id="mobile-name-cancel-btn" type="button" class="px-3 py-2 rounded-xl bg-gray-100 text-xs font-bold text-gray-600">取消</button>
+                                </div>
+                                <input id="mobile-pattern-name-input" type="text" maxlength="40" placeholder="未命名图纸"
+                                    class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-base font-bold focus:outline-none focus:border-primary">
+                                <button id="mobile-name-apply-btn" type="button" class="w-full py-4 rounded-2xl bg-gray-900 text-white text-sm font-bold">完成</button>
+                            </div>
+                            <div id="mobile-scheme-panel" class="hidden space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-base font-bold text-gray-900">拼豆方案</h3>
+                                    <button id="mobile-scheme-close-btn" type="button" class="px-3 py-2 rounded-xl bg-gray-100 text-xs font-bold text-gray-600">完成</button>
+                                </div>
+                                <div>
+                                    <p class="mb-2 text-xs font-bold text-gray-500">品牌</p>
+                                    <div id="mobile-brand-options" class="grid grid-cols-2 gap-2"></div>
+                                </div>
+                                <div id="mobile-mard-set-options-wrap">
+                                    <p class="mb-2 text-xs font-bold text-gray-500">规格</p>
+                                    <div id="mobile-mard-set-options" class="grid grid-cols-3 gap-2"></div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="mobile-upload-actions" hidden>
+                        <button type="button" id="mobile-upload-back"><img src="assets/figma-ui/mobile-upload-chevron.svg" width="16" height="16" alt="">返回</button>
+                        <button type="button" id="mobile-upload-preview">预览图纸</button>
+                    </div>
+                    <div id="workbench-generate-actions" class="grid grid-cols-1 gap-3">
+                        <button id="generate-pixel-art-btn"
+                            class="hidden w-full py-4 bg-primary text-white text-sm font-bold rounded-xl active:scale-95 transition justify-center items-center shadow-sm">
+                            生成像素风
+                        </button>
+                        <button id="generate-pattern-btn"
+                            class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition flex justify-center items-center shadow-sm">
+                            <span id="generate-pattern-label">生成预览</span>
+                        </button>
+                    </div>
+                    <button id="legacy-generate-pattern-btn"
+                        class="hidden w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition flex justify-center items-center shadow-sm">
+                        原始算法生成（对比）
+                    </button>
+                    <button id="apply-workbench-settings-btn"
+                        class="hidden w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-xl active:scale-95 transition">
+                        应用设置
+                    </button>
+                </section>
+
+                <section id="workbench-color-list-panel" class="flex-1 min-h-0 bg-white p-5 rounded-2xl border border-white shadow-sm overflow-y-auto no-scrollbar">
+                    <h3 class="text-sm font-bold mb-4 flex items-center justify-between">
+                        <span>颜色清单</span>
+                        <span class="flex items-center gap-2">
+                            <span id="color-types-count" class="text-xs bg-primary/20 text-primary px-2 py-1"></span>
+                            <span id="total-beads-count" class="text-gray-500 font-mono text-xs"></span>
+                        </span>
+                    </h3>
+                    <div id="workbench-color-panel-empty" class="h-full min-h-48 flex items-center justify-center text-gray-500">
+                        生成图纸后显示颜色清单
+                    </div>
+                    <div id="color-stats" class="grid grid-cols-2 gap-2"></div>
+                </section>
+
+                <div id="workbench-side-draft-slot">
+                <div id="workbench-draft-actions" class="relative grid grid-cols-[minmax(0,1fr)_116px] gap-3">
+                    <div id="draft-drawer" class="hidden absolute left-0 right-[128px] bottom-full mb-3 z-40 bg-white rounded-2xl border border-gray-100 shadow-2xl p-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <button id="export-drafts-btn" class="flex-1 px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 active:scale-95 transition">
+                                导出全部
+                            </button>
+                            
+                        </div>
+                        <div id="autosave-records" class="hidden max-h-48 overflow-y-auto mb-3"></div>
+                        <div id="draft-box-empty" class="text-sm text-gray-500 px-2 py-3">
+                            暂无草稿
+                        </div>
+                        <div id="draft-box-list" class="hidden space-y-2 max-h-80 overflow-y-auto no-scrollbar"></div>
+                    </div>
+                    <div id="draft-primary-control" class="grid grid-cols-[minmax(0,1fr)_48px] rounded-2xl overflow-hidden shadow-sm">
+                        <button id="save-draft-btn" type="button" title="保存当前图纸和设置为草稿" class="py-4 bg-white text-gray-900 text-sm font-bold border border-gray-200 border-r-0 active:scale-[0.99] transition">
+                            <span class="draft-save-pc-icon" aria-hidden="true"><img src="assets/figma-ui/draft-save-569.svg" alt=""><span class="draft-save-bead-loader"><i></i><i></i><i></i><i></i></span></span>
+                            <svg class="draft-save-icon" viewBox="0 0 14 14" aria-hidden="true"><path d="M8.8833.75c.3517.005.6872.1488.9334.4l2.5333 2.5333c.2512.2462.395.5817.4.9334v6.8c0 .3536-.1405.6927-.3905.9428-.25.25-.5892.3905-.9428.3905H2.0833c-.3536 0-.6928-.1405-.9428-.3905-.25-.25-.3905-.5892-.3905-.9428V2.0833c0-.3536.1405-.6928.3905-.9428.25-.25.5892-.3905.9428-.3905zM10.0833 12.7503V8.0837c0-.1768-.0702-.3464-.1953-.4714-.125-.1251-.2946-.1953-.4714-.1953H4.0833c-.1768 0-.3464.0702-.4714.1953-.1251.125-.1953.2946-.1953.4714v4.6666M3.4166.75v2.6667c0 .1768.0703.3464.1953.4714.1251.1251.2947.1953.4714.1953H8.75"/></svg><span class="draft-save-label">保存为草稿（0）</span>
+                        </button>
+                        <button id="toggle-draft-drawer-btn" class="py-4 bg-white text-gray-900 border border-gray-200 text-sm font-bold hover:text-primary active:scale-95 transition" aria-label="展开草稿列表">
+                            <span class="draft-records-pc" aria-hidden="true"><span class="draft-records-pc-icon"><img class="draft-records-dot row-one" src="assets/figma-ui/draft-list-dot-569.svg" alt=""><img class="draft-records-dot row-two" src="assets/figma-ui/draft-list-dot-569.svg" alt=""><img class="draft-records-dot row-three" src="assets/figma-ui/draft-list-dot-569.svg" alt=""><img class="draft-records-line row-one" src="assets/figma-ui/draft-list-line-569.svg" alt=""><img class="draft-records-line row-two" src="assets/figma-ui/draft-list-line-569.svg" alt=""><img class="draft-records-line row-three" src="assets/figma-ui/draft-list-line-569.svg" alt=""></span><span class="draft-records-pc-label">草稿</span></span>
+                            <svg class="draft-toggle-caret" viewBox="0 0 5 3" aria-hidden="true"><path d="M.5.5 2.5 2.5 4.5.5"/></svg><span class="draft-toggle-pc-caret" aria-hidden="true"><span class="draft-toggle-pc-divider"><img src="assets/figma-ui/save-caret.svg" alt=""></span><span class="draft-toggle-pc-arrow"><img src="assets/figma-ui/save-caret.svg" alt=""></span></span>
+                        </button>
+                    </div>
+                    <button id="next-to-step-4" aria-label="导出图纸" class="w-full py-4 bg-gray-900 text-white text-sm font-bold rounded-2xl shadow-sm">
+                        <img class="draft-export-icon" src="assets/figma-ui/export.svg" alt=""><span class="draft-export-label">导出</span><span class="draft-export-pc-label" aria-hidden="true">导出图纸</span>
+                    </button>
+                </div>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <dialog id="mobile-operation-loading" aria-labelledby="mobile-operation-message">
+        <span class="mobile-operation-spinner" aria-hidden="true"></span>
+        <p id="mobile-operation-message" role="status" aria-live="polite" aria-atomic="true"></p>
+    </dialog>
+
+    <dialog id="mobile-upload-exit-dialog" aria-labelledby="mobile-upload-exit-title" aria-describedby="mobile-upload-exit-note">
+        <form method="dialog">
+            <h2 id="mobile-upload-exit-title">返回首页？</h2>
+            <p id="mobile-upload-exit-note">本次上传的图片、裁剪范围和设置将被丢弃。</p>
+            <div>
+                <button value="cancel" autofocus>继续设置</button>
+                <button value="discard" id="mobile-upload-discard">确认返回</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="mobile-draft-dialog" aria-labelledby="mobile-draft-heading" aria-describedby="mobile-draft-note">
+        <div class="mobile-draft-sheet">
+            <button type="button" class="mobile-draft-close" aria-label="关闭我的草稿" autofocus>
+                <img src="assets/figma-ui/mobile-draft-close.svg" width="14" height="14" alt="">
+            </button>
+            <h2 id="mobile-draft-heading">我的草稿</h2>
+            <p id="mobile-draft-note">草稿保存在本地，请勿清理缓存</p>
+            <div class="mobile-draft-stack" hidden></div>
+            <p class="mobile-draft-empty" role="status">正在读取草稿…</p>
+            <div class="mobile-draft-caption" aria-live="polite" hidden>
+                <p class="mobile-draft-name"></p>
+                <div><span class="mobile-draft-summary"></span><time></time></div>
+            </div>
+            <button type="button" class="mobile-draft-open" hidden>
+                <img src="assets/figma-ui/mobile-draft-open.svg" width="20" height="20" alt="">
+                进入草稿
+            </button>
+        </div>
+    </dialog>
+
+    <div id="pattern-preview-layer" class="hidden fixed inset-0 z-50 bg-[#E7EBEE]">
+        <h1 class="pattern-preview-mobile-title">预览图纸</h1>
+        <div class="pattern-preview-layout h-full grid grid-cols-[minmax(0,1fr)_340px] max-lg:grid-cols-1">
+            <main class="pattern-preview-image min-h-0 flex items-center justify-center p-5 max-lg:p-3">
+                <div class="pattern-preview-frame w-full h-full bg-white rounded-2xl border border-white shadow-sm overflow-hidden flex items-center justify-center">
+                    <canvas id="pattern-preview-canvas" class="image-pixelated max-w-full max-h-full"></canvas>
+                </div>
+            </main>
+            <aside class="pattern-preview-panel bg-white border-l border-gray-100 p-5 flex flex-col gap-4 max-lg:border-l-0 max-lg:border-t max-lg:max-h-[42vh] max-lg:overflow-y-auto">
+                <div class="pattern-preview-desktop-intro">
+                    <p class="text-xs font-bold text-primary mb-2">生成预览</p>
+                    <h2 class="text-xl font-black text-gray-900">选择一个更合适的效果</h2>
+                    <p id="pattern-preview-summary" class="text-xs text-gray-500 mt-2"></p>
+                </div>
+                <div class="pattern-preview-mobile-effects">
+                    <h2>生成效果</h2>
+                    <span id="pattern-preview-mobile-color-count" aria-live="polite"></span>
+                </div>
+                <div id="pattern-preview-style-options" class="grid grid-cols-3 gap-2" role="group" aria-label="生成效果">
+                    <button data-preview-style="original" class="pattern-preview-style-btn px-3 py-3 rounded-xl border border-gray-200 text-sm font-bold hover:border-primary hover:text-primary">原图</button>
+                    <button data-preview-style="cartoon" class="pattern-preview-style-btn px-3 py-3 rounded-xl border border-gray-200 text-sm font-bold hover:border-primary hover:text-primary">卡通</button>
+                    <button data-preview-style="photo" class="pattern-preview-style-btn px-3 py-3 rounded-xl border border-gray-200 text-sm font-bold hover:border-primary hover:text-primary">照片</button>
+                    <button data-preview-style="pixel" disabled class="pattern-preview-style-btn hidden px-3 py-3 rounded-xl border border-gray-200 text-sm font-bold hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed">像素画</button>
+                </div>
+                <p id="pixel-art-detection-hint" class="hidden text-xs text-gray-500 -mt-2"></p>
+                <div class="pattern-preview-desktop-note text-xs text-gray-500 leading-relaxed">
+                    基础规格仍在右侧设置中调整。这里仅切换生成风格，点击后会直接重新生成预览。
+                </div>
+                <div class="pattern-preview-actions mt-auto grid grid-cols-2 gap-3">
+                    <button id="pattern-preview-cancel-btn" class="py-3 rounded-xl bg-gray-100 text-gray-800 text-sm font-bold active:scale-95 transition">返回调整</button>
+                    <button id="pattern-preview-confirm-btn" class="py-3 rounded-xl bg-gray-900 text-white text-sm font-bold active:scale-95 transition">使用这个效果</button>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div id="workbench-history-modal" class="history-overlay" hidden>
+        <section id="history-main-dialog" class="history-dialog" role="dialog" aria-modal="true" aria-labelledby="history-title" tabindex="-1">
+            <button type="button" class="history-close" data-history-close aria-label="关闭草稿记录"><img src="assets/figma-ui/history-close.svg" alt=""></button>
+            <header class="history-header"><h2 id="history-title"><span class="history-title-desktop">草稿记录</span><span class="history-title-mobile">历史记录</span></h2><p>仅保存在当前小工具</p></header>
+            <section class="history-saved-section" aria-labelledby="history-saved-heading">
+                <h3 id="history-saved-heading">保存版本</h3>
+                <div id="history-version-list" class="history-version-list"></div>
+            </section>
+            <section class="history-auto-section" aria-labelledby="history-auto-heading">
+                <div class="history-auto-heading"><h3 id="history-auto-heading">自动保存</h3><p>有未保存修改时，每5分钟自动保存</p></div>
+                <div id="history-automatic-record" class="history-automatic-record"></div>
+            </section>
+            <p id="history-error" class="history-error" role="status" hidden></p>
+        </section>
+        <section id="history-preview-dialog" class="history-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="history-preview-caption" tabindex="-1" hidden>
+            <button type="button" class="history-close" data-history-back aria-label="关闭版本大图"><img src="assets/figma-ui/history-close.svg" alt=""></button>
+            <h2 id="history-preview-caption"></h2>
+            <div class="history-preview-scroll"><img id="history-preview-image" alt="保存版本的完整图纸"></div>
+        </section>
+        <section id="history-confirm-dialog" class="history-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="history-confirm-title" aria-describedby="history-confirm-description" tabindex="-1" hidden>
+            <h2 id="history-confirm-title">恢复此保存版本？</h2>
+            <p id="history-confirm-description">当前未保存修改将被替换，已保存的版本仍会保留。</p>
+            <div class="history-confirm-actions"><button id="history-confirm-cancel" type="button" data-history-back>取消</button><button id="history-confirm-restore" type="button">确认恢复</button></div>
+        </section>
+    </div>
+
+    <div id="workbench-export-modal" class="export-modal-overlay" hidden>
+        <div id="export-choice-dialog" class="export-choice-dialog" role="dialog" aria-modal="true" aria-labelledby="export-dialog-title" tabindex="-1">
+            <button type="button" class="export-modal-close" data-export-close aria-label="关闭导出弹窗"><img src="assets/figma-ui/export-close.svg" alt=""></button>
+            <h2 id="export-dialog-title">导出图纸</h2>
+            <div class="export-dialog-body">
+                <div class="export-dialog-preview">
+                    <div class="export-dialog-paper"><img id="export-dialog-preview-image" alt="当前图纸导出预览"></div>
+                    <button id="export-preview-enlarge" type="button" aria-label="放大图纸预览"><img src="assets/figma-ui/export-expand.svg" alt=""></button>
+                </div>
+                <div class="export-dialog-settings">
+                    <h3 id="export-dialog-name"></h3>
+                    <div class="export-dialog-meta"><span id="export-dialog-spec"></span><span id="export-dialog-stats"></span></div>
+                    <p class="export-dialog-section-label">导出设置</p>
+                    <div class="export-dialog-options" role="group" aria-label="选择导出图纸，可多选">
+                        <button type="button" class="export-option" data-export-type="pattern" aria-pressed="true">
+                            <img class="export-option-icon" src="assets/figma-ui/export-grid.svg" alt="">
+                            <span class="export-option-copy"><span>拼豆图纸</span><small>含网格与色号，方便对照拼豆</small></span>
+                            <img class="export-option-check" src="assets/figma-ui/export-check.svg" alt="">
+                            <img class="export-option-unchecked" src="assets/figma-ui/export-unchecked.svg" alt="">
+                        </button>
+                        <button type="button" class="export-option" data-export-type="mirrored" aria-pressed="true">
+                            <img class="export-option-icon" src="assets/figma-ui/export-mirror.svg" alt="">
+                            <span class="export-option-copy"><span>镜像图纸</span><small>左右翻转，含网格与色号</small></span>
+                            <img class="export-option-check" src="assets/figma-ui/export-check.svg" alt="">
+                            <img class="export-option-unchecked" src="assets/figma-ui/export-unchecked.svg" alt="">
+                        </button>
+                        <button type="button" class="export-option" data-export-type="raw" aria-pressed="true">
+                            <img class="export-option-icon" src="assets/figma-ui/export-raw.svg" alt="">
+                            <span class="export-option-copy"><span>无标注图</span><small>不含网格与色号，适合展示</small></span>
+                            <img class="export-option-check" src="assets/figma-ui/export-check.svg" alt="">
+                            <img class="export-option-unchecked" src="assets/figma-ui/export-unchecked.svg" alt="">
+                        </button>
+                    </div>
+                    <p id="export-dialog-error" class="export-dialog-error" role="status" hidden></p>
+                </div>
+            </div>
+            <div class="export-dialog-actions">
+                <button type="button" class="export-modal-button" data-export-close>取消导出</button>
+                <button id="export-selected-btn" type="button" class="export-modal-button is-primary">导出3张图纸</button>
+            </div>
+        </div>
+        <div id="export-preview-dialog" class="export-preview-dialog" role="dialog" aria-modal="true" aria-label="放大图纸预览" tabindex="-1" hidden>
+            <button type="button" class="export-modal-close" id="export-preview-shrink" aria-label="关闭放大预览"><img src="assets/figma-ui/export-close.svg" alt=""></button>
+            <div class="export-preview-scroll"><img id="export-dialog-large-image" alt="当前图纸放大预览"></div>
+        </div>
+        <div id="export-result-dialog" class="export-result-dialog" role="dialog" aria-modal="true" aria-labelledby="export-result-title" tabindex="-1" hidden>
+            <button type="button" class="export-modal-close" data-export-close aria-label="关闭下载提示，继续编辑"><img src="assets/figma-ui/export-result-close.svg" alt=""></button>
+            <div class="export-result-message">
+                <img src="assets/figma-ui/export-started.svg" alt="">
+                <div><h2 id="export-result-title">已发起下载</h2><p id="export-result-description">请确认浏览器下载结果。</p></div>
+            </div>
+            <div class="export-result-actions">
+                <button type="button" class="export-modal-button" data-export-close>继续编辑</button>
+                <button type="button" class="export-modal-button is-primary" id="export-return-home">返回首页</button>
+            </div>
+        </div>
+    </div>
+
+    <section id="step-export" class="step-section export-page">
+        <header class="export-page-header">
+            <button id="back-to-step-3" type="button" class="export-back-button" aria-label="返回图纸编辑">
+                <img src="assets/figma-ui/back.svg" alt="">
+            </button>
+            <h2>保存与分享</h2>
+        </header>
+        <div class="export-page-content">
+            <div class="export-preview-card">
+                <img id="export-preview" class="image-pixelated" alt="图纸导出预览">
+                <div class="export-preview-meta">
+                    <span id="export-meta">32x32 · MARD</span>
+                    <span class="export-brand">拼豆大师</span>
+                </div>
+            </div>
+            <div class="export-page-actions">
+                <p id="export-save-status" role="status" class="text-xs text-gray-500 text-center">导出图纸或镜像图时，将同时保存当前草稿。</p>
+                <button id="download-image-btn" type="button" class="export-page-button is-primary">保存图片</button>
+                <button id="download-mirrored-image-btn" type="button" class="export-page-button">保存镜像图</button>
+                <button id="download-raw-image-btn" type="button" class="export-page-button">保存原图</button>
+            </div>
+        </div>
+    </section>
+
+    <dialog id="mobile-palette-dialog" aria-label="色板"></dialog>
+
+    <div id="all-colors-panel"
+        class="hidden fixed left-1/2 top-1/2 z-[100] w-[360px] max-w-[calc(100vw-3rem)] max-h-[68vh] -translate-x-1/2 bg-white/95 backdrop-blur shadow-2xl rounded-2xl border border-white overflow-hidden">
+        <div class="figma-palette-tabs" role="tablist" aria-label="色板视图">
+            <button type="button" data-palette-view="used" role="tab" aria-selected="false">图纸颜色</button>
+            <button type="button" data-palette-view="all" role="tab" aria-selected="true">全部颜色</button>
+        </div>
+        <div class="p-4 border-b border-gray-100">
+            <div class="flex items-center justify-between gap-3">
+                <h3 class="text-sm font-bold text-gray-900">全部颜色</h3>
+                <p id="all-colors-panel-summary" class="text-xs text-gray-400 whitespace-nowrap"></p>
+                <button id="close-all-colors-panel-btn" aria-label="关闭色板" type="button" class="text-sm font-bold text-gray-400 hover:text-gray-700">关闭</button>
+            </div>
+            <input id="all-colors-search-input" type="search" placeholder="搜索色号，例如 C29"
+                class="mt-3 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+        </div>
+        <div id="all-colors-grid" class="grid grid-cols-5 gap-2 max-h-[48vh] overflow-y-auto p-4"></div>
+    </div>
+
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center space-y-4">
+            <p class="text-lg font-semibold">确定要删除这个色块吗？</p>
+            <div class="flex justify-center space-x-4">
+                <button id="delete-confirm-yes" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition">确认</button>
+                <button id="delete-confirm-no" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="draft-save-as-modal" role="dialog" aria-modal="true" aria-labelledby="draft-save-as-title"
+        class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-6">
+        <form id="draft-save-as-form" class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h2 id="draft-save-as-title" class="text-lg font-bold text-gray-900">另存为新草稿</h2>
+            <label for="draft-save-as-name" class="mt-4 block text-sm text-gray-600">草稿名称</label>
+            <input id="draft-save-as-name" type="text" maxlength="60" autocomplete="off"
+                aria-describedby="draft-save-as-error"
+                class="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
+            <p id="draft-save-as-error" role="status" class="mt-2 min-h-[20px] text-sm text-red-500"></p>
+            <div class="mt-4 flex justify-end gap-3">
+                <button id="draft-save-as-cancel" type="button" class="rounded-xl bg-gray-100 px-5 py-3 text-sm font-bold text-gray-600 disabled:opacity-50">取消</button>
+                <button id="draft-save-as-submit" type="submit" class="rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white disabled:opacity-50">保存副本</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="workbench-exit-modal" role="dialog" aria-modal="true" aria-labelledby="workbench-exit-title" aria-describedby="workbench-exit-description"
+        class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-6">
+        <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h2 id="workbench-exit-title" class="text-lg font-bold text-gray-900">保存图纸后再返回？</h2>
+            <p id="workbench-exit-description" class="mt-3 text-sm text-gray-600">当前图纸有未保存的内容。不保存返回将丢弃这些内容，已保存的草稿仍会保留。</p>
+            <p id="workbench-exit-error" role="status" class="mt-2 text-sm text-red-500"></p>
+            <div class="mt-6 flex flex-wrap justify-end gap-3">
+                <button id="workbench-exit-cancel" type="button" class="rounded-xl bg-gray-100 px-4 py-3 text-sm font-bold text-gray-600 disabled:opacity-50">取消</button>
+                <button id="workbench-exit-discard" type="button" class="rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold text-gray-600 disabled:opacity-50">不保存返回</button>
+                <button id="workbench-exit-save" type="button" class="rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white disabled:opacity-50">保存并返回</button>
+            </div>
+        </div>
+    </div>
+
+
+<aside id="minitool-storage-status" hidden role="status"></aside>
+<div id="minitool-output" hidden>
+ <section role="dialog" aria-modal="true" aria-labelledby="minitool-output-title" tabindex="-1">
+  <h2 id="minitool-output-title">保存与分享</h2>
+  <label><input type="checkbox" value="pattern" checked>拼豆图纸</label>
+  <label><input type="checkbox" value="mirrored">镜像图纸</label>
+  <label><input type="checkbox" value="raw">无标注图</label>
+  <div class="output-actions"><button type="button" data-destination="album">保存到相册</button><button type="button" data-destination="post">发作品</button></div>
+  <p role="status" aria-live="polite"></p><button type="button" data-output-close>返回编辑</button>
+ </section>
+</div>
+
+</body>
+</html>

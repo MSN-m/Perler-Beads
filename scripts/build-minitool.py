@@ -51,7 +51,7 @@ def stage_sources(stage):
     try {
         const drafts = await miniToolStore.list();
         AppState.autoSaves = drafts.filter(item => item.kind === 'autosave').sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-        AppState.drafts = drafts.filter(item => item.kind !== 'autosave').sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        AppState.drafts = drafts.filter(item => item.kind !== 'autosave' && item.kind !== 'setup-recovery').sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
         document.getElementById('minitool-storage-status').hidden = true;
     } catch (error) {
         console.warn('Native draft read failed.', error);
@@ -84,6 +84,7 @@ def stage_sources(stage):
     text = main.read_text()
     text = replace_once(text, "from './features/export-modal.js'", "from './platform/minitool/output.js'", 'native output modal')
     text = replace_once(text, "if (AppState.workbenchViewportMode === 'desktop') exportModal.open();", "if (true) exportModal.open();", 'native output all viewports')
+    text = replace_once(text, '    installWorkbenchAutoSave();', '    // Native progress installer replaces the website five-minute timer.', 'native progress scheduling')
     write(main, text)
     exporter = stage / 'src/exporter.js'
     text = exporter.read_text()
@@ -129,14 +130,14 @@ def main():
         stage = Path(temp)
         sources = stage_sources(stage)
         css_input = stage / 'all.css'
-        css_input.write_text('\n'.join((ROOT / file).read_text() for file in ['css/tailwind.generated.css', 'css/style.css', 'src/platform/minitool/output.css']))
+        css_input.write_text('\n'.join((ROOT / file).read_text() for file in ['css/tailwind.generated.css', 'css/style.css', 'src/platform/minitool/output.css', 'src/platform/minitool/chrome.css', 'src/platform/minitool/progress.css']))
         # style.css lives in css/ in the web app; the release stylesheet is at the ZIP root.
         css_input.write_text(css_input.read_text().replace('../assets/', './assets/'))
         meta = output / 'css-compatibility.json'
         env = dict(os.environ, PERLER_LIGHTNINGCSS=args.lightningcss)
         subprocess.run([args.node, str(ROOT / 'scripts/minitool/compile-css.cjs'), str(css_input), str(artifact / 'style.css'), str(meta)], env=env, check=True)
         info = json.loads(meta.read_text())
-        write(stage / 'entry.js', "import './src/platform/minitool/polyfills.js';\nimport { installMiniToolCompatibility } from './src/platform/minitool/compat.js';\nimport { installMiniToolHomeChrome } from './src/platform/minitool/home-chrome.js';\nimport './src/main.js';\ninstallMiniToolCompatibility(" + json.dumps(info['has']) + ', ' + json.dumps(info['gaps']) + ', ' + json.dumps(info['aspects']) + ');\ninstallMiniToolHomeChrome();\n')
+        write(stage / 'entry.js', "import './src/platform/minitool/polyfills.js';\nimport { installMiniToolCompatibility } from './src/platform/minitool/compat.js';\nimport { installMiniToolHomeChrome } from './src/platform/minitool/home-chrome.js';\nimport { installMiniToolProgress } from './src/platform/minitool/progress.js';\nimport './src/main.js';\ndocument.addEventListener('DOMContentLoaded', installMiniToolProgress);\ninstallMiniToolCompatibility(" + json.dumps(info['has']) + ', ' + json.dumps(info['gaps']) + ', ' + json.dumps(info['aspects']) + ');\ninstallMiniToolHomeChrome();\n')
         command = [args.esbuild, '--bundle', '--format=iife', '--target=chrome61', '--tree-shaking=true', '--minify', '--legal-comments=none', '--metafile=' + str(output / 'bundle-inputs.json')]
         subprocess.run(command + [str(stage / 'entry.js'), '--outfile=' + str(artifact / 'app.js')], check=True)
         subprocess.run([args.esbuild, str(sources / 'features/pixel-art-detection-worker.js'), '--bundle', '--format=iife', '--target=chrome61', '--minify', '--legal-comments=none', '--outfile=' + str(artifact / 'pixel-worker.js')], check=True)

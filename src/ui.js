@@ -1529,7 +1529,7 @@ function renderAutoSaveRecords() {
     box.classList.toggle('hidden', records.length === 0 && !AppState.autoSaveError);
     box.innerHTML = `<h3 class="text-sm font-bold text-gray-700 mb-2">自动恢复记录</h3><p class="text-xs text-gray-500 mb-2">每张图纸保留一份，不占手动历史版本。</p>${AppState.autoSaveError ? '<p role="status" class="text-xs text-red-500 mb-2">自动保存失败，请手动保存草稿。</p>' : ''}` + records.map(record => `<div class="rounded-xl bg-gray-50 p-3 mb-2"><p class="text-sm font-bold">${escapeHtml(record.name)}</p><p class="text-xs text-gray-500 mt-1">${escapeHtml(getDraftTimestampLabel(record.updatedAt))}</p><button type="button" data-autosave-id="${escapeHtml(record.id)}" ${hasWorkbenchPattern() ? 'disabled' : ''} class="mt-2 text-sm text-primary disabled:opacity-50">${hasWorkbenchPattern() ? '请先保存或退出当前图纸' : '恢复自动进度'}</button></div>`).join('');
 }
-export async function saveWorkbenchAutomatically() {
+export async function saveWorkbenchAutomatically(options = {}) {
     if (autoSaving || savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke || AppState.fillSelection || returningFromWorkbench || draftNamingPending || !hasWorkbenchPattern()) return false;
     await workbenchDraftsReady;
     if (autoSaving || savingDraft || AppState.draftRestorePending || AppState.paintStroke || AppState.eraserStroke || !hasWorkbenchPattern()) return false;
@@ -1546,6 +1546,7 @@ export async function saveWorkbenchAutomatically() {
             return true;
         }
         const pixels = getCurrentDraftSourcePixels();
+        const savedPatternId = AppState.colorSelectionPatternId;
         const record = {
             id: autoSaveKey(), kind: 'autosave', baseDraftId: AppState.currentDraftId,
             sourcePatternId: AppState.colorSelectionPatternId, updatedAt: new Date().toISOString(),
@@ -1554,15 +1555,21 @@ export async function saveWorkbenchAutomatically() {
             colorCount: new Set(pixels.filter(p => p && p.id !== 'NONE').map(p => p.id)).size,
             isMirrored: AppState.isMirrored, colorSelection: getColorSelectionSnapshot(),
             cropRect: AppState.cropRect ? { ...AppState.cropRect } : null, generationSettings: captureDraftGenerationSettings(),
-            sourceImageDataUrl: AppState.image ? getCurrentSourceCanvasSnapshot() || AppState.draftSourceImageDataUrl : AppState.draftSourceImageDataUrl,
+            sourceImageDataUrl: options.sourceImageDataUrl !== undefined ? options.sourceImageDataUrl
+                : AppState.image ? getCurrentSourceCanvasSnapshot() || AppState.draftSourceImageDataUrl : AppState.draftSourceImageDataUrl,
             pixelData: pixels
         };
         const previous = (AppState.autoSaves || []).find(item => item.id === record.id);
-        if (previous && autoSaveContent(previous) === autoSaveContent(record)) return true;
+        if (previous && autoSaveContent(previous) === autoSaveContent(record)) {
+            if (AppState.autoSaveError) { AppState.autoSaveError = false; renderAutoSaveRecords(); }
+            return true;
+        }
         await upsertWorkbenchDraft(record);
         AppState.autoSaves = [record, ...(AppState.autoSaves || []).filter(item => item.id !== record.id)];
-        AppState.autoSaveError = false;
-        renderAutoSaveRecords();
+        if (savedPatternId === AppState.colorSelectionPatternId) {
+            AppState.autoSaveError = false;
+            renderAutoSaveRecords();
+        }
         return true;
     } catch (error) {
         console.warn('Automatic draft save failed.', error);
@@ -4729,3 +4736,83 @@ const workbenchDraftsReady = loadWorkbenchDrafts().then(() => {
         renderDraftBox();
     }
 });
+
+
+// Opt-in adapter helpers: the normal website keeps its existing five-minute policy.
+export function getWorkbenchProgressState() {
+    const phase = hasWorkbenchPattern() ? 'editor' : AppState.image ? 'setup' : null;
+    if (!phase) return null;
+    const controls = DRAFT_SETTING_IDS.map(id => {
+        const el = document.getElementById(id);
+        return el?.type === 'checkbox' ? el.checked : el?.value;
+    });
+    const crop = AppState.cropRect;
+    return {
+        phase,
+        safe: !(autoSaving || savingDraft || returningFromWorkbench || draftNamingPending || AppState.draftRestorePending
+            || AppState.paintStroke || AppState.eraserStroke || AppState.fillSelection || AppState.cropInteraction
+            || AppState.batchReplace.active || AppState.isBgRemoving || isMobileLoadingActive()
+            || document.querySelector('#mobile-upload-exit-dialog[open]')
+            || [...document.querySelectorAll('[role="dialog"]')].some(el => el.getClientRects().length && el.getAttribute('aria-modal') === 'true')),
+        token: [phase, AppState.colorSelectionPatternId, AppState.currentDraftId, AppState.currentDraftVersionId,
+            AppState.image, AppState.history[AppState.history.length - 1], AppState.pixelData, AppState.stagedPixelData,
+            AppState.editor.undoStack.length, AppState.editor.undoStack[AppState.editor.undoStack.length - 1],
+            AppState.editor.redoStack.length, AppState.patternName, AppState.isMirrored,
+            AppState.gridWidth, AppState.gridHeight, AppState.brand, AppState.mardSet,
+            crop?.x, crop?.y, crop?.width, crop?.height, mobileUploadLongEdge, mobileUploadColorLimit,
+            mobileUploadCropHistory.length, AppState.imageAdjustments.brightness,
+            AppState.imageAdjustments.contrast, AppState.imageAdjustments.saturation, ...controls]
+    };
+}
+
+export function captureWorkbenchSetupProgress(sourceImageDataUrl) {
+    return {
+        id: 'minitool:setup-recovery', kind: 'setup-recovery', updatedAt: new Date().toISOString(),
+        sourcePatternId: AppState.colorSelectionPatternId, sourceImageDataUrl,
+        patternName: AppState.patternName, brand: AppState.brand, mardSet: AppState.mardSet,
+        cropRect: AppState.cropRect ? { ...AppState.cropRect } : null,
+        cropHistory: mobileUploadCropHistory.map(rect => ({ ...rect })),
+        longEdge: mobileUploadLongEdge, colorLimit: mobileUploadColorLimit,
+        imageAdjustments: { ...AppState.imageAdjustments }
+    };
+}
+
+export async function restoreWorkbenchSetupProgress(record) {
+    if (getWorkbenchProgressState() || AppState.draftRestorePending || record?.kind !== 'setup-recovery'
+        || !/^data:image\//.test(record.sourceImageDataUrl || '')
+        || ![40, 70, 100].includes(record.longEdge) || ![4, 8, 12, 16].includes(record.colorLimit)) return false;
+    AppState.draftRestorePending = true;
+    try {
+        const img = await new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = () => reject(new Error('恢复图片失败，请保留记录后重试。'));
+            image.src = record.sourceImageDataUrl;
+        });
+        // A fresh upload or example opened while the image decoded wins.
+        if (AppState.image || hasWorkbenchPattern()) return false;
+        AppState.image = img;
+        resetMobileUploadSettings();
+        resetPatternColorSelection(null, record.sourcePatternId);
+        AppState.currentDraftId = null;
+        AppState.currentDraftVersionId = null;
+        AppState.patternName = String(record.patternName || '');
+        AppState.brand = record.brand || 'mard';
+        AppState.mardSet = record.mardSet || 221;
+        AppState.imageAdjustments = normalizeImageAdjustments(record.imageAdjustments);
+        goToStep(2);
+        mobileUploadLongEdge = record.longEdge;
+        mobileUploadColorLimit = record.colorLimit;
+        mobileUploadGridApplied = false;
+        const validRect = rect => rect && ['x', 'y', 'width', 'height'].every(key => Number.isFinite(rect[key]))
+            && rect.width > 0 && rect.height > 0;
+        mobileUploadCropHistory.push(...(record.cropHistory || []).filter(validRect).map(normalizeWorkbenchCropRect));
+        if (validRect(record.cropRect)) AppState.cropRect = normalizeWorkbenchCropRect(record.cropRect);
+        const input = document.getElementById('pattern-name-input');
+        if (input) input.value = AppState.patternName;
+        updateGridDimensions();
+        syncImageAdjustmentControls();
+        updateWorkbenchUI();
+        return true;
+    } finally { AppState.draftRestorePending = false; }
+}

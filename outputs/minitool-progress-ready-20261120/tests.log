@@ -1,0 +1,408 @@
+TAP version 13
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: save updates one identity, save-as copies, restore version retains newer data; imported history survives
+ok 1 - save updates one identity, save-as copies, restore version retains newer data; imported history survives
+  ---
+  duration_ms: 3.364875
+  type: 'test'
+  ...
+# Subtest: aborted storage transaction leaves pixels, draft list and saved identity untouched
+ok 2 - aborted storage transaction leaves pixels, draft list and saved identity untouched
+  ---
+  duration_ms: 1.047709
+  type: 'test'
+  ...
+# Subtest: save-as page dialog validates, submits once, creates copy, and cancels without native prompt
+ok 3 - save-as page dialog validates, submits once, creates copy, and cancels without native prompt
+  ---
+  duration_ms: 0.626708
+  type: 'test'
+  ...
+# Subtest: return warning compares content with saved draft, including undo and older saved versions
+ok 4 - return warning compares content with saved draft, including undo and older saved versions
+  ---
+  duration_ms: 0.682459
+  type: 'test'
+  ...
+# Subtest: return dialog cancels or stays open on storage failure, without native browser dialogs
+ok 5 - return dialog cancels or stays open on storage failure, without native browser dialogs
+  ---
+  duration_ms: 1.747
+  type: 'test'
+  ...
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Automatic draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Pattern export failed. Error: export failed
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:160:62
+#     at downloadAndSaveWorkbenchDraft (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/src/ui.js:1805:74)
+#     at TestContext.<anonymous> (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:160:21)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: return saves before exiting, discard preserves saved drafts, clean draft exits directly
+ok 6 - return saves before exiting, discard preserves saved drafts, clean draft exits directly
+  ---
+  duration_ms: 1.773791
+  type: 'test'
+  ...
+# Subtest: automatic recovery overwrites one separate record, skips unchanged, and manual save clears it without extra history
+ok 7 - automatic recovery overwrites one separate record, skips unchanged, and manual save clears it without extra history
+  ---
+  duration_ms: 0.40125
+  type: 'test'
+  ...
+# Subtest: automatic save skips live strokes and reports failure while keeping previous recovery data
+ok 8 - automatic save skips live strokes and reports failure while keeping previous recovery data
+  ---
+  duration_ms: 0.203125
+  type: 'test'
+  ...
+# Subtest: five-minute timer installs once, defers busy gestures, and saves after the gesture ends
+ok 9 - five-minute timer installs once, defers busy gestures, and saves after the gesture ends
+  ---
+  duration_ms: 0.313125
+  type: 'test'
+  ...
+# Subtest: undo back to the manual save removes stale automatic recovery on the next check
+ok 10 - undo back to the manual save removes stale automatic recovery on the next check
+  ---
+  duration_ms: 0.307209
+  type: 'test'
+  ...
+# Subtest: export saves the matching staged diagram, repeated export does not duplicate versions, later edits warn on exit
+ok 11 - export saves the matching staged diagram, repeated export does not duplicate versions, later edits warn on exit
+  ---
+  duration_ms: 0.230167
+  type: 'test'
+  ...
+# Subtest: failed draft save still triggers download and retains exit warning; failed export does not mark saved
+ok 12 - failed draft save still triggers download and retains exit warning; failed export does not mark saved
+  ---
+  duration_ms: 0.318667
+  type: 'test'
+  ...
+# Subtest: editor automatic recovery requires confirmation and rejects another document record
+ok 13 - editor automatic recovery requires confirmation and rejects another document record
+  ---
+  duration_ms: 0.299958
+  type: 'test'
+  ...
+# Subtest: failed changed save does not trim an existing ten-version history
+ok 14 - failed changed save does not trim an existing ten-version history
+  ---
+  duration_ms: 0.423041
+  type: 'test'
+  ...
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: PC save button records every explicit save without opening history
+ok 15 - PC save button records every explicit save without opening history
+  ---
+  duration_ms: 3003.667667
+  type: 'test'
+  ...
+# Subtest: PC save failure keeps history closed and preserves unsaved diagram
+ok 16 - PC save failure keeps history closed and preserves unsaved diagram
+  ---
+  duration_ms: 1.002625
+  type: 'test'
+  ...
+# Subtest: phone save only saves while PAD retains save-then-open behavior
+ok 17 - phone save only saves while PAD retains save-then-open behavior
+  ---
+  duration_ms: 1501.856375
+  type: 'test'
+  ...
+# Subtest: desktop button reports saving and saved, rejects repeat clicks, then restores its label
+ok 18 - desktop button reports saving and saved, rejects repeat clicks, then restores its label
+  ---
+  duration_ms: 2.116375
+  type: 'test'
+  ...
+# Draft save failed. Error: quota
+#     at file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/draft-saving.test.mjs:9:51
+#     at node:internal/process/task_queues:151:7
+#     at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+#     at AsyncResource.runMicrotask (node:internal/process/task_queues:148:8)
+# Subtest: mobile button reports saving and saved, rejects repeat clicks, then restores its label
+ok 19 - mobile button reports saving and saved, rejects repeat clicks, then restores its label
+  ---
+  duration_ms: 0.611125
+  type: 'test'
+  ...
+# Subtest: PC failed save restores button without reporting saved; delayed feedback does not cross documents
+ok 20 - PC failed save restores button without reporting saved; delayed feedback does not cross documents
+  ---
+  duration_ms: 1.00825
+  type: 'test'
+  ...
+# Subtest: drafts save confirmed image adjustments, restore versions and default old drafts to neutral
+ok 21 - drafts save confirmed image adjustments, restore versions and default old drafts to neutral
+  ---
+  duration_ms: 1.654959
+  type: 'test'
+  ...
+# Subtest: automatic records capture confirmed adjustments without storing pending controls
+ok 22 - automatic records capture confirmed adjustments without storing pending controls
+  ---
+  duration_ms: 0.264708
+  type: 'test'
+  ...
+# Subtest: saved versions round trip pixels, alpha, dimensions, image and settings
+ok 23 - saved versions round trip pixels, alpha, dimensions, image and settings
+  ---
+  duration_ms: 4.933375
+  type: 'test'
+  ...
+# Subtest: unchanged saves do not create versions, including selection timestamps
+ok 24 - unchanged saves do not create versions, including selection timestamps
+  ---
+  duration_ms: 0.213208
+  type: 'test'
+  ...
+# Subtest: legacy draft is retained as first historical version
+ok 25 - legacy draft is retained as first historical version
+  ---
+  duration_ms: 0.131083
+  type: 'test'
+  ...
+# Subtest: three-version cap and restoring old state preserves newer versions
+ok 26 - three-version cap and restoring old state preserves newer versions
+  ---
+  duration_ms: 0.536917
+  type: 'test'
+  ...
+# Subtest: shared current image occurs once; changed source images remain recoverable
+ok 27 - shared current image occurs once; changed source images remain recoverable
+  ---
+  duration_ms: 0.282875
+  type: 'test'
+  ...
+# Subtest: corrupt compact data is rejected
+ok 28 - corrupt compact data is rejected
+  ---
+  duration_ms: 0.711625
+  type: 'test'
+  ...
+# Subtest: old ten-version history survives unchanged saving and trims only after changed save
+ok 29 - old ten-version history survives unchanged saving and trims only after changed save
+  ---
+  duration_ms: 0.689125
+  type: 'test'
+  ...
+# Subtest: explicit save records unchanged pixels with a new timestamp and keeps the latest three
+ok 30 - explicit save records unchanged pixels with a new timestamp and keeps the latest three
+  ---
+  duration_ms: 0.228958
+  type: 'test'
+  ...
+# Subtest: new capsule takes priority over legacy rectangles and status bar is not added twice
+ok 31 - new capsule takes priority over legacy rectangles and status bar is not added twice
+  ---
+  duration_ms: 0.393084
+  type: 'test'
+  ...
+# Subtest: zero-size capsule and hidden legacy controls do not reserve space
+ok 32 - zero-size capsule and hidden legacy controls do not reserve space
+  ---
+  duration_ms: 0.134708
+  type: 'test'
+  ...
+# Subtest: normal native controls fit above the centered logo without a duplicate status bar offset
+ok 33 - normal native controls fit above the centered logo without a duplicate status bar offset
+  ---
+  duration_ms: 0.31725
+  type: 'test'
+  ...
+# Subtest: larger native button rectangles shift the complete hero and gallery below the controls
+ok 34 - larger native button rectangles shift the complete hero and gallery below the controls
+  ---
+  duration_ms: 0.059042
+  type: 'test'
+  ...
+# Subtest: hidden, missing or invalid native geometry uses the source layout without reserving hidden controls
+ok 35 - hidden, missing or invalid native geometry uses the source layout without reserving hidden controls
+  ---
+  duration_ms: 0.149083
+  type: 'test'
+  ...
+# Subtest: coalesces edits after two idle seconds and performs no unchanged writes
+ok 36 - coalesces edits after two idle seconds and performs no unchanged writes
+  ---
+  duration_ms: 0.903833
+  type: 'test'
+  ...
+# Subtest: continuous operations save within fifteen seconds but never mid-stroke
+ok 37 - continuous operations save within fifteen seconds but never mid-stroke
+  ---
+  duration_ms: 0.542541
+  type: 'test'
+  ...
+# Subtest: does not mark changes made during a slow write as saved or start overlapping writes
+ok 38 - does not mark changes made during a slow write as saved or start overlapping writes
+  ---
+  duration_ms: 0.138042
+  type: 'test'
+  ...
+# Subtest: failures retain pending revision, report error and back off instead of retrying each poll
+ok 39 - failures retain pending revision, report error and back off instead of retrying each poll
+  ---
+  duration_ms: 0.110667
+  type: 'test'
+  ...
+# Subtest: leaving the page before debounce does not save a stale project snapshot
+ok 40 - leaving the page before debounce does not save a stale project snapshot
+  ---
+  duration_ms: 0.062
+  type: 'test'
+  ...
+# Subtest: busy save result is retried and never presented as persisted
+ok 41 - busy save result is retried and never presented as persisted
+  ---
+  duration_ms: 0.107042
+  type: 'test'
+  ...
+# Native output did not complete. saveImageToPhotosAlbum Error: permission
+#     at Object.saveImageToPhotosAlbum (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/minitool.test.mjs:125:144)
+#     at invoke (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/src/platform/minitool/output.js:15:39)
+#     at Object.run (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/src/platform/minitool/output.js:47:47)
+#     at async waitForActual (node:assert:566:5)
+#     at async Function.rejects (node:assert:687:25)
+#     at async TestContext.<anonymous> (file:///Volumes/MSN%E7%9A%841TB/ChatGPT/AIcode/Perler-Beads/tests/minitool.test.mjs:153:5)
+#     at async Test.run (node:internal/test_runner/test:1054:7)
+#     at async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+# Native output did not complete. postNote { errMsg: 'postNote:fail cancel' }
+# Subtest: native drafts round-trip large Unicode and source images without exceeding a single-key quota
+ok 42 - native drafts round-trip large Unicode and source images without exceeding a single-key quota
+  ---
+  duration_ms: 15.542917
+  type: 'test'
+  ...
+# Subtest: a failed new chunk keeps the previous saved draft and cleans only the failed generation
+ok 43 - a failed new chunk keeps the previous saved draft and cleans only the failed generation
+  ---
+  duration_ms: 0.629583
+  type: 'test'
+  ...
+# Subtest: pointer commit failure preserves previous chunks and pointer; no false success
+ok 44 - pointer commit failure preserves previous chunks and pointer; no false success
+  ---
+  duration_ms: 0.52625
+  type: 'test'
+  ...
+# Subtest: missing chunk is a read error rather than an empty library
+ok 45 - missing chunk is a read error rather than an empty library
+  ---
+  duration_ms: 0.161417
+  type: 'test'
+  ...
+# Subtest: storage quota failure leaves existing data untouched
+ok 46 - storage quota failure leaves existing data untouched
+  ---
+  duration_ms: 0.213
+  type: 'test'
+  ...
+# Subtest: unsupported or unknown client version never writes to native or browser storage
+ok 47 - unsupported or unknown client version never writes to native or browser storage
+  ---
+  duration_ms: 0.147084
+  type: 'test'
+  ...
+# Subtest: native recent colors and submission metadata do not become draft records
+ok 48 - native recent colors and submission metadata do not become draft records
+  ---
+  duration_ms: 0.410959
+  type: 'test'
+  ...
+# Subtest: deleting one draft leaves other drafts and their chunks intact
+ok 49 - deleting one draft leaves other drafts and their chunks intact
+  ---
+  duration_ms: 0.205708
+  type: 'test'
+  ...
+# Subtest: repeated autosaves reuse unchanged source chunks without accumulating generations
+ok 50 - repeated autosaves reuse unchanged source chunks without accumulating generations
+  ---
+  duration_ms: 19.206208
+  type: 'test'
+  ...
+# Subtest: failed autosave never cleans source chunks shared with the last successful record
+ok 51 - failed autosave never cleans source chunks shared with the last successful record
+  ---
+  duration_ms: 2.51675
+  type: 'test'
+  ...
+# Subtest: all seven image combinations save first, including unannotated-only output
+ok 52 - all seven image combinations save first, including unannotated-only output
+  ---
+  duration_ms: 0.462209
+  type: 'test'
+  ...
+# Subtest: save failure prevents rendering, album and publishing
+ok 53 - save failure prevents rendering, album and publishing
+  ---
+  duration_ms: 0.055584
+  type: 'test'
+  ...
+# Subtest: partial album failure retries only remaining images and saves the draft once
+ok 54 - partial album failure retries only remaining images and saves the draft once
+  ---
+  duration_ms: 0.435875
+  type: 'test'
+  ...
+# Subtest: cancelled publishing preserves saved draft and never marks a submitted version
+ok 55 - cancelled publishing preserves saved draft and never marks a submitted version
+  ---
+  duration_ms: 0.166875
+  type: 'test'
+  ...
+# Subtest: post uses all images in one note and marks the saved version only after a successful receipt
+ok 56 - post uses all images in one note and marks the saved version only after a successful receipt
+  ---
+  duration_ms: 0.059375
+  type: 'test'
+  ...
+# Subtest: double submission is ignored and changed document cannot use a stale output batch
+ok 57 - double submission is ignored and changed document cannot use a stale output batch
+  ---
+  duration_ms: 0.04875
+  type: 'test'
+  ...
+1..57
+# tests 57
+# suites 0
+# pass 57
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4592.628875

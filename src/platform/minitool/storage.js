@@ -10,6 +10,7 @@ export function createMiniToolStore(getXhs = () => window.xhs) {
     let queue = Promise.resolve();
     let colors = {};
     let error = '';
+    const previousParts = new Map();
     const call = async (name, options) => {
         if (!native || typeof native[name] !== 'function') throw new Error('当前小红书暂不支持草稿存储，请升级客户端后重试。');
         const result = await native[name](options || {});
@@ -61,10 +62,11 @@ export function createMiniToolStore(getXhs = () => window.xhs) {
             throw new Error('草稿记录不完整，请保留数据后重试。');
         }
     };
-    const clean = async pointer => {
+    const clean = async (pointer, keep = []) => {
         if (!pointer) return;
         validatePointer(pointer);
         for (const key of pointer.chunks) {
+            if (keep.includes(key)) continue;
             try { await call('removeStorage', { key }); }
             catch (failure) { console.warn('旧草稿分片暂未清理。', failure); }
         }
@@ -111,30 +113,51 @@ export function createMiniToolStore(getXhs = () => window.xhs) {
                 const old = await read(key);
                 if (old) validatePointer(old);
                 const text = JSON.stringify(draft);
+                const textChecksum = checksum(text);
                 const revision = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
-                const chunks = [];
-                const parts = [];
-                // JSON escaping can expand a character to six bytes. 64K characters stays below 1 MB.
-                for (let i = 0; i < text.length; i += 65536) {
-                    chunks.push(chunkPrefix + encodeURIComponent(draft.id) + '.' + revision + '.' + parts.length);
-                    parts.push(text.slice(i, i + 65536));
+                const chunks = [], parts = [], fresh = [];
+                // Isolate the unchanged source value: edits before it cannot shift its chunk boundaries.
+                const marker = '"sourceImageDataUrl":';
+                const start = typeof draft.sourceImageDataUrl === 'string' ? text.indexOf(marker) + marker.length : 0;
+                const source = start ? JSON.stringify(draft.sourceImageDataUrl) : '';
+                const segments = start && text.slice(start, start + source.length) === source
+                    ? [text.slice(0, start), source, text.slice(start + source.length)] : [text];
+                segments.forEach(segment => {
+                    for (let i = 0; i < segment.length; i += 65536) parts.push(segment.slice(i, i + 65536));
+                });
+                const reusable = new Map();
+                const cached = previousParts.get(draft.id);
+                if (old) {
+                    const prior = cached && cached.checksum === old.checksum ? cached.parts
+                        : await Promise.all(old.chunks.map(part => read(part)));
+                    prior.forEach((part, i) => { if (typeof part === 'string') reusable.set(part, old.chunks[i]); });
                 }
+                parts.forEach((part, i) => {
+                    const reused = reusable.get(part);
+                    const chunk = reused || chunkPrefix + encodeURIComponent(draft.id) + '.' + revision + '.' + i;
+                    chunks.push(chunk);
+                    if (!reused) fresh.push({ key: chunk, part });
+                });
                 const info = await call('getStorageInfo');
-                const needed = parts.reduce((sum, part) => sum + new Blob([JSON.stringify(part)]).size, 0) + 16384;
+                const needed = fresh.reduce((sum, item) => sum + new Blob([JSON.stringify(item.part)]).size, 0) + 16384;
                 if (Number.isFinite(info.limitBytes) && Number.isFinite(info.usedBytes) && info.usedBytes + needed > info.limitBytes) {
                     throw new Error('小工具存储空间不足，请保留当前图纸并清理不需要的草稿后重试。');
                 }
                 let committing = false;
                 try {
-                    for (let i = 0; i < chunks.length; i++) await write(chunks[i], parts[i]);
+                    for (const item of fresh) await write(item.key, item.part);
                     committing = true;
-                    await write(key, { id: draft.id, chunks, length: text.length, checksum: checksum(text) });
+                    await write(key, { id: draft.id, chunks, length: text.length, checksum: textChecksum });
                 } catch (failure) {
-                    // On an ambiguous pointer failure, retain both generations for recovery.
-                    if (!committing) await clean({ chunks });
+                    // An ambiguous pointer result must retain both generations; reused old chunks stay intact.
+                    if (!committing) await clean({ chunks: fresh.map(item => item.key) });
+                    previousParts.delete(draft.id);
                     throw failure;
                 }
-                await clean(old);
+                // Only autosaves need the warm source cache. Bound it to the current record.
+                previousParts.clear();
+                if (draft.kind === 'autosave' || draft.kind === 'setup-recovery') previousParts.set(draft.id, { checksum: textChecksum, parts });
+                await clean(old, chunks);
             });
         },
         remove(id) {
@@ -144,6 +167,7 @@ export function createMiniToolStore(getXhs = () => window.xhs) {
                 const old = await read(key);
                 await call('removeStorage', { key });
                 await clean(old);
+                previousParts.delete(id);
             });
         },
         markSubmitted(draftId, versionId) {

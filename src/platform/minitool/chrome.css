@@ -1,0 +1,24 @@
+/* Native-only sheet, appended by the MiniTool build. Coordinates already include safe areas. */
+@media (max-width: 767px) {
+    #step-settings:has(#mobile-upload-title:not([hidden])) {
+        padding-top: var(--minitool-content-top, calc(44px + env(safe-area-inset-top, 0px)));
+    }
+    #mobile-upload-actions,
+    #pattern-preview-layer .pattern-preview-mobile-title,
+    #pattern-preview-layer .pattern-preview-actions {
+        top: var(--minitool-content-top, calc(44px + env(safe-area-inset-top, 0px)));
+    }
+    #pattern-preview-layer:not(.hidden) {
+        padding-top: calc(var(--minitool-content-top, calc(44px + env(safe-area-inset-top, 0px))) + 68px);
+    }
+    #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-top-actions {
+        height: calc(var(--minitool-editor-row-top, calc(var(--minitool-content-top, calc(44px + env(safe-area-inset-top, 0px))) + 44px)) + 68px);
+        min-height: calc(var(--minitool-editor-row-top, calc(var(--minitool-content-top, calc(44px + env(safe-area-inset-top, 0px))) + 44px)) + 68px);
+        padding-top: calc(var(--minitool-editor-row-top, calc(var(--minitool-content-top, calc(44px + env(safe-area-inset-top, 0px))) + 44px)) + 8px);
+    }
+    #workbench-layout[data-viewport="mobile"][data-mode="editor"] #workbench-top-title > div {
+        top: var(--minitool-editor-title-top, calc(var(--minitool-content-top, calc(44px + env(safe-area-inset-top, 0px))) + 4px));
+        max-width: var(--minitool-editor-title-width, calc(100% - 96px));
+        transform: var(--minitool-editor-title-transform, translateX(-50%));
+    }
+}

@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: editor title shares the legacy button row and returns its former height to the canvas
+ok 1 - editor title shares the legacy button row and returns its former height to the canvas
+  ---
+  duration_ms: 0.531917
+  type: 'test'
+  ...
+# Subtest: capsule layout limits the centered title to the unobstructed middle band
+ok 2 - capsule layout limits the centered title to the unobstructed middle band
+  ---
+  duration_ms: 0.075958
+  type: 'test'
+  ...
+# Subtest: unsafe title space or unknown geometry retains the below-button layout
+ok 3 - unsafe title space or unknown geometry retains the below-button layout
+  ---
+  duration_ms: 0.037333
+  type: 'test'
+  ...
+# Subtest: new capsule takes priority over legacy rectangles and status bar is not added twice
+ok 4 - new capsule takes priority over legacy rectangles and status bar is not added twice
+  ---
+  duration_ms: 0.0315
+  type: 'test'
+  ...
+# Subtest: zero-size capsule and hidden legacy controls do not reserve space
+ok 5 - zero-size capsule and hidden legacy controls do not reserve space
+  ---
+  duration_ms: 0.06825
+  type: 'test'
+  ...
+# Subtest: normal native controls fit above the centered logo without a duplicate status bar offset
+ok 6 - normal native controls fit above the centered logo without a duplicate status bar offset
+  ---
+  duration_ms: 0.046375
+  type: 'test'
+  ...
+# Subtest: larger native button rectangles shift the complete hero and gallery below the controls
+ok 7 - larger native button rectangles shift the complete hero and gallery below the controls
+  ---
+  duration_ms: 0.071208
+  type: 'test'
+  ...
+# Subtest: hidden, missing or invalid native geometry uses the source layout without reserving hidden controls
+ok 8 - hidden, missing or invalid native geometry uses the source layout without reserving hidden controls
+  ---
+  duration_ms: 0.073375
+  type: 'test'
+  ...
+# Subtest: waiting and saving are silent, success disappears after 1.5 seconds
+ok 9 - waiting and saving are silent, success disappears after 1.5 seconds
+  ---
+  duration_ms: 0.463542
+  type: 'test'
+  ...
+# Subtest: frequent successful saves do not repeatedly show a toast within thirty seconds
+ok 10 - frequent successful saves do not repeatedly show a toast within thirty seconds
+  ---
+  duration_ms: 0.046541
+  type: 'test'
+  ...
+# Subtest: failures stay visible during retries and recovery can bypass the success cooldown
+ok 11 - failures stay visible during retries and recovery can bypass the success cooldown
+  ---
+  duration_ms: 0.349667
+  type: 'test'
+  ...
+# Subtest: leaving the page or an unchanged snapshot produces no persistent or false success
+ok 12 - leaving the page or an unchanged snapshot produces no persistent or false success
+  ---
+  duration_ms: 0.069458
+  type: 'test'
+  ...
+# Subtest: coalesces edits after two idle seconds and performs no unchanged writes
+ok 13 - coalesces edits after two idle seconds and performs no unchanged writes
+  ---
+  duration_ms: 0.662708
+  type: 'test'
+  ...
+# Subtest: continuous operations save within fifteen seconds but never mid-stroke
+ok 14 - continuous operations save within fifteen seconds but never mid-stroke
+  ---
+  duration_ms: 0.3965
+  type: 'test'
+  ...
+# Subtest: does not mark changes made during a slow write as saved or start overlapping writes
+ok 15 - does not mark changes made during a slow write as saved or start overlapping writes
+  ---
+  duration_ms: 0.133875
+  type: 'test'
+  ...
+# Subtest: failures retain pending revision, report error and back off instead of retrying each poll
+ok 16 - failures retain pending revision, report error and back off instead of retrying each poll
+  ---
+  duration_ms: 0.101375
+  type: 'test'
+  ...
+# Subtest: leaving the page before debounce does not save a stale project snapshot
+ok 17 - leaving the page before debounce does not save a stale project snapshot
+  ---
+  duration_ms: 0.068791
+  type: 'test'
+  ...
+# Subtest: busy save result is retried and never presented as persisted
+ok 18 - busy save result is retried and never presented as persisted
+  ---
+  duration_ms: 0.078792
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49.993417

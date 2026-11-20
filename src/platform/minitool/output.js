@@ -2,6 +2,20 @@ import { AppState } from '../../state.js';
 import { preparePatternExports } from '../../exporter.js';
 import { miniToolStore } from './storage.js';
 
+export function createPostNoteCopy({ gridWidth, gridHeight, pixelData }) {
+    const colors = new Set();
+    let beads = 0;
+    for (const pixel of pixelData) {
+        if (!pixel || pixel.id === 'NONE' || pixel.a === 0) continue;
+        colors.add(String(pixel.id));
+        beads++;
+    }
+    return {
+        title: '我用小豆鸡做了一张拼豆图纸，准备开拼！',
+        content: `图纸做好了，准备把它拼出来\n${gridWidth}×${gridHeight}格，${colors.size}色，共${beads}颗豆。\n从图片到图纸，用小豆鸡就能完成🧩#拼豆 #拼豆图纸 #拼豆图纸生成器 #图片转拼豆 #小豆鸡`
+    };
+}
+
 // Testable transaction: save first, render once, retry only unfinished album images.
 export function createNativeOutput({ save, prepare, native, current, markSubmitted }) {
     let busy = false;
@@ -57,7 +71,7 @@ export function createNativeOutput({ save, prepare, native, current, markSubmitt
                     if (!result || result.errMsg !== 'writeTempFile:ok' || !result.filePath) throw new Error('图片准备失败，请重试。');
                     images.push({ url: result.filePath });
                 }
-                const outcome = await invoke(api, 'postNote', { title: String(saved.title || '').slice(0, 20), pageType: 'photo_publish', mediaInfo: { image_resources: images } }, '已取消或未完成发布，草稿已保留。');
+                const outcome = await invoke(api, 'postNote', { ...saved.postCopy, pageType: 'photo_publish', mediaInfo: { image_resources: images } }, '已取消或未完成发布，草稿已保留。');
                 if (!outcome || outcome.errMsg !== 'postNote:ok') return { message: '未收到发布提交回执，草稿已保留。' };
                 posted = true;
                 try { await markSubmitted(saved.draftId, saved.versionId); }
@@ -80,13 +94,16 @@ export function createWorkbenchExportModal({ saveDraft }) {
     let batch = null;
     let focus = null;
     let inert = [];
-    const current = () => ({
-        patternId: AppState.colorSelectionPatternId,
-        signature: JSON.stringify([AppState.patternName, AppState.gridWidth, AppState.gridHeight, AppState.isMirrored, AppState.stagedPixelData || AppState.pixelData]),
-        draftId: AppState.currentDraftId,
-        versionId: AppState.currentDraftVersionId,
-        title: AppState.patternName || '未命名图纸'
-    });
+    const current = () => {
+        const pixels = AppState.stagedPixelData || AppState.pixelData;
+        return {
+            patternId: AppState.colorSelectionPatternId,
+            signature: JSON.stringify([AppState.patternName, AppState.gridWidth, AppState.gridHeight, AppState.isMirrored, pixels]),
+            draftId: AppState.currentDraftId,
+            versionId: AppState.currentDraftVersionId,
+            postCopy: createPostNoteCopy({ gridWidth: AppState.gridWidth, gridHeight: AppState.gridHeight, pixelData: pixels })
+        };
+    };
     const update = () => {
         const count = checks.filter(input => input.checked).length;
         checks.forEach(input => { input.disabled = batch.busy || batch.locked; });

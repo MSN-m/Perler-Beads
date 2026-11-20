@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMiniToolStore } from '../src/platform/minitool/storage.js';
-import { createNativeOutput } from '../src/platform/minitool/output.js';
+import { createNativeOutput, createPostNoteCopy } from '../src/platform/minitool/output.js';
 
 function nativeStore(version = 9533001) {
     const data = new Map();
@@ -86,10 +86,36 @@ test('deleting one draft leaves other drafts and their chunks intact', async () 
     assert.deepEqual(await ctx.store.list(), [{ id: 'b', value: 2 }]);
 });
 
+test('repeated autosaves reuse unchanged source chunks without accumulating generations', async () => {
+    const c = nativeStore();
+    const sourceImageDataUrl = 'data:image/png;base64,' + 'A'.repeat(180000);
+    const record = { id: 'auto', kind: 'autosave', name: 'one', sourceImageDataUrl, pixelData: [{ id: 'A1' }] };
+    await c.store.put(record);
+    const pointer = () => JSON.parse(c.data.get('perler.v1.draft.auto'));
+    const initial = pointer().chunks;
+    c.events.length = 0;
+    for (let i = 0; i < 20; i++) await c.store.put({ ...record, name: 'edit ' + i, pixelData: [{ id: 'B' + i }] });
+    assert.ok(pointer().chunks.filter(key => initial.includes(key)).length >= 2);
+    assert.equal(c.data.size, pointer().chunks.length + 1);
+    assert.deepEqual((await c.store.list())[0], { ...record, name: 'edit 19', pixelData: [{ id: 'B19' }] });
+    const writes = c.events.filter(e => e[0] === 'set' && e[1].includes('chunk.'));
+    assert.ok(writes.length <= 40, 'each edit should only write changed metadata/pixels, not the original image');
+});
+
+test('failed autosave never cleans source chunks shared with the last successful record', async () => {
+    const c = nativeStore();
+    const record = { id: 'auto', kind: 'autosave', sourceImageDataUrl: 'data:image/png;base64,' + 'B'.repeat(160000), pixelData: [1] };
+    await c.store.put(record);
+    c.fail((method, key) => method === 'set' && key.includes('chunk.'));
+    await assert.rejects(c.store.put({ ...record, pixelData: [2] }));
+    c.fail(null);
+    assert.deepEqual(await c.store.list(), [record]);
+});
+
 function outputSetup({ save = true } = {}) {
     const events = [];
     let albumCalls = 0, albumFailAt = 0, cancel = false;
-    const identity = { patternId: 'p1', signature: 's1', draftId: 'd1', versionId: 'v1', title: 'test' };
+    const identity = { patternId: 'p1', signature: 's1', draftId: 'd1', versionId: 'v1', postCopy: createPostNoteCopy({ gridWidth: 2, gridHeight: 1, pixelData: [{ id: 'A1' }, { id: 'A2' }] }) };
     const batch = createNativeOutput({
         async save() { events.push('save'); return save; },
         prepare(types) { events.push(['prepare', types]); return types.map(type => ({ href: type })); },
@@ -146,6 +172,9 @@ test('post uses all images in one note and marks the saved version only after a 
     const ctx = outputSetup();
     await ctx.batch.run('post', ['pattern', 'raw']);
     const post = ctx.events.find(event => event[0] === 'post')[1];
+    assert.equal(post.title, '我用小豆鸡做了一张拼豆图纸，准备开拼！');
+    assert.ok(Array.from(post.title).length <= 20);
+    assert.equal(post.content, '图纸做好了，准备把它拼出来\n2×1格，2色，共2颗豆。\n从图片到图纸，用小豆鸡就能完成🧩#拼豆 #拼豆图纸 #拼豆图纸生成器 #图片转拼豆 #小豆鸡');
     assert.deepEqual(post.mediaInfo.image_resources, [{ url: 'tmp://pattern' }, { url: 'tmp://raw' }]);
     assert.deepEqual(ctx.events[ctx.events.length - 1], ['submitted', 'd1', 'v1']);
     await ctx.batch.run('post', ['pattern', 'raw']);
@@ -159,4 +188,22 @@ test('double submission is ignored and changed document cannot use a stale outpu
     await first;
     ctx.identity.patternId = 'p2';
     await assert.rejects(ctx.batch.run('post', ['pattern']), /图纸已变化/);
+});
+
+
+test('post copy reads actual diagram cells, excluding transparent and NONE cells', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const examples = JSON.parse(await readFile(new URL('../assets/data/mobile-home-patterns.json', import.meta.url), 'utf8'));
+    const corgi = examples.find(item => item.name === '柯基');
+    const pixelData = corgi.indices.map(index => { const [id, r, g, b] = corgi.colors[index]; return { id, r, g, b }; });
+    const copy = createPostNoteCopy({ ...corgi, pixelData });
+    assert.equal(copy.title, '我用小豆鸡做了一张拼豆图纸，准备开拼！');
+    assert.equal(copy.content, '图纸做好了，准备把它拼出来\n56×48格，9色，共1596颗豆。\n从图片到图纸，用小豆鸡就能完成🧩#拼豆 #拼豆图纸 #拼豆图纸生成器 #图片转拼豆 #小豆鸡');
+    assert.ok(Array.from(copy.content).length <= 1000);
+});
+
+test('post copy counts distinct used colors rather than palette size and respects edits', () => {
+    const copy = createPostNoteCopy({ gridWidth: 3, gridHeight: 2,
+        pixelData: [{ id: 'A1' }, { id: 'A1' }, { id: 'A2' }, { id: 'NONE', a: 0 }, { id: 'A3', a: 0 }, null] });
+    assert.ok(copy.content.includes('3×2格，2色，共3颗豆。'));
 });

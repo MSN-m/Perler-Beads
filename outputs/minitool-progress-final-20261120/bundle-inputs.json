@@ -1,0 +1,855 @@
+{
+  "inputs": {
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/polyfills.js": {
+      "bytes": 2231,
+      "imports": []
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/compat.js": {
+      "bytes": 4245,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/storage.js": {
+      "bytes": 10205,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/home-chrome.js": {
+      "bytes": 3118,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/storage.js",
+          "kind": "import-statement",
+          "original": "./storage.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js": {
+      "bytes": 3538,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/progress-saver.js": {
+      "bytes": 1971,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/pattern-preview-zoom.js": {
+      "bytes": 3461,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-loading.js": {
+      "bytes": 1023,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/image-adjustments.js": {
+      "bytes": 1638,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/pattern-rename.js": {
+      "bytes": 3261,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/draft-versions.js": {
+      "bytes": 3793,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/history-modal.js": {
+      "bytes": 12588,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/draft-versions.js",
+          "kind": "import-statement",
+          "original": "./draft-versions.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/utils.js": {
+      "bytes": 2532,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/constants.js": {
+      "bytes": 29969,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/processor.js": {
+      "bytes": 65170,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/utils.js",
+          "kind": "import-statement",
+          "original": "./utils.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/constants.js",
+          "kind": "import-statement",
+          "original": "./constants.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/fixed-ruler.js": {
+      "bytes": 9585,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/utils.js",
+          "kind": "import-statement",
+          "original": "../utils.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js": {
+      "bytes": 17653,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "./state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/fixed-ruler.js",
+          "kind": "import-statement",
+          "original": "./features/fixed-ruler.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/utils.js",
+          "kind": "import-statement",
+          "original": "./utils.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js": {
+      "bytes": 25277,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/storage.js",
+          "kind": "import-statement",
+          "original": "./platform/minitool/storage.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "./state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/processor.js",
+          "kind": "import-statement",
+          "original": "./processor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "./renderer.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/constants.js",
+          "kind": "import-statement",
+          "original": "./constants.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/quality-analysis.js": {
+      "bytes": 4078,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/quality.js": {
+      "bytes": 24704,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "../renderer.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "../editor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/quality-analysis.js",
+          "kind": "import-statement",
+          "original": "./quality-analysis.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/delete.js": {
+      "bytes": 12886,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "../renderer.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "../editor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/quality.js",
+          "kind": "import-statement",
+          "original": "./quality.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/adjust.js": {
+      "bytes": 32263,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "../editor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/utils.js",
+          "kind": "import-statement",
+          "original": "../utils.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "../renderer.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/delete.js",
+          "kind": "import-statement",
+          "original": "./delete.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "../editor.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/tooltips.js": {
+      "bytes": 9221,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/adjust.js",
+          "kind": "import-statement",
+          "original": "./adjust.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/recent-color-motion.js": {
+      "bytes": 2615,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/zoom.js": {
+      "bytes": 13627,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "../renderer.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/edge.js": {
+      "bytes": 2295,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "../editor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "../renderer.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/utils.js",
+          "kind": "import-statement",
+          "original": "../utils.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/adjust.js",
+          "kind": "import-statement",
+          "original": "./adjust.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/ui.js": {
+      "bytes": 228949,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/storage.js",
+          "kind": "import-statement",
+          "original": "./platform/minitool/storage.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "./state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/pattern-preview-zoom.js",
+          "kind": "import-statement",
+          "original": "./features/pattern-preview-zoom.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-loading.js",
+          "kind": "import-statement",
+          "original": "./features/mobile-loading.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/image-adjustments.js",
+          "kind": "import-statement",
+          "original": "./features/image-adjustments.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/pattern-rename.js",
+          "kind": "import-statement",
+          "original": "./features/pattern-rename.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/draft-versions.js",
+          "kind": "import-statement",
+          "original": "./features/draft-versions.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/history-modal.js",
+          "kind": "import-statement",
+          "original": "./features/history-modal.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/tooltips.js",
+          "kind": "import-statement",
+          "original": "./features/tooltips.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/recent-color-motion.js",
+          "kind": "import-statement",
+          "original": "./features/recent-color-motion.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "./editor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/processor.js",
+          "kind": "import-statement",
+          "original": "./processor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/fixed-ruler.js",
+          "kind": "import-statement",
+          "original": "./features/fixed-ruler.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "./renderer.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/constants.js",
+          "kind": "import-statement",
+          "original": "./constants.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "./editor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/delete.js",
+          "kind": "import-statement",
+          "original": "./features/delete.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/zoom.js",
+          "kind": "import-statement",
+          "original": "./features/zoom.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/edge.js",
+          "kind": "import-statement",
+          "original": "./features/edge.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/quality.js",
+          "kind": "import-statement",
+          "original": "./features/quality.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/adjust.js",
+          "kind": "import-statement",
+          "original": "./features/adjust.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/progress.js": {
+      "bytes": 5832,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/storage.js",
+          "kind": "import-statement",
+          "original": "./storage.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/progress-saver.js",
+          "kind": "import-statement",
+          "original": "./progress-saver.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/ui.js",
+          "kind": "import-statement",
+          "original": "../../ui.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-compare.js": {
+      "bytes": 6784,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "../renderer.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/exporter.js": {
+      "bytes": 22023,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "./state.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/canvas-context-menu.js": {
+      "bytes": 8895,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "../editor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/adjust.js",
+          "kind": "import-statement",
+          "original": "./adjust.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/delete.js",
+          "kind": "import-statement",
+          "original": "./delete.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "../renderer.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/zoom.js",
+          "kind": "import-statement",
+          "original": "./zoom.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/editor-shortcuts.js": {
+      "bytes": 3651,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/output.js": {
+      "bytes": 9455,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "../../state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/exporter.js",
+          "kind": "import-statement",
+          "original": "../../exporter.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/storage.js",
+          "kind": "import-statement",
+          "original": "./storage.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-pattern-cover.js": {
+      "bytes": 938,
+      "imports": [],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-home.js": {
+      "bytes": 64842,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-pattern-cover.js",
+          "kind": "import-statement",
+          "original": "./mobile-pattern-cover.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-drafts.js": {
+      "bytes": 8516,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-pattern-cover.js",
+          "kind": "import-statement",
+          "original": "./mobile-pattern-cover.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/main.js": {
+      "bytes": 58929,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/adjust.js",
+          "kind": "import-statement",
+          "original": "./features/adjust.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js",
+          "kind": "import-statement",
+          "original": "./state.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-compare.js",
+          "kind": "import-statement",
+          "original": "./features/mobile-compare.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-loading.js",
+          "kind": "import-statement",
+          "original": "./features/mobile-loading.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/pattern-rename.js",
+          "kind": "import-statement",
+          "original": "./features/pattern-rename.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/tooltips.js",
+          "kind": "import-statement",
+          "original": "./features/tooltips.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/delete.js",
+          "kind": "import-statement",
+          "original": "./features/delete.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/ui.js",
+          "kind": "import-statement",
+          "original": "./ui.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/exporter.js",
+          "kind": "import-statement",
+          "original": "./exporter.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/zoom.js",
+          "kind": "import-statement",
+          "original": "./features/zoom.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/adjust.js",
+          "kind": "import-statement",
+          "original": "./features/adjust.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/canvas-context-menu.js",
+          "kind": "import-statement",
+          "original": "./features/canvas-context-menu.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/quality.js",
+          "kind": "import-statement",
+          "original": "./features/quality.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js",
+          "kind": "import-statement",
+          "original": "./editor.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js",
+          "kind": "import-statement",
+          "original": "./renderer.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/editor-shortcuts.js",
+          "kind": "import-statement",
+          "original": "./features/editor-shortcuts.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/output.js",
+          "kind": "import-statement",
+          "original": "./platform/minitool/output.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/history-modal.js",
+          "kind": "import-statement",
+          "original": "./features/history-modal.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-home.js",
+          "kind": "import-statement",
+          "original": "./features/mobile-home.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-drafts.js",
+          "kind": "import-statement",
+          "original": "./features/mobile-drafts.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/entry.js": {
+      "bytes": 9184,
+      "imports": [
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/polyfills.js",
+          "kind": "import-statement",
+          "original": "./src/platform/minitool/polyfills.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/compat.js",
+          "kind": "import-statement",
+          "original": "./src/platform/minitool/compat.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/home-chrome.js",
+          "kind": "import-statement",
+          "original": "./src/platform/minitool/home-chrome.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/progress.js",
+          "kind": "import-statement",
+          "original": "./src/platform/minitool/progress.js"
+        },
+        {
+          "path": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/main.js",
+          "kind": "import-statement",
+          "original": "./src/main.js"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "outputs/minitool-progress-final-20261120/app/app.js": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/entry.js",
+      "inputs": {
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/polyfills.js": {
+          "bytesInOutput": 1426
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/compat.js": {
+          "bytesInOutput": 2211
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/storage.js": {
+          "bytesInOutput": 5089
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/home-chrome.js": {
+          "bytesInOutput": 1582
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/state.js": {
+          "bytesInOutput": 2430
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/progress-saver.js": {
+          "bytesInOutput": 568
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/pattern-preview-zoom.js": {
+          "bytesInOutput": 1659
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-loading.js": {
+          "bytesInOutput": 787
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/image-adjustments.js": {
+          "bytesInOutput": 694
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/pattern-rename.js": {
+          "bytesInOutput": 1896
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/draft-versions.js": {
+          "bytesInOutput": 2207
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/history-modal.js": {
+          "bytesInOutput": 7886
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/utils.js": {
+          "bytesInOutput": 808
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/constants.js": {
+          "bytesInOutput": 16408
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/processor.js": {
+          "bytesInOutput": 14115
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/fixed-ruler.js": {
+          "bytesInOutput": 3830
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/renderer.js": {
+          "bytesInOutput": 6572
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/editor.js": {
+          "bytesInOutput": 14149
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/quality-analysis.js": {
+          "bytesInOutput": 2420
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/quality.js": {
+          "bytesInOutput": 17521
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/delete.js": {
+          "bytesInOutput": 5338
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/adjust.js": {
+          "bytesInOutput": 14381
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/tooltips.js": {
+          "bytesInOutput": 5857
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/recent-color-motion.js": {
+          "bytesInOutput": 1473
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/zoom.js": {
+          "bytesInOutput": 5685
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/edge.js": {
+          "bytesInOutput": 959
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/ui.js": {
+          "bytesInOutput": 117831
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/progress.js": {
+          "bytesInOutput": 2983
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-compare.js": {
+          "bytesInOutput": 3439
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/exporter.js": {
+          "bytesInOutput": 8315
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/canvas-context-menu.js": {
+          "bytesInOutput": 4658
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/editor-shortcuts.js": {
+          "bytesInOutput": 1405
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/platform/minitool/output.js": {
+          "bytesInOutput": 6389
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-pattern-cover.js": {
+          "bytesInOutput": 439
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-home.js": {
+          "bytesInOutput": 62773
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/features/mobile-drafts.js": {
+          "bytesInOutput": 4461
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/src/main.js": {
+          "bytesInOutput": 26806
+        },
+        "../../../../../private/var/folders/_h/cr0lqx796353rjp_l8vqbsqw0000gn/T/perler-minitool-rn7hkzqb/entry.js": {
+          "bytesInOutput": 8298
+        }
+      },
+      "bytes": 385760
+    }
+  }
+}
