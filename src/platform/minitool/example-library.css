@@ -1,0 +1,24 @@
+/* This stylesheet is included only by the MiniTool build. */
+@media all {
+    .mobile-home-grid.minitool-example-library { display: block; }
+    .minitool-example-group { margin-bottom: 14px; }
+    .minitool-example-heading {
+        display: block;
+        width: 100%;
+        min-height: 48px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: #fff7f6;
+        color: #594444;
+        font-size: 15px;
+        font-weight: 600;
+        text-align: left;
+    }
+    .minitool-example-heading::after { content: '+'; float: right; }
+    .minitool-example-heading[aria-expanded="true"]::after { content: '−'; }
+    .minitool-example-heading:focus, .minitool-example-more:focus { outline: 2px solid #a75c76; outline-offset: 2px; }
+    .minitool-example-group [hidden] { display: none !important; }
+    .minitool-example-group [role="status"] { margin: 8px 0; font-size: 13px; color: #765b63; }
+    .minitool-example-group [role="status"]:empty { display: none; }
+    .minitool-example-more { min-height: 44px; margin-top: 12px; padding: 8px 18px; border-radius: 14px; background: #fff7f6; color: #594444; }
+}

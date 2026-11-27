@@ -5231,3 +5231,16 @@ body[data-layout="workbench"] .crop-edge-handle-x {
         display: none;
     }
 }
+
+/* Original comparison is unavailable for diagrams without a source image. */
+#workbench-layout #result-pane #toggle-compare-preview-btn:disabled {
+    color: #9ca3af;
+    background: rgba(245, 245, 245, .85);
+    border-color: #e5e7eb;
+    box-shadow: none;
+    opacity: .65;
+    cursor: not-allowed;
+}
+#workbench-layout #result-pane #toggle-compare-preview-btn:disabled::after {
+    opacity: .35;
+}

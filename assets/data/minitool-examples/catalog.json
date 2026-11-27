@@ -1,0 +1,10 @@
+{
+  "patterns": [
+    "latest/draft-1.json",
+    "latest/corgi.json",
+    "group-1/draft-10.json",
+    "group-1/draft-9.json",
+    "group-1/draft-8.json",
+    "group-1/draft-7.json"
+  ]
+}

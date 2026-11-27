@@ -1,0 +1,69 @@
+<div id="ipad-editor-concept">
+  <style>
+    #ipad-editor-concept { color-scheme:light dark; --paper:light-dark(#fff,#29262c); --ink:light-dark(#272e3e,#f2ecf1); --quiet:light-dark(#78808e,#b9b1bd); --ground:light-dark(#eae7ed,#1c1a20); --soft:light-dark(#f4eff2,#39313b); --line:light-dark(#ded8e0,#514858); --pink:#de5387; font:14px/1.5 "PingFang SC",system-ui,sans-serif; color:var(--ink); }
+    #ipad-editor-concept * { box-sizing:border-box; }
+    #ipad-editor-concept .device { background:var(--ground); padding:20px; border-radius:24px; }
+    #ipad-editor-concept button { font:inherit; color:inherit; border:0; background:var(--soft); padding:10px 15px; border-radius:24px; display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; cursor:pointer; }
+    #ipad-editor-concept button svg { width:18px; height:18px; }
+    #ipad-editor-concept button[aria-pressed=true],#ipad-editor-concept .primary { background:var(--pink); color:#fff; }
+    #ipad-editor-concept .header { background:var(--paper); border-radius:20px; padding:12px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; }
+    #ipad-editor-concept .left { justify-self:start; }
+    #ipad-editor-concept .title { text-align:center; font-weight:500; }
+    #ipad-editor-concept .muted { color:var(--quiet); font-size:12px; font-weight:400; }
+    #ipad-editor-concept .right { display:flex; justify-content:flex-end; gap:8px; }
+    #ipad-editor-concept .actions { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; }
+    #ipad-editor-concept .group { display:flex; gap:8px; flex-wrap:wrap; }
+    #ipad-editor-concept .actions button { background:var(--paper); }
+    #ipad-editor-concept .stage { position:relative; background:var(--paper); border-radius:16px; height:410px; overflow:hidden; }
+    #ipad-editor-concept .sheet { width:100%; height:100%; display:block; }
+    #ipad-editor-concept .compare { position:absolute; top:12px; left:12px; }
+    #ipad-editor-concept .zoom { position:absolute; right:12px; bottom:12px; background:var(--soft); padding:8px 12px; border-radius:20px; }
+    #ipad-editor-concept .tools { display:flex; width:fit-content; max-width:100%; flex-wrap:wrap; justify-content:center; margin:14px auto 0; padding:8px; gap:6px; background:var(--paper); border-radius:28px; }
+    #ipad-editor-concept .tools button { background:transparent; }
+    #ipad-editor-concept .tools button[aria-pressed=true] { background:var(--pink); }
+    #ipad-editor-concept .palette { position:absolute; right:12px; top:12px; width:248px; max-width:calc(100% - 24px); padding:16px; background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:0 8px 24px #0002; }
+    #ipad-editor-concept [hidden] { display:none!important; }
+    #ipad-editor-concept .panelhead { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    #ipad-editor-concept .colors { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    #ipad-editor-concept .swatch { padding:8px 4px; text-align:center; background:var(--soft); border-radius:10px; }
+    #ipad-editor-concept .dot { width:28px; height:28px; margin:0 auto 4px; border-radius:6px; background:var(--c); }
+    #ipad-editor-concept .status { min-height:22px; text-align:center; margin-top:10px; color:var(--quiet); font-size:12px; }
+    @media(max-width:650px) { #ipad-editor-concept .header { grid-template-columns:auto 1fr; } #ipad-editor-concept .title { text-align:right; } #ipad-editor-concept .right { grid-column:1 / -1; } #ipad-editor-concept .device { padding:12px; } #ipad-editor-concept .stage { height:360px; } }
+  </style>
+  <div class="device">
+    <header class="header">
+      <button class="left" data-message="返回操作沿用现有确认保护"><i data-lucide="chevron-left" aria-hidden="true"></i>返回</button>
+      <div class="title">小鸡图纸 <span aria-hidden="true">⌄</span><div class="muted">60×54 · MARD 221色</div></div>
+      <div class="right"><button data-message="示意：保存草稿 / 查看历史版本"><i data-lucide="save" aria-hidden="true"></i>保存草稿</button><button class="primary" data-message="示意：打开现有保存与分享弹窗"><i data-lucide="share" aria-hidden="true"></i>导出</button></div>
+    </header>
+    <div class="actions">
+      <div class="group"><button aria-label="撤销" data-message="示意：撤销"><i data-lucide="undo-2" aria-hidden="true"></i></button><button aria-label="重做" data-message="示意：重做"><i data-lucide="redo-2" aria-hidden="true"></i></button><button data-message="示意：放弃当前修改">放弃修改</button></div>
+      <div class="group"><button data-message="示意：打开平板排查面板"><i data-lucide="scan-search" aria-hidden="true"></i>排查</button><button data-message="示意：左右镜像"><i data-lucide="flip-horizontal-2" aria-hidden="true"></i>镜像</button></div>
+    </div>
+    <main class="stage" aria-label="图纸画布示意，颜色面板按需浮出">
+      <svg class="sheet" viewBox="0 0 900 410" role="img" aria-label="带网格和坐标的像素小鸡图纸"><defs><pattern id="editor-grid" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M18 0H0V18" fill="none" stroke="var(--line)" stroke-width="0.6"/></pattern></defs><rect x="162" y="43" width="576" height="324" fill="var(--paper)"/><g id="editor-beads"></g><rect x="162" y="43" width="576" height="324" fill="url(#editor-grid)"/><g fill="var(--quiet)" font-size="11" font-family="system-ui"><text x="162" y="32">1</text><text x="324" y="32">10</text><text x="504" y="32">20</text><text x="684" y="32">30</text><text x="145" y="58">1</text><text x="138" y="220">10</text></g></svg>
+      <button class="compare" data-message="示意：浮出原图对比窗口"><i data-lucide="images" aria-hidden="true"></i>对比原图</button>
+      <div class="zoom">100% · 适应画布</div>
+      <aside class="palette" hidden>
+        <div class="panelhead"><span>颜色清单 · 6色</span><button aria-label="关闭颜色清单" data-close><i data-lucide="x" aria-hidden="true"></i></button></div>
+        <div class="colors"><div class="swatch"><div class="dot" style="--c:#f9d154"></div>黄色<div class="muted">268颗</div></div><div class="swatch"><div class="dot" style="--c:#ee9d39"></div>橙色<div class="muted">52颗</div></div><div class="swatch"><div class="dot" style="--c:#38343c"></div>深色<div class="muted">24颗</div></div><div class="swatch"><div class="dot" style="--c:#ee8297"></div>粉色<div class="muted">12颗</div></div><div class="swatch"><div class="dot" style="--c:#faf3de"></div>米白<div class="muted">36颗</div></div><div class="swatch"><div class="dot" style="--c:#bd7e46"></div>棕色<div class="muted">18颗</div></div></div>
+      </aside>
+    </main>
+    <nav class="tools" aria-label="编辑工具">
+      <button data-tool="画笔" aria-pressed="true"><i data-lucide="pencil" aria-hidden="true"></i>画笔⌄</button><button data-tool="吸管" aria-pressed="false"><i data-lucide="pipette" aria-hidden="true"></i>吸管</button><button data-tool="橡皮" aria-pressed="false"><i data-lucide="eraser" aria-hidden="true"></i>橡皮⌄</button><button data-message="示意：浮出全部颜色选色面板"><i data-lucide="palette" aria-hidden="true"></i>全部颜色</button><button data-palette aria-expanded="false"><i data-lucide="list" aria-hidden="true"></i>颜色清单</button>
+    </nav>
+    <div class="status" aria-live="polite">iPad 横版示意 · 面板按需浮出，画布优先</div>
+  </div>
+  <script>
+    (()=>{const root=document.getElementById('ipad-editor-concept'); const beads=root.querySelector('#editor-beads');
+    const rows=['       YY       ','      YYYY      ','    YYYYYYYY    ','   YYYYYYYYYY   ','  YYYKYYYYKYYY  ','  YYYKYYYYKYYY  ','  YYYYYOOYYYYY  ','  YYPYYYYYYPYY  ','  YYYYYYYYYYYY  ','   YYYYWWYYYY   ','    YWWWWWWY    ','     YYYYYY     ','     O    O     '];
+    const colors={Y:'#f9d154',K:'#38343c',O:'#ee9d39',P:'#ee8297',W:'#faf3de'};
+    beads.innerHTML=rows.map((row,y)=>[...row].map((c,x)=>colors[c]?`<rect x="${306+x*18}" y="${79+y*18}" width="18" height="18" fill="${colors[c]}"/>`:'').join('')).join('');
+    const panel=root.querySelector('.palette'),toggle=root.querySelector('[data-palette]'),status=root.querySelector('.status');
+    function setPanel(open){panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));}
+    toggle.addEventListener('click',()=>setPanel(panel.hidden));root.querySelector('[data-close]').addEventListener('click',()=>setPanel(false));
+    root.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{root.querySelectorAll('[data-tool]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));status.textContent='当前工具：'+b.dataset.tool;}));
+    root.querySelectorAll('[data-message]').forEach(b=>b.addEventListener('click',()=>status.textContent=b.dataset.message));
+    })();
+  </script>
+</div>

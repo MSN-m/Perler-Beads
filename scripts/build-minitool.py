@@ -16,6 +16,7 @@ import tempfile
 import zipfile
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
+from minitool_examples import emit_groups
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = Path('/private/tmp/perler-minitool-build-tools')
@@ -37,7 +38,7 @@ def write(path, text):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(text.replace('\r\n', '\n').replace('\n', '\r\n').encode())
 
-def stage_sources(stage):
+def stage_sources(stage, example_groups):
     shutil.copytree(ROOT / 'src', stage / 'src')
     for path in (stage / 'src').rglob('*.js'):
         text = path.read_text()
@@ -74,6 +75,21 @@ def stage_sources(stage):
     # An intentionally empty title is a valid saved value, not a missing legacy field.
     text = replace_once(text, "String(draft.patternName || draft.name || '').trim()", "String(draft.patternName ?? draft.name ?? '').trim()", 'unnamed saved diagram dirty check')
     text = text.replace("draft.patternName || draft.name || ''", "draft.patternName ?? draft.name ?? ''")
+    text = "import { isMiniToolHomeViewport } from './platform/minitool/home-layout.js';\n" + text
+    text = replace_once(text, 'if (!isWorkbenchMobileLayout() || AppState.image || hasWorkbenchPattern() || AppState.draftRestorePending) return false;', 'if (!isMiniToolHomeViewport() || AppState.image || hasWorkbenchPattern() || AppState.draftRestorePending) return false;', 'tablet home example entry')
+    text = replace_once(text, 'const showMobileHome = isMobile && !hasPattern && !hasImage;', 'const showMobileHome = isMiniToolHomeViewport() && !hasPattern && !hasImage;', 'native tablet home visibility')
+    # Reuse phone upload semantics only for the native tablet upload surface.
+    text = replace_once(text, 'return isWorkbenchMobileLayout() && Boolean(AppState.image) && !hasWorkbenchPattern();', 'return isMiniToolHomeViewport() && Boolean(AppState.image) && !hasWorkbenchPattern();', 'tablet upload controls')
+    text = replace_once(text, 'const mobileUploadSetup = isMobile && hasImage && !hasPattern;', 'const mobileUploadSetup = isMobileUploadSetup();', 'tablet upload UI state')
+    text = replace_once(text, 'layout.dataset.mobileStep = isMobile && hasImage && !hasPattern ? \'upload\' : \'\';', 'layout.dataset.mobileStep = isMobile && hasImage && !hasPattern ? \'upload\' : \'\';\n    layout.toggleAttribute(\'data-minitool-upload\', !isMobile && isMiniToolHomeViewport() && hasImage && !hasPattern);', 'tablet upload layout marker')
+    text = replace_once(text, "if (patternSettings) patternSettings.hidden = !active || mobileUploadTab !== 'pattern';", "if (patternSettings) patternSettings.hidden = !active || (isWorkbenchMobileLayout() && mobileUploadTab !== 'pattern');", 'parallel tablet pattern settings')
+    text = replace_once(text, "setHidden('image-adjustments-panel', mobileUploadTab !== 'image');", "setHidden('image-adjustments-panel', isWorkbenchMobileLayout() && mobileUploadTab !== 'image');", 'parallel tablet image adjustments')
+    text = replace_once(text, 'const isOpen = isWorkbenchMobileLayout() && Boolean(AppState.mobileSettingsModal);', 'const isOpen = (isWorkbenchMobileLayout() || isMobileUploadSetup()) && Boolean(AppState.mobileSettingsModal);', 'tablet settings modal')
+    text = replace_once(text, "if (!isWorkbenchMobileLayout() || !['name', 'scheme'].includes(type)) return false;", "if ((!isWorkbenchMobileLayout() && !isMobileUploadSetup()) || !['name', 'scheme'].includes(type)) return false;", 'tablet name and brand entry')
+    # Native iPad offers the same pixel-art option as phone/desktop, retaining detection gates.
+    text = replace_once(text, "const offersPixelStyle = viewportMode !== 'tablet';", "const offersPixelStyle = viewportMode !== 'tablet' || isMiniToolHomeViewport();", 'tablet pixel style grid')
+    text = replace_once(text, "button.classList.toggle('hidden', viewportMode === 'tablet');", "button.classList.toggle('hidden', viewportMode === 'tablet' && !isMiniToolHomeViewport());", 'tablet pixel style visibility')
+    text = text.replace("getWorkbenchViewportMode() === 'tablet' || (!AppState.patternPreviewPixelGridDetection", "(getWorkbenchViewportMode() === 'tablet' && !isMiniToolHomeViewport()) || (!AppState.patternPreviewPixelGridDetection")
     write(ui, text)
     editor = stage / 'src/editor.js'
     text = "import { miniToolStore } from './platform/minitool/storage.js';\n" + editor.read_text()
@@ -94,9 +110,21 @@ def stage_sources(stage):
     write(exporter, text)
     home = stage / 'src/features/mobile-home.js'
     text = home.read_text()
-    text = replace_once(text, "const response = await fetch('assets/data/mobile-home-patterns.json');\n            if (!response.ok) throw new Error(`HTTP ${response.status}`);\n            const records = await response.json();", 'const records = MOBILE_HOME_PATTERNS;', 'offline examples')
-    text = 'const MOBILE_HOME_PATTERNS = ' + (ROOT / 'assets/data/mobile-home-patterns.json').read_text().strip() + ';\n' + text
+    text = replace_once(text, "const response = await fetch('assets/data/mobile-home-patterns.json');\n            if (!response.ok) throw new Error(`HTTP ${response.status}`);\n            const records = await response.json();\n            records.forEach(record => renderPatternCard(grid, record, openExample));", 'installMiniToolExamples(grid, MINI_TOOL_EXAMPLE_GROUPS, openExample);', 'grouped offline examples')
+    text = "import { installMiniToolExamples } from '../platform/minitool/example-library.js';\nconst MINI_TOOL_EXAMPLE_GROUPS = " + json.dumps(example_groups, ensure_ascii=True) + ';\n' + text
+    text = "import { isMiniToolHomeViewport } from '../platform/minitool/home-layout.js';\n" + text
+    text = text.replace("const mobileViewport = '(max-width: 767px)';", "const mobileViewport = '(max-width: 1023px), (pointer: coarse)';")
+    text = replace_once(text, 'if (!viewport.matches) return;', 'if (!isMiniToolHomeViewport()) return;', 'native tablet example loading')
     write(home, text)
+    drafts = stage / 'src/features/mobile-drafts.js'
+    text = "import { isMiniToolHomeViewport } from '../platform/minitool/home-layout.js';\n" + drafts.read_text()
+    text = replace_once(text, "window.matchMedia('(max-width: 767px)')", "window.matchMedia('(max-width: 1023px), (pointer: coarse)')", 'native draft dialog viewport')
+    text = replace_once(text, 'if (!event.matches && dialog.open) dialog.close();', 'if (!isMiniToolHomeViewport() && dialog.open) dialog.close();', 'retain tablet drafts across rotation')
+    write(drafts, text)
+    loading = stage / 'src/features/mobile-loading.js'
+    text = "import { isMiniToolHomeViewport } from '../platform/minitool/home-layout.js';\n" + loading.read_text()
+    text = replace_once(text, "!window.matchMedia('(max-width: 767px)').matches", '!isMiniToolHomeViewport()', 'tablet upload and generation loading')
+    write(loading, text)
     return stage / 'src'
 
 OUTPUT_HTML = '''
@@ -119,6 +147,7 @@ def main():
     parser.add_argument('--node', default=str(TOOLS / 'node-v22.16.0-darwin-arm64/bin/node'))
     parser.add_argument('--lightningcss', default=str(TOOLS / 'node_modules/lightningcss'))
     parser.add_argument('--output', default=str(ROOT / 'outputs/minitool-release'))
+    parser.add_argument('--preview-only', action='store_true', help='Compile and audit a preview directory without creating a release ZIP')
     args = parser.parse_args()
     output = Path(args.output).resolve()
     if output == ROOT or ROOT not in output.parents: raise RuntimeError('Output must be a dedicated project subdirectory')
@@ -126,18 +155,19 @@ def main():
     if output.exists() and any(output.iterdir()): raise RuntimeError('Choose a new/empty output directory')
     output.mkdir(parents=True, exist_ok=True)
     artifact = output / 'app'; artifact.mkdir()
+    example_groups = emit_groups(artifact)
     with tempfile.TemporaryDirectory(prefix='perler-minitool-') as temp:
         stage = Path(temp)
-        sources = stage_sources(stage)
+        sources = stage_sources(stage, example_groups)
         css_input = stage / 'all.css'
-        css_input.write_text('\n'.join((ROOT / file).read_text() for file in ['css/tailwind.generated.css', 'css/style.css', 'src/platform/minitool/output.css', 'src/platform/minitool/chrome.css', 'src/platform/minitool/progress.css']))
+        css_input.write_text('\n'.join((ROOT / file).read_text() for file in ['css/tailwind.generated.css', 'css/style.css', 'src/platform/minitool/output.css', 'src/platform/minitool/chrome.css', 'src/platform/minitool/progress.css', 'src/platform/minitool/example-library.css', 'src/platform/minitool/home-tablet.css', 'src/platform/minitool/upload-tablet.css']))
         # style.css lives in css/ in the web app; the release stylesheet is at the ZIP root.
         css_input.write_text(css_input.read_text().replace('../assets/', './assets/'))
         meta = output / 'css-compatibility.json'
         env = dict(os.environ, PERLER_LIGHTNINGCSS=args.lightningcss)
         subprocess.run([args.node, str(ROOT / 'scripts/minitool/compile-css.cjs'), str(css_input), str(artifact / 'style.css'), str(meta)], env=env, check=True)
         info = json.loads(meta.read_text())
-        write(stage / 'entry.js', "import './src/platform/minitool/polyfills.js';\nimport { installMiniToolCompatibility } from './src/platform/minitool/compat.js';\nimport { installMiniToolHomeChrome } from './src/platform/minitool/home-chrome.js';\nimport { installMiniToolProgress } from './src/platform/minitool/progress.js';\nimport './src/main.js';\ndocument.addEventListener('DOMContentLoaded', installMiniToolProgress);\ninstallMiniToolCompatibility(" + json.dumps(info['has']) + ', ' + json.dumps(info['gaps']) + ', ' + json.dumps(info['aspects']) + ');\ninstallMiniToolHomeChrome();\n')
+        write(stage / 'entry.js', "import './src/platform/minitool/polyfills.js';\nimport { installMiniToolCompatibility } from './src/platform/minitool/compat.js';\nimport { installMiniToolHomeChrome } from './src/platform/minitool/home-chrome.js';\nimport { installMiniToolProgress } from './src/platform/minitool/progress.js';\nimport './src/main.js';\nimport { updateWorkbenchUI } from './src/ui.js';\nimport { installMiniToolHomeLayout } from './src/platform/minitool/home-layout.js';\ndocument.addEventListener('DOMContentLoaded', installMiniToolProgress);\ninstallMiniToolCompatibility(" + json.dumps(info['has']) + ', ' + json.dumps(info['gaps']) + ', ' + json.dumps(info['aspects']) + ');\ninstallMiniToolHomeLayout(updateWorkbenchUI);\ninstallMiniToolHomeChrome();\n')
         command = [args.esbuild, '--bundle', '--format=iife', '--target=chrome61', '--tree-shaking=true', '--minify', '--legal-comments=none', '--metafile=' + str(output / 'bundle-inputs.json')]
         subprocess.run(command + [str(stage / 'entry.js'), '--outfile=' + str(artifact / 'app.js')], check=True)
         subprocess.run([args.esbuild, str(sources / 'features/pixel-art-detection-worker.js'), '--bundle', '--format=iife', '--target=chrome61', '--minify', '--legal-comments=none', '--outfile=' + str(artifact / 'pixel-worker.js')], check=True)
@@ -146,6 +176,11 @@ def main():
     html = re.sub(r'\s*<link[^>]+(?:rel="manifest"|rel="stylesheet")[^>]*>', '', html)
     html = html.replace('content="width=device-width, initial-scale=1.0"', 'content="width=device-width, initial-scale=1.0, viewport-fit=cover"')
     html = html.replace('</head>', '<link rel="stylesheet" href="./style.css">\n<script defer src="./app.js"></script>\n</head>')
+    html = replace_once(html, '<h1>一秒转图纸<br>一格一格改喜欢</h1>', '<h1><span>一秒转图纸</span><br><span>一格一格改喜欢</span></h1>', 'tablet homepage headline')
+    html = replace_once(html, '<div id="mobile-upload-pattern-settings" hidden>', '<div id="mobile-upload-pattern-settings" hidden><h2 class="minitool-upload-settings-title">图纸设置</h2>', 'tablet settings section heading')
+    for button, label in [('mobile-upload-crop-confirm', '确认'), ('mobile-upload-crop-undo', '撤回'), ('mobile-upload-crop-cancel', '取消')]:
+        html, count = re.subn(r'(<button\b[^>]*id="' + button + r'"[^>]*>.*?)(</button>)', lambda match: match[1] + '<span class="minitool-crop-label">' + label + '</span>' + match[2], html, count=1, flags=re.S)
+        if count != 1: raise RuntimeError('Review tablet crop button: ' + button)
     html = html.replace('</body>', OUTPUT_HTML + '\n</body>')
     # Keep old hidden views for shared DOM binding, but remove unsupported file controls.
     html = re.sub(r'<label for="import-drafts-file".*?</label>\s*<input id="import-drafts-file"[^>]*>', '', html, flags=re.S)
@@ -181,6 +216,9 @@ def main():
     allowed = {'.html', '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.woff', '.woff2', '.json'}
     for file in artifact.rglob('*'):
         if file.is_file() and file.suffix.lower() not in allowed: raise RuntimeError('Unsupported release file: ' + str(file))
+    if args.preview_only:
+        print(json.dumps({'preview': str(artifact), 'zipCreated': False}, ensure_ascii=False))
+        return
     archive = output / '小豆鸡-小红书小工具.zip'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as zipout:
         for file in sorted(artifact.rglob('*')):

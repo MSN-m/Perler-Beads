@@ -3363,7 +3363,7 @@ export function resetWorkbenchComparePreview() {
 }
 
 export function toggleWorkbenchComparePreview() {
-    if (!isWorkbenchLayout() || !hasWorkbenchPattern()) return;
+    if (!isWorkbenchLayout() || !hasWorkbenchPattern() || !AppState.image) return;
     AppState.comparePreviewVisible = !AppState.comparePreviewVisible;
     if (isWorkbenchMobileLayout()) {
         updateWorkbenchUI();
@@ -3721,7 +3721,7 @@ export function updateWorkbenchUI() {
     const settingsCollapsed = false;
     const showSettingsPanel = hasPattern ? tabletPanel === 'settings' : !isMobile || hasImage;
     const showColorListPanel = hasPattern && tabletPanel === 'colors';
-    const compareVisible = hasPattern && AppState.comparePreviewVisible;
+    const compareVisible = hasPattern && hasImage && AppState.comparePreviewVisible;
     setHidden('workbench-upload-empty', hasImage || hasPattern);
     setHidden('workbench-change-image', isMobile || (!hasImage && !hasPattern));
     setHidden('workbench-preview-empty', !hasImage || hasPattern || hasPixelArt || isMobile);
@@ -3952,7 +3952,9 @@ export function updateWorkbenchUI() {
     updateWorkbenchCursors(compareVisible);
     const compareBtn = document.getElementById('toggle-compare-preview-btn');
     if (compareBtn) {
-        compareBtn.textContent = compareVisible ? '收起原图' : isMobile ? '查看原图' : '原图对照';
+        compareBtn.textContent = !hasImage ? '没有原图' : compareVisible ? '收起原图' : '对比原图';
+        compareBtn.disabled = !hasImage;
+        compareBtn.setAttribute('aria-disabled', String(!hasImage));
         compareBtn.setAttribute('aria-expanded', String(compareVisible));
     }
     const resultPane = document.getElementById('result-pane');
